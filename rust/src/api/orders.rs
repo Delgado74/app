@@ -8100,14 +8100,6 @@ fn spawn_stale_sweep() {
     });
 }
 
-/// [`fetch_public_order_revision`]'s status alone, for the restored-history
-/// pass ([`reconcile_history_with`]), which decides on the status only.
-async fn fetch_public_order_status(order_id: &str) -> Option<crate::api::types::OrderStatus> {
-    fetch_public_order_revision(order_id)
-        .await
-        .map(|(_, order)| order.status)
-}
-
 /// The time the daemon published `order_id` as `success` (#642), from its
 /// newest public event. `None` when that event says anything else, or on the
 /// failures [`fetch_public_order_revision`] reads as no answer.
