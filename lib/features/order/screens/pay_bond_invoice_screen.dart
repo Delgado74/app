@@ -16,8 +16,10 @@ import 'package:mostro/core/daemon_errors.dart';
 import 'package:mostro/core/invoice_palette.dart';
 import 'package:mostro/features/about/providers/mostro_node_provider.dart';
 import 'package:mostro/features/order/models/bond_rules.dart';
+import 'package:mostro/features/order/models/invoice_rules.dart';
 import 'package:mostro/features/order/providers/bond_providers.dart';
 import 'package:mostro/features/order/providers/exchange_rate_provider.dart';
+import 'package:mostro/features/order/providers/invoice_providers.dart';
 import 'package:mostro/features/order/providers/trade_state_provider.dart';
 import 'package:mostro/features/order/widgets/bond_widgets.dart';
 import 'package:mostro/features/order/widgets/invoice_clock.dart';
@@ -27,6 +29,7 @@ import 'package:mostro/features/settings/providers/nwc_provider.dart';
 import 'package:mostro/features/trades/providers/trades_providers.dart'
     show refreshTrades, tradeInfoProvider;
 import 'package:mostro/l10n/app_localizations.dart';
+import 'package:mostro/shared/mascot/mascot_cues.dart';
 import 'package:mostro/shared/utils/platform_int64.dart';
 import 'package:mostro/shared/widgets/mostro_modal.dart';
 import 'package:mostro/shared/widgets/nwc_payment_widget.dart';
@@ -42,8 +45,9 @@ const _docsUrl = 'https://mostro.network/docs-english/';
 ///
 /// The taker pays the bond hold invoice the daemon asks for before the trade
 /// starts (`docs/ANTI_ABUSE_BOND.md` §6.1). 14a puts the amount first, the
-/// three things that can happen to it, and the wallet as the primary action;
-/// 14b is the same scroll with the long explanation open. Mostro detects the
+/// three things that can happen to it, and the wallet as the primary action
+/// (Copy on web, see [copyLeadsInvoice]); 14b is the same scroll with the
+/// long explanation open, the QR still under the amount. Mostro detects the
 /// payment and the trade moves on: the screen leaves on its own.
 class PayBondInvoiceScreen extends ConsumerStatefulWidget {
   const PayBondInvoiceScreen({super.key, required this.orderId});
@@ -131,6 +135,7 @@ class _PayBondInvoiceScreenState extends ConsumerState<PayBondInvoiceScreen>
     } catch (e) {
       // A lock that beat the cancel was already told by the listener.
       if (!mounted || _navigated) return;
+      ref.read(mascotCueProvider.notifier).daemonRefused(e);
       if (maker && e.toString().contains('MakerCancelRefused')) {
         await _offerRemoval();
         return;
@@ -183,6 +188,7 @@ class _PayBondInvoiceScreenState extends ConsumerState<PayBondInvoiceScreen>
       context.go(AppRoute.home);
     } catch (e) {
       if (!mounted || _navigated) return;
+      ref.read(mascotCueProvider.notifier).daemonRefused(e);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
@@ -205,6 +211,7 @@ class _PayBondInvoiceScreenState extends ConsumerState<PayBondInvoiceScreen>
       refreshTrades(ref);
     } catch (e) {
       if (!mounted) return;
+      ref.read(mascotCueProvider.notifier).daemonRefused(e);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
@@ -402,8 +409,11 @@ class _PayBondInvoiceScreenState extends ConsumerState<PayBondInvoiceScreen>
       appBar: appBar,
       body: ValueListenableBuilder<Duration?>(
         valueListenable: invoiceRemaining,
+        // Built outside the countdown's builder, so a tick does not
+        // re-encode it: a QR is costly to encode.
+        child: _identifiedQr(l10n, invoice),
         builder:
-            (context, remaining, _) =>
+            (context, remaining, qr) =>
                 remaining == Duration.zero && !_waiting
                     ? _withId(_expired(l10n, maker: maker))
                     : _payable(
@@ -411,6 +421,7 @@ class _PayBondInvoiceScreenState extends ConsumerState<PayBondInvoiceScreen>
                       trade: trade,
                       bond: bond,
                       invoice: invoice,
+                      qr: qr!,
                       amountSats: amountSats,
                       remaining: remaining,
                       maker: maker,
@@ -437,6 +448,7 @@ class _PayBondInvoiceScreenState extends ConsumerState<PayBondInvoiceScreen>
     required TradeInfo trade,
     required BondInfo bond,
     required String invoice,
+    required Widget qr,
     required int amountSats,
     required Duration? remaining,
     required bool maker,
@@ -483,7 +495,7 @@ class _PayBondInvoiceScreenState extends ConsumerState<PayBondInvoiceScreen>
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    if (open)
+                    if (open) ...[
                       BondAmountRow(
                         label: l10n.bondRefundableLabel,
                         sats: amountSats,
@@ -492,8 +504,12 @@ class _PayBondInvoiceScreenState extends ConsumerState<PayBondInvoiceScreen>
                         timeLabel: l10n.bondPayWithinLabel,
                         hours: l10n.invoiceCountdownHours,
                         unit: l10n.satsUnitLabel,
-                      )
-                    else ...[
+                        // Opening the explainer keeps the QR in the amount's
+                        // card (DS-CMP-23): it opens by default, so hiding it
+                        // left a first-time payer with only the wallet link.
+                        child: qr,
+                      ),
+                    ] else ...[
                       InvoiceHeroCard(
                         label: l10n.bondRefundableLabel,
                         sats: amountSats,
@@ -501,9 +517,7 @@ class _PayBondInvoiceScreenState extends ConsumerState<PayBondInvoiceScreen>
                           amountSats.toString(),
                         ),
                         contextLine: fiatLine,
-                        automationId: AutomationIds.bondInvoiceText,
-                        automationLabel: invoice,
-                        child: _qr(l10n, invoice),
+                        child: qr,
                       ),
                       if (remaining != null) ...[
                         const SizedBox(height: 12),
@@ -565,11 +579,10 @@ class _PayBondInvoiceScreenState extends ConsumerState<PayBondInvoiceScreen>
                         l10n,
                         invoice,
                         amountSats: amountSats,
-                        open: open,
                         maker: maker,
                       )
                     else
-                      ..._footer(l10n, invoice, open: open, maker: maker),
+                      ..._footer(l10n, invoice, maker: maker),
                   ],
                 ),
               ),
@@ -643,6 +656,24 @@ class _PayBondInvoiceScreenState extends ConsumerState<PayBondInvoiceScreen>
     ];
   }
 
+  /// The QR with the bolt11 readout beside it, the one node that carries
+  /// `bond.invoice.text` in both states. A sibling, not a wrapper: a readout
+  /// hides what it wraps from screen readers, and the QR keeps its own
+  /// description. One pixel, not zero: a zero-size box has no semantics node.
+  Widget _identifiedQr(AppLocalizations l10n, String invoice) => Stack(
+    children: [
+      _qr(l10n, invoice),
+      Positioned(
+        left: 0,
+        top: 0,
+        child: const SizedBox(
+          width: 1,
+          height: 1,
+        ).withAutomationId(AutomationIds.bondInvoiceText, label: invoice),
+      ),
+    ],
+  );
+
   Widget _qr(AppLocalizations l10n, String invoice) => Center(
     child: SizedBox.square(
       dimension: 150 + 2 * 12,
@@ -677,7 +708,6 @@ class _PayBondInvoiceScreenState extends ConsumerState<PayBondInvoiceScreen>
   List<Widget> _footer(
     AppLocalizations l10n,
     String invoice, {
-    required bool open,
     required bool maker,
   }) {
     final book = OrderBookPalette.of(context);
@@ -692,69 +722,38 @@ class _PayBondInvoiceScreenState extends ConsumerState<PayBondInvoiceScreen>
         ),
       ];
     }
-    final copied = _copiedTimer != null;
-    final copyIcon = copied ? Icons.check : Icons.copy;
-    final secondaries = Row(
-      children: [
-        Expanded(
-          child: InvoiceSecondaryButton(
-            icon: _noWalletApp ? Icons.bolt : copyIcon,
-            iconColor: !_noWalletApp && copied ? book.lime : null,
-            label: _noWalletApp ? l10n.invoiceOpenWallet : l10n.copyButtonLabel,
-            onPressed:
-                _noWalletApp
-                    ? () => _openWallet(invoice)
-                    : () => _copy(invoice),
-          ),
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: InvoiceSecondaryButton(
-            icon: Icons.share,
-            label: l10n.shareButtonLabel,
-            onPressed: () => _share(invoice),
-          ),
-        ),
-      ],
-    );
     return [
-      // Without an app for `lightning:` links, `Copy` is the primary action
-      // and the wallet link drops to a secondary one.
-      if (_noWalletApp)
-        InvoicePrimaryButton(
-          icon: copyIcon,
-          label: l10n.copyButtonLabel,
-          onPressed: () => _copy(invoice),
-        )
-      else
-        InvoicePrimaryButton(
-          icon: Icons.bolt,
-          label: l10n.invoiceOpenWallet,
-          onPressed: () => _openWallet(invoice),
+      InvoicePaymentActions(
+        copyLeads: copyLeadsInvoice(
+          isWeb: ref.watch(invoiceOnWebProvider),
+          noWalletApp: _noWalletApp,
         ),
-      // 14b hides copy / share: whoever is reading is not scanning.
-      if (!open) ...[const SizedBox(height: 8), secondaries],
+        copied: _copiedTimer != null,
+        onCopy: () => _copy(invoice),
+        onOpenWallet: () => _openWallet(invoice),
+        onShare: () => _share(invoice),
+      ),
       const SizedBox(height: 4),
       _leaveLink(l10n, maker: maker),
     ];
   }
 
   /// The wallet pays: one button, the fallback to manual payment lives in
-  /// the widget, the cancel link stays. When the QR card is hidden (14b)
-  /// the widget's readout carries the bolt11 for automation instead.
+  /// the widget, the cancel link stays. The QR above carries the bolt11 for
+  /// automation in both states, so the widget does not.
   List<Widget> _nwcFooter(
     AppLocalizations l10n,
     String invoice, {
     required int amountSats,
-    required bool open,
     required bool maker,
   }) {
-    if (_waiting) return _footer(l10n, invoice, open: open, maker: maker);
+    if (_waiting) return _footer(l10n, invoice, maker: maker);
     return [
       NwcPaymentWidget(
         bolt11: invoice,
         amountSats: amountSats,
-        invoiceAutomationId: open ? AutomationIds.bondInvoiceText : null,
+        // The screen's QR carries the bolt11 as `bond.invoice.text`.
+        invoiceAutomationId: null,
         onPaymentSuccess: _onPaymentDetected,
         onFallbackToManual: () => setState(() => _manualMode = true),
       ),
