@@ -1,0 +1,64 @@
+name: Build Android APK (arm64-v8a debug)
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Select branch to build'
+        required: true
+        default: 'main'
+        type: choice
+        options:
+          - main
+          - feat/effective-fiat-rate
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.branch }}
+          fetch-depth: 0
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      # cargokit (rust_builder) compiles the Rust core while building the APK
+      # through rustup's default stable toolchain.
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-linux-android
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.41.9'
+          channel: 'stable'
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Generate localizations
+        run: flutter gen-l10n
+
+      - name: Build debug APK (arm64-v8a)
+        run: flutter build apk --debug --target-platform android-arm64
+
+      - name: Rename APK
+        run: |
+          mkdir -p artifacts
+          cp build/app/outputs/flutter-apk/app-debug.apk artifacts/mostro-debug-arm64-v8a.apk
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: mostro-debug-arm64-v8a
+          path: artifacts/mostro-debug-arm64-v8a.apk
