@@ -33,7 +33,7 @@ Future<Map<String, double>> _readRates(
     for (final order in orders) order.fiatCode,
   };
   for (final code in codes) {
-    await container.read(exchangeRateProvider(code)).future;
+    await container.read(exchangeRateProvider(code).future);
   }
   return container.read(effectiveRatesProvider);
 }
