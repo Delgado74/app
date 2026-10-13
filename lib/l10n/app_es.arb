@@ -563,6 +563,7 @@
   "reasonBestPremium": "Mejor prima",
   "reasonMostReputable": "Mejor reputado",
   "marketPriceCaption": "Precio de mercado",
+  "effectiveRateUsd": "~{rate} {currency}/USD",
   "reputationTradesLabel": "{count, plural, =1{operación} other{operaciones}}",
   "reputationDaysLabel": "{count, plural, =1{día} other{días}}",
   "sortNewest": "Más recientes",

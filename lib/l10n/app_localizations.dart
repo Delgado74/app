@@ -3478,6 +3478,12 @@ abstract class AppLocalizations {
   /// **'Market price'**
   String get marketPriceCaption;
 
+  /// Effective fiat/USD cross rate of a market-price offer under the order-book card amount, after the maker's premium. {rate} is the already formatted number and {currency} the offer's fiat code; place them wherever the language needs them
+  ///
+  /// In en, this message translates to:
+  /// **'~{rate} {currency}/USD'**
+  String effectiveRateUsd(String rate, String currency);
+
   /// Unit word after the trade count in the order-book reputation row
   ///
   /// In en, this message translates to:

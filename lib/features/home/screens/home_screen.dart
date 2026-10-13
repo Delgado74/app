@@ -10,6 +10,7 @@ import 'package:mostro/core/create_order_palette.dart';
 import 'package:mostro/features/drawer/screens/drawer_menu.dart';
 import 'package:mostro/features/home/providers/home_order_providers.dart';
 import 'package:mostro/features/home/providers/order_reason_provider.dart';
+import 'package:mostro/features/home/providers/effective_rate_provider.dart';
 import 'package:mostro/features/home/widgets/order_book_list.dart';
 import 'package:mostro/features/home/widgets/order_filter_chip.dart';
 import 'package:mostro/features/home/widgets/order_list_empty.dart';
@@ -76,6 +77,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final filteredOrders = ref.watch(filteredOrdersProvider);
     // Highlight chips computed once per visible list (not per card).
     final orderReasons = ref.watch(orderReasonsProvider);
+    // Effective fiat/USD cross rate per market-price order, once per list.
+    final effectiveRates = ref.watch(effectiveRatesProvider);
     final flags = ref.watch(currencyFlagsProvider);
     final orderType = ref.watch(homeOrderTypeProvider);
     final sort = ref.watch(orderSortProvider);
@@ -112,6 +115,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     orders: filteredOrders,
                     currencyFlags: flags,
                     reasons: orderReasons,
+                    effectiveRates: effectiveRates,
                     columns: columns,
                     onOrderTap: _openOrder,
                   ),

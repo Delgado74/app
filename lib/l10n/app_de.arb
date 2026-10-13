@@ -563,6 +563,7 @@
   "reasonBestPremium": "Beste Prämie",
   "reasonMostReputable": "Am angesehensten",
   "marketPriceCaption": "Marktpreis",
+  "effectiveRateUsd": "~{rate} {currency}/USD",
   "reputationTradesLabel": "{count, plural, =1{Trade} other{Trades}}",
   "reputationDaysLabel": "{count, plural, =1{Tag} other{Tage}}",
   "sortNewest": "Neueste",

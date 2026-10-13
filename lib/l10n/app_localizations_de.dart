@@ -1988,6 +1988,11 @@ class AppLocalizationsDe extends AppLocalizations {
   String get marketPriceCaption => 'Marktpreis';
 
   @override
+  String effectiveRateUsd(String rate, String currency) {
+    return '~$rate $currency/USD';
+  }
+
+  @override
   String reputationTradesLabel(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,

@@ -1960,6 +1960,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get marketPriceCaption => 'Market price';
 
   @override
+  String effectiveRateUsd(String rate, String currency) {
+    return '~$rate $currency/USD';
+  }
+
+  @override
   String reputationTradesLabel(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,

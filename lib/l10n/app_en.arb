@@ -2593,6 +2593,18 @@
   "@marketPriceCaption": {
     "description": "Caption under an order-book card amount"
   },
+  "effectiveRateUsd": "~{rate} {currency}/USD",
+  "@effectiveRateUsd": {
+    "description": "Effective fiat/USD cross rate of a market-price offer under the order-book card amount, after the maker's premium. {rate} is the already formatted number and {currency} the offer's fiat code; place them wherever the language needs them",
+    "placeholders": {
+      "rate": {
+        "type": "String"
+      },
+      "currency": {
+        "type": "String"
+      }
+    }
+  },
   "reputationTradesLabel": "{count, plural, =1{trade} other{trades}}",
   "@reputationTradesLabel": {
     "description": "Unit word after the trade count in the order-book reputation row",

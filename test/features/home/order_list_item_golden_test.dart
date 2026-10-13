@@ -47,6 +47,8 @@ Widget _gallery() {
             rating: 3.2,
             minutesAgo: 120,
           ),
+          // Market-price card: show the effective rate once reproduced.
+          effectiveFiatPerUsd: 0.892,
         ),
       ],
     ),

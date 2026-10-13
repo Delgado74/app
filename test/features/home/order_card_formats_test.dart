@@ -29,5 +29,13 @@ void main() {
       expect(formats.premium.format(2.5), '+2.5');
       expect(formats.premium.format(-2.5), '-2.5');
     });
+
+    test('keeps small effective rates and groups large ones', () {
+      final formats = OrderCardFormats.of('en');
+
+      expect(formats.rate.format(0.0084), '0.0084');
+      expect(formats.rate.format(305.4), '305.4');
+      expect(formats.rate.format(15000.5), '15,000.5');
+    });
   });
 }

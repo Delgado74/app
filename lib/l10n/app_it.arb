@@ -563,6 +563,7 @@
   "reasonBestPremium": "Miglior premio",
   "reasonMostReputable": "Più affidabile",
   "marketPriceCaption": "Prezzo di mercato",
+  "effectiveRateUsd": "~{rate} {currency}/USD",
   "reputationTradesLabel": "{count, plural, =1{operazione} other{operazioni}}",
   "reputationDaysLabel": "{count, plural, =1{giorno} other{giorni}}",
   "sortNewest": "Più recenti",

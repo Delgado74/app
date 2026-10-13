@@ -15,6 +15,7 @@ Future<void> _pumpCard(
   WidgetTester tester,
   OrderItem order, {
   OrderReason? reason,
+  double? effectiveFiatPerUsd,
   double width = 360,
   double textScale = 1,
 }) async {
@@ -41,6 +42,7 @@ Future<void> _pumpCard(
             child: OrderListItem(
               order: order,
               reason: reason,
+              effectiveFiatPerUsd: effectiveFiatPerUsd,
               currencyFlags: const {'USD': '🇺🇸'},
             ),
           ),
@@ -115,6 +117,28 @@ void main() {
         findsOneWidget,
       );
       expect(find.text('Market price'), findsNothing);
+    });
+
+    testWidgets('market-price orders with a computable rate show it', (
+      tester,
+    ) async {
+      await _pumpCard(
+        tester,
+        fakeOrder(amountSats: BigInt.zero, fiatCode: 'USD'),
+        effectiveFiatPerUsd: 305.4,
+      );
+
+      expect(find.text('~305.4 USD/USD'), findsOneWidget);
+      expect(find.text('Market price'), findsNothing);
+    });
+
+    testWidgets('keeps the market-price caption when the rate is unknown', (
+      tester,
+    ) async {
+      await _pumpCard(tester, fakeOrder(amountSats: BigInt.zero));
+
+      expect(find.text('Market price'), findsOneWidget);
+      expect(find.textContaining('/USD'), findsNothing);
     });
   });
 
