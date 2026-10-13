@@ -52,7 +52,12 @@ Widget _cards() {
             rating: 3.2,
             minutesAgo: 120,
           ),
+<<<<<<< HEAD
           reason: OrderReason.bestPremium,
+=======
+          // Market-price card: show the effective rate once reproduced.
+          effectiveFiatPerUsd: 0.892,
+>>>>>>> 2466ee60 (feat(order): show the effective fiat/USD rate on market-price offer cards)
         ),
       ],
     ),

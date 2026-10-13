@@ -2044,6 +2044,36 @@ class AppLocalizationsEs extends AppLocalizations {
   String get marketPriceCaption => 'Precio de mercado';
 
   @override
+<<<<<<< HEAD
+=======
+  String effectiveRateUsd(String rate, String currency) {
+    return '~$rate $currency/USD';
+  }
+
+  @override
+  String reputationTradesLabel(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'operaciones',
+      one: 'operación',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String reputationDaysLabel(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'días',
+      one: 'día',
+    );
+    return '$_temp0';
+  }
+
+  @override
+>>>>>>> 2466ee60 (feat(order): show the effective fiat/USD rate on market-price offer cards)
   String get sortNewest => 'Más recientes';
 
   @override

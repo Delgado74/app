@@ -575,6 +575,12 @@
   "reasonBestPremium": "Mejor prima",
   "reasonMostReputable": "Mejor reputado",
   "marketPriceCaption": "Precio de mercado",
+<<<<<<< HEAD
+=======
+  "effectiveRateUsd": "~{rate} {currency}/USD",
+  "reputationTradesLabel": "{count, plural, =1{operación} other{operaciones}}",
+  "reputationDaysLabel": "{count, plural, =1{día} other{días}}",
+>>>>>>> 2466ee60 (feat(order): show the effective fiat/USD rate on market-price offer cards)
   "sortNewest": "Más recientes",
   "ordersCount": "{count, plural, =1{1 orden} other{{count} órdenes}}",
   "sortBestPremium": "Mejor prima",
