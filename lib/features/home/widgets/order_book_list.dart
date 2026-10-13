@@ -19,6 +19,7 @@ class OrderBookList extends StatelessWidget {
     required this.reasons,
     required this.columns,
     required this.onOrderTap,
+    this.effectiveRates = const {},
   });
 
   /// Already filtered and sorted — newest first by default, which is what
@@ -27,6 +28,11 @@ class OrderBookList extends StatelessWidget {
   final Map<String, OrderReason> reasons;
   final int columns;
   final void Function(String orderId) onOrderTap;
+
+  /// Effective fiat/USD cross rate per market-price order, computed once for
+  /// the visible list by [effectiveRatesProvider]. Orders whose id is absent
+  /// keep the "Market price" caption.
+  final Map<String, double> effectiveRates;
 
   /// Handoff 4b: 18 at the sides, cards straight under the filter row, and
   /// enough bottom clearance for the last card to scroll out from under the
@@ -130,6 +136,7 @@ class OrderBookList extends StatelessWidget {
     key: ValueKey(order.id),
     order: order,
     reason: reasons[order.id],
+    effectiveFiatPerUsd: effectiveRates[order.id],
     onTap: () => onOrderTap(order.id),
   );
 }

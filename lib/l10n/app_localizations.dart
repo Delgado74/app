@@ -3552,6 +3552,27 @@ abstract class AppLocalizations {
   /// **'Market price'**
   String get marketPriceCaption;
 
+<<<<<<< HEAD
+=======
+  /// Effective fiat/USD cross rate of a market-price offer under the order-book card amount, after the maker's premium. {rate} is the already formatted number and {currency} the offer's fiat code; place them wherever the language needs them
+  ///
+  /// In en, this message translates to:
+  /// **'~{rate} {currency}/USD'**
+  String effectiveRateUsd(String rate, String currency);
+
+  /// Unit word after the trade count in the order-book reputation row
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{trade} other{trades}}'**
+  String reputationTradesLabel(int count);
+
+  /// Unit word after the active-days count in the order-book reputation row
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{day} other{days}}'**
+  String reputationDaysLabel(int count);
+
+>>>>>>> 2466ee60 (feat(order): show the effective fiat/USD rate on market-price offer cards)
   /// Sort caption on the order-book filter row; must describe the ordering actually applied (newest first)
   ///
   /// In en, this message translates to:

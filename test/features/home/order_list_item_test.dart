@@ -17,6 +17,7 @@ Future<void> _pumpCard(
   WidgetTester tester,
   OrderItem order, {
   OrderReason? reason,
+  double? effectiveFiatPerUsd,
   double width = 360,
   double textScale = 1,
 }) async {
@@ -25,6 +26,7 @@ Future<void> _pumpCard(
   addTearDown(tester.view.reset);
   await withClock(Clock.fixed(kFakeNow), () async {
     await tester.pumpWidget(
+<<<<<<< HEAD
       ProviderScope(
         overrides: [catalogueOverride()],
         child: MaterialApp(
@@ -43,6 +45,28 @@ Future<void> _pumpCard(
             body: SingleChildScrollView(
               padding: const EdgeInsets.all(18),
               child: OrderListItem(order: order, reason: reason),
+=======
+      MaterialApp(
+        theme: buildDarkTheme(),
+        locale: const Locale('en'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        builder:
+            (context, child) => MediaQuery(
+              data: MediaQuery.of(
+                context,
+              ).copyWith(textScaler: TextScaler.linear(textScale)),
+              child: child!,
+            ),
+        home: Scaffold(
+          body: SingleChildScrollView(
+            padding: const EdgeInsets.all(18),
+            child: OrderListItem(
+              order: order,
+              reason: reason,
+              effectiveFiatPerUsd: effectiveFiatPerUsd,
+              currencyFlags: const {'USD': '🇺🇸'},
+>>>>>>> 2466ee60 (feat(order): show the effective fiat/USD rate on market-price offer cards)
             ),
           ),
         ),
@@ -120,11 +144,16 @@ void main() {
       expect(find.text('Market price'), findsNothing);
     });
 
+<<<<<<< HEAD
     testWidgets('fixed-sats orders show their price per BTC, not a premium', (
+=======
+    testWidgets('market-price orders with a computable rate show it', (
+>>>>>>> 2466ee60 (feat(order): show the effective fiat/USD rate on market-price offer cards)
       tester,
     ) async {
       await _pumpCard(
         tester,
+<<<<<<< HEAD
         fakeOrder(
           fiatAmount: 100,
           fiatCode: 'EUR',
@@ -136,6 +165,23 @@ void main() {
       expect(find.text('price'), findsOneWidget);
       expect(find.text('premium'), findsNothing);
       expect(find.textContaining('%'), findsNothing);
+=======
+        fakeOrder(amountSats: BigInt.zero, fiatCode: 'USD'),
+        effectiveFiatPerUsd: 305.4,
+      );
+
+      expect(find.text('~305.4 USD/USD'), findsOneWidget);
+      expect(find.text('Market price'), findsNothing);
+    });
+
+    testWidgets('keeps the market-price caption when the rate is unknown', (
+      tester,
+    ) async {
+      await _pumpCard(tester, fakeOrder(amountSats: BigInt.zero));
+
+      expect(find.text('Market price'), findsOneWidget);
+      expect(find.textContaining('/USD'), findsNothing);
+>>>>>>> 2466ee60 (feat(order): show the effective fiat/USD rate on market-price offer cards)
     });
   });
 

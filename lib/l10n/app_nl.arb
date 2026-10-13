@@ -575,6 +575,12 @@
   "reasonBestPremium": "Beste premie",
   "reasonMostReputable": "Beste reputatie",
   "marketPriceCaption": "Marktprijs",
+<<<<<<< HEAD
+=======
+  "effectiveRateUsd": "~{rate} {currency}/USD",
+  "reputationTradesLabel": "{count, plural, =1{trade} other{trades}}",
+  "reputationDaysLabel": "{count, plural, =1{dag} other{dagen}}",
+>>>>>>> 2466ee60 (feat(order): show the effective fiat/USD rate on market-price offer cards)
   "sortNewest": "Nieuwste",
   "ordersCount": "{count, plural, =1{1 order} other{{count} orders}}",
   "sortBestPremium": "Beste premie",
