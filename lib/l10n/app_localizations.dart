@@ -1804,6 +1804,24 @@ abstract class AppLocalizations {
   /// **'Fiat Currencies'**
   String get aboutFiatCurrenciesLabel;
 
+  /// Technical data row, in the Price group: a price provider behind the exchange rates the Mostro node publishes now (Yadio, CoinGecko, El Toque…), as its rates event names them
+  ///
+  /// In en, this message translates to:
+  /// **'Source'**
+  String get aboutPriceSourceLabel;
+
+  /// Technical data group title: the node's exchange rates, holding the price source row
+  ///
+  /// In en, this message translates to:
+  /// **'Price'**
+  String get aboutPriceSection;
+
+  /// Technical data footnote, added when the Price group is shown: the sources are the providers of the rates published now, not every provider the node is configured with
+  ///
+  /// In en, this message translates to:
+  /// **'Price sources are the providers behind the rates the node publishes now; one that failed or was set aside is not listed.'**
+  String get aboutPriceSourcesFootnote;
+
   /// About screen — Mostro Version row label
   ///
   /// In en, this message translates to:
@@ -2691,6 +2709,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'If it expires, the order is cancelled.'**
   String get tradeTimerExpiryCancelled;
+
+  /// Note under the countdown of an active trade: the time is estimated in Bitcoin blocks, and mostrod's escrow deadline guardian cancels the trade when it runs out
+  ///
+  /// In en, this message translates to:
+  /// **'Approximate time. If it runs out, Mostro cancels the trade.'**
+  String get tradeTimerEscrowCancels;
+
+  /// Note under the countdown of a fiat-sent trade: the time is estimated in Bitcoin blocks, and mostrod's escrow deadline guardian opens a dispute when it runs out
+  ///
+  /// In en, this message translates to:
+  /// **'Approximate time. If it runs out, Mostro opens a dispute.'**
+  String get tradeTimerEscrowDisputes;
+
+  /// Note under the countdown of an active trade once it reaches zero: mostrod is about to cancel the trade and refund the seller's sats
+  ///
+  /// In en, this message translates to:
+  /// **'Mostro is about to cancel the trade and return the sats to the seller.'**
+  String get tradeTimerEscrowCancelling;
+
+  /// Note under the countdown of a fiat-sent trade once it reaches zero: mostrod is about to open a dispute
+  ///
+  /// In en, this message translates to:
+  /// **'A dispute is about to be opened.'**
+  String get tradeTimerEscrowDisputing;
 
   /// Timeline step: order taken
   ///
@@ -4023,12 +4065,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Time left'**
   String get tradeTimerOrderHas;
-
-  /// Note under the countdown of an active trade
-  ///
-  /// In en, this message translates to:
-  /// **'If you need more time, coordinate in the chat before it expires.'**
-  String get tradeTimerNoteCoordinate;
 
   /// Counterpart role on the reputation row
   ///
@@ -7371,6 +7407,78 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'On {node}'**
   String myReputationOnNode(String node);
+
+  /// App bar title of the screen that opens a mostro: order link
+  ///
+  /// In en, this message translates to:
+  /// **'Order link'**
+  String get orderLinkTitle;
+
+  /// Order link screen: shown while the relays are asked for the linked order
+  ///
+  /// In en, this message translates to:
+  /// **'Looking for the order…'**
+  String get orderLinkLooking;
+
+  /// Order link screen: shown while the app changes to the node that published the linked order
+  ///
+  /// In en, this message translates to:
+  /// **'Changing to {nodeName}…'**
+  String orderLinkSwitching(String nodeName);
+
+  /// Order link screen: title when the link is not a valid Mostro order link
+  ///
+  /// In en, this message translates to:
+  /// **'This link can\'t be opened'**
+  String get orderLinkInvalidTitle;
+
+  /// Order link screen: explanation when the link is not a valid Mostro order link
+  ///
+  /// In en, this message translates to:
+  /// **'It isn\'t a link to a Mostro order, or part of it is missing.'**
+  String get orderLinkInvalidBody;
+
+  /// Order link screen: explanation when no relay returned the linked order (the title is orderNotFoundTitle)
+  ///
+  /// In en, this message translates to:
+  /// **'No relay answered with this order. Check your connection and try again.'**
+  String get orderLinkNotFoundBody;
+
+  /// Order link screen: title when the linked order exists but can no longer be taken
+  ///
+  /// In en, this message translates to:
+  /// **'Order no longer available'**
+  String get orderLinkUnavailableTitle;
+
+  /// Order link screen: explanation when the linked order was taken, canceled or expired
+  ///
+  /// In en, this message translates to:
+  /// **'Someone already took it, or it was canceled or expired.'**
+  String get orderLinkUnavailableBody;
+
+  /// Order link screen: title when changing node or reading the trades failed (the body says which)
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t open the order'**
+  String get orderLinkFailedTitle;
+
+  /// Title of the dialog asking to change to the node that published a linked order
+  ///
+  /// In en, this message translates to:
+  /// **'Order on another node'**
+  String get orderLinkOtherNodeTitle;
+
+  /// Body of the dialog asking to change to the node that published a linked order
+  ///
+  /// In en, this message translates to:
+  /// **'This order was published on {nodeName}. To see it and take it, change to that node.'**
+  String orderLinkOtherNodeBody(String nodeName);
+
+  /// Warning in the change-node dialog when the linked order's node is neither trusted nor added by the user
+  ///
+  /// In en, this message translates to:
+  /// **'This node isn\'t in your list. Change to it only if you trust whoever sent you the link: the node you trade on settles your trades and resolves their disputes.'**
+  String get orderLinkUnknownNodeWarning;
 }
 
 class _AppLocalizationsDelegate

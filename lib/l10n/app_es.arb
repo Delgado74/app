@@ -284,6 +284,9 @@
   "aboutNodeRetry": "Reintentar",
   "aboutLightningNetworkSection": "Red Lightning",
   "aboutFiatCurrenciesLabel": "Monedas fiat",
+  "aboutPriceSourceLabel": "Fuente",
+  "aboutPriceSection": "Precio",
+  "aboutPriceSourcesFootnote": "Las fuentes de precio son los proveedores de las tasas que el nodo publica ahora; uno que falló o se descartó no aparece.",
   "aboutMostroVersionLabel": "Versión de Mostro",
   "aboutMostroCommitLabel": "Commit de Mostro",
   "aboutHoldInvoiceExpLabel": "Vencimiento de hold invoice",
@@ -432,6 +435,10 @@
   "tradeTimerPendingConsequence": "Si expira, la orden se elimina del libro. No afectará tu reputación.",
   "tradeTimerExpiryBackToBook": "Si expira, la orden vuelve al libro.",
   "tradeTimerExpiryCancelled": "Si expira, la orden se cancela.",
+  "tradeTimerEscrowCancels": "Tiempo aproximado. Si se agota, Mostro cancela la operación.",
+  "tradeTimerEscrowDisputes": "Tiempo aproximado. Si se agota, Mostro abre una disputa.",
+  "tradeTimerEscrowCancelling": "Mostro está a punto de cancelar la operación y devolver los sats al vendedor.",
+  "tradeTimerEscrowDisputing": "Está a punto de abrirse una disputa.",
   "tradeStepOrderTaken": "Orden tomada",
   "tradeStepInvoiceBuyer": "El vendedor bloquea los sats",
   "tradeStepInvoiceSeller": "Bloqueas los sats",
@@ -733,10 +740,6 @@
   "tradeTimerOrderHas": "Queda",
   "@tradeTimerOrderHas": {
     "description": "Countdown label of a pending order's time in the book"
-  },
-  "tradeTimerNoteCoordinate": "Si necesitan más tiempo, coordínenlo por el chat antes de que expire.",
-  "@tradeTimerNoteCoordinate": {
-    "description": "Note under the countdown of an active trade"
   },
   "tradeRoleBuyer": "Comprador",
   "@tradeRoleBuyer": {
@@ -1362,5 +1365,17 @@
   "myReputationPrivacyMode": "El modo de privacidad total no guarda reputación. Elige el modo reputación abajo para construirla.",
   "myReputationLoading": "Consultando a tu nodo…",
   "myReputationUnavailable": "Tu nodo aún no ha respondido.",
-  "myReputationOnNode": "En {node}"
+  "myReputationOnNode": "En {node}",
+  "orderLinkTitle": "Enlace a una orden",
+  "orderLinkLooking": "Buscando la orden…",
+  "orderLinkSwitching": "Cambiando a {nodeName}…",
+  "orderLinkInvalidTitle": "No se puede abrir este enlace",
+  "orderLinkInvalidBody": "No es un enlace a una orden de Mostro, o le falta una parte.",
+  "orderLinkNotFoundBody": "Ningún relay respondió con esta orden. Revisa tu conexión e inténtalo de nuevo.",
+  "orderLinkUnavailableTitle": "La orden ya no está disponible",
+  "orderLinkUnavailableBody": "Alguien ya la tomó, o se canceló o expiró.",
+  "orderLinkFailedTitle": "No se pudo abrir la orden",
+  "orderLinkOtherNodeTitle": "Orden en otro nodo",
+  "orderLinkOtherNodeBody": "Esta orden se publicó en {nodeName}. Para verla y tomarla, cambia a ese nodo.",
+  "orderLinkUnknownNodeWarning": "Este nodo no está en tu lista. Cambia a él solo si confías en quien te envió el enlace: el nodo en el que operas liquida tus operaciones y resuelve sus disputas."
 }

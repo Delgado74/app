@@ -284,6 +284,9 @@
   "aboutNodeRetry": "Erneut versuchen",
   "aboutLightningNetworkSection": "Lightning-Netzwerk",
   "aboutFiatCurrenciesLabel": "Fiat-Währungen",
+  "aboutPriceSourceLabel": "Quelle",
+  "aboutPriceSection": "Preis",
+  "aboutPriceSourcesFootnote": "Die Preisquellen sind die Anbieter hinter den Kursen, die der Knoten gerade veröffentlicht; ein ausgefallener oder aussortierter Anbieter fehlt.",
   "aboutMostroVersionLabel": "Mostro-Version",
   "aboutMostroCommitLabel": "Mostro-Commit",
   "aboutHoldInvoiceExpLabel": "Hold-Invoice-Ablauf",
@@ -432,6 +435,10 @@
   "tradeTimerPendingConsequence": "Bei Ablauf wird die Bestellung aus dem Buch entfernt. Es wirkt sich nicht auf deine Reputation aus.",
   "tradeTimerExpiryBackToBook": "Bei Ablauf kehrt die Bestellung ins Buch zurück.",
   "tradeTimerExpiryCancelled": "Bei Ablauf wird die Bestellung storniert.",
+  "tradeTimerEscrowCancels": "Ungefähre Zeit. Läuft sie ab, storniert Mostro den Handel.",
+  "tradeTimerEscrowDisputes": "Ungefähre Zeit. Läuft sie ab, eröffnet Mostro einen Streitfall.",
+  "tradeTimerEscrowCancelling": "Mostro storniert gleich den Handel und gibt die Sats an den Verkäufer zurück.",
+  "tradeTimerEscrowDisputing": "Gleich wird ein Streitfall eröffnet.",
   "tradeStepOrderTaken": "Bestellung angenommen",
   "tradeStepInvoiceBuyer": "Der Verkäufer sperrt die Sats",
   "tradeStepInvoiceSeller": "Du sperrst die Sats",
@@ -733,10 +740,6 @@
   "tradeTimerOrderHas": "Verbleibend",
   "@tradeTimerOrderHas": {
     "description": "Countdown label of a pending order's time in the book"
-  },
-  "tradeTimerNoteCoordinate": "Wenn ihr mehr Zeit braucht, sprecht es im Chat ab, bevor sie abläuft.",
-  "@tradeTimerNoteCoordinate": {
-    "description": "Note under the countdown of an active trade"
   },
   "tradeRoleBuyer": "Käufer",
   "@tradeRoleBuyer": {
@@ -1362,5 +1365,17 @@
   "myReputationPrivacyMode": "Im vollständigen Privatsphäre-Modus wird keine Reputation geführt. Wähle unten den Reputationsmodus, um eine aufzubauen.",
   "myReputationLoading": "Dein Knoten wird gefragt…",
   "myReputationUnavailable": "Dein Knoten hat noch nicht geantwortet.",
-  "myReputationOnNode": "Auf {node}"
+  "myReputationOnNode": "Auf {node}",
+  "orderLinkTitle": "Order-Link",
+  "orderLinkLooking": "Order wird gesucht…",
+  "orderLinkSwitching": "Wechsel zu {nodeName}…",
+  "orderLinkInvalidTitle": "Dieser Link lässt sich nicht öffnen",
+  "orderLinkInvalidBody": "Er ist kein Link zu einer Mostro-Order, oder ein Teil fehlt.",
+  "orderLinkNotFoundBody": "Kein Relay hat mit dieser Order geantwortet. Prüfe deine Verbindung und versuche es erneut.",
+  "orderLinkUnavailableTitle": "Order nicht mehr verfügbar",
+  "orderLinkUnavailableBody": "Jemand hat sie bereits angenommen, oder sie wurde storniert oder ist abgelaufen.",
+  "orderLinkFailedTitle": "Die Order konnte nicht geöffnet werden",
+  "orderLinkOtherNodeTitle": "Order auf einem anderen Knoten",
+  "orderLinkOtherNodeBody": "Diese Order wurde auf {nodeName} veröffentlicht. Um sie zu sehen und anzunehmen, wechsle zu diesem Knoten.",
+  "orderLinkUnknownNodeWarning": "Dieser Knoten ist nicht in deiner Liste. Wechsle nur zu ihm, wenn du der Person vertraust, die dir den Link geschickt hat: Der Knoten, auf dem du handelst, wickelt deine Trades ab und entscheidet ihre Streitfälle."
 }

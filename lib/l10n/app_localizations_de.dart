@@ -984,6 +984,16 @@ class AppLocalizationsDe extends AppLocalizations {
   String get aboutFiatCurrenciesLabel => 'Fiat-Währungen';
 
   @override
+  String get aboutPriceSourceLabel => 'Quelle';
+
+  @override
+  String get aboutPriceSection => 'Preis';
+
+  @override
+  String get aboutPriceSourcesFootnote =>
+      'Die Preisquellen sind die Anbieter hinter den Kursen, die der Knoten gerade veröffentlicht; ein ausgefallener oder aussortierter Anbieter fehlt.';
+
+  @override
   String get aboutMostroVersionLabel => 'Mostro-Version';
 
   @override
@@ -1500,6 +1510,22 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String get tradeTimerExpiryCancelled =>
       'Bei Ablauf wird die Bestellung storniert.';
+
+  @override
+  String get tradeTimerEscrowCancels =>
+      'Ungefähre Zeit. Läuft sie ab, storniert Mostro den Handel.';
+
+  @override
+  String get tradeTimerEscrowDisputes =>
+      'Ungefähre Zeit. Läuft sie ab, eröffnet Mostro einen Streitfall.';
+
+  @override
+  String get tradeTimerEscrowCancelling =>
+      'Mostro storniert gleich den Handel und gibt die Sats an den Verkäufer zurück.';
+
+  @override
+  String get tradeTimerEscrowDisputing =>
+      'Gleich wird ein Streitfall eröffnet.';
 
   @override
   String get tradeStepOrderTaken => 'Bestellung angenommen';
@@ -2364,10 +2390,6 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get tradeTimerOrderHas => 'Verbleibend';
-
-  @override
-  String get tradeTimerNoteCoordinate =>
-      'Wenn ihr mehr Zeit braucht, sprecht es im Chat ab, bevor sie abläuft.';
 
   @override
   String get tradeRoleBuyer => 'Käufer';
@@ -4475,4 +4497,48 @@ class AppLocalizationsDe extends AppLocalizations {
   String myReputationOnNode(String node) {
     return 'Auf $node';
   }
+
+  @override
+  String get orderLinkTitle => 'Order-Link';
+
+  @override
+  String get orderLinkLooking => 'Order wird gesucht…';
+
+  @override
+  String orderLinkSwitching(String nodeName) {
+    return 'Wechsel zu $nodeName…';
+  }
+
+  @override
+  String get orderLinkInvalidTitle => 'Dieser Link lässt sich nicht öffnen';
+
+  @override
+  String get orderLinkInvalidBody =>
+      'Er ist kein Link zu einer Mostro-Order, oder ein Teil fehlt.';
+
+  @override
+  String get orderLinkNotFoundBody =>
+      'Kein Relay hat mit dieser Order geantwortet. Prüfe deine Verbindung und versuche es erneut.';
+
+  @override
+  String get orderLinkUnavailableTitle => 'Order nicht mehr verfügbar';
+
+  @override
+  String get orderLinkUnavailableBody =>
+      'Jemand hat sie bereits angenommen, oder sie wurde storniert oder ist abgelaufen.';
+
+  @override
+  String get orderLinkFailedTitle => 'Die Order konnte nicht geöffnet werden';
+
+  @override
+  String get orderLinkOtherNodeTitle => 'Order auf einem anderen Knoten';
+
+  @override
+  String orderLinkOtherNodeBody(String nodeName) {
+    return 'Diese Order wurde auf $nodeName veröffentlicht. Um sie zu sehen und anzunehmen, wechsle zu diesem Knoten.';
+  }
+
+  @override
+  String get orderLinkUnknownNodeWarning =>
+      'Dieser Knoten ist nicht in deiner Liste. Wechsle nur zu ihm, wenn du der Person vertraust, die dir den Link geschickt hat: Der Knoten, auf dem du handelst, wickelt deine Trades ab und entscheidet ihre Streitfälle.';
 }

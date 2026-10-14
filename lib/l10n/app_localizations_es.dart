@@ -983,6 +983,16 @@ class AppLocalizationsEs extends AppLocalizations {
   String get aboutFiatCurrenciesLabel => 'Monedas fiat';
 
   @override
+  String get aboutPriceSourceLabel => 'Fuente';
+
+  @override
+  String get aboutPriceSection => 'Precio';
+
+  @override
+  String get aboutPriceSourcesFootnote =>
+      'Las fuentes de precio son los proveedores de las tasas que el nodo publica ahora; uno que falló o se descartó no aparece.';
+
+  @override
   String get aboutMostroVersionLabel => 'Versión de Mostro';
 
   @override
@@ -1490,6 +1500,22 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get tradeTimerExpiryCancelled => 'Si expira, la orden se cancela.';
+
+  @override
+  String get tradeTimerEscrowCancels =>
+      'Tiempo aproximado. Si se agota, Mostro cancela la operación.';
+
+  @override
+  String get tradeTimerEscrowDisputes =>
+      'Tiempo aproximado. Si se agota, Mostro abre una disputa.';
+
+  @override
+  String get tradeTimerEscrowCancelling =>
+      'Mostro está a punto de cancelar la operación y devolver los sats al vendedor.';
+
+  @override
+  String get tradeTimerEscrowDisputing =>
+      'Está a punto de abrirse una disputa.';
 
   @override
   String get tradeStepOrderTaken => 'Orden tomada';
@@ -2351,10 +2377,6 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get tradeTimerOrderHas => 'Queda';
-
-  @override
-  String get tradeTimerNoteCoordinate =>
-      'Si necesitan más tiempo, coordínenlo por el chat antes de que expire.';
 
   @override
   String get tradeRoleBuyer => 'Comprador';
@@ -4447,4 +4469,48 @@ class AppLocalizationsEs extends AppLocalizations {
   String myReputationOnNode(String node) {
     return 'En $node';
   }
+
+  @override
+  String get orderLinkTitle => 'Enlace a una orden';
+
+  @override
+  String get orderLinkLooking => 'Buscando la orden…';
+
+  @override
+  String orderLinkSwitching(String nodeName) {
+    return 'Cambiando a $nodeName…';
+  }
+
+  @override
+  String get orderLinkInvalidTitle => 'No se puede abrir este enlace';
+
+  @override
+  String get orderLinkInvalidBody =>
+      'No es un enlace a una orden de Mostro, o le falta una parte.';
+
+  @override
+  String get orderLinkNotFoundBody =>
+      'Ningún relay respondió con esta orden. Revisa tu conexión e inténtalo de nuevo.';
+
+  @override
+  String get orderLinkUnavailableTitle => 'La orden ya no está disponible';
+
+  @override
+  String get orderLinkUnavailableBody =>
+      'Alguien ya la tomó, o se canceló o expiró.';
+
+  @override
+  String get orderLinkFailedTitle => 'No se pudo abrir la orden';
+
+  @override
+  String get orderLinkOtherNodeTitle => 'Orden en otro nodo';
+
+  @override
+  String orderLinkOtherNodeBody(String nodeName) {
+    return 'Esta orden se publicó en $nodeName. Para verla y tomarla, cambia a ese nodo.';
+  }
+
+  @override
+  String get orderLinkUnknownNodeWarning =>
+      'Este nodo no está en tu lista. Cambia a él solo si confías en quien te envió el enlace: el nodo en el que operas liquida tus operaciones y resuelve sus disputas.';
 }

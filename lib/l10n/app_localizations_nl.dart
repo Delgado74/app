@@ -980,6 +980,16 @@ class AppLocalizationsNl extends AppLocalizations {
   String get aboutFiatCurrenciesLabel => 'Fiatvaluta';
 
   @override
+  String get aboutPriceSourceLabel => 'Bron';
+
+  @override
+  String get aboutPriceSection => 'Prijs';
+
+  @override
+  String get aboutPriceSourcesFootnote =>
+      'De prijsbronnen zijn de aanbieders achter de koersen die de node nu publiceert; een aanbieder die faalde of werd weggelaten, staat er niet bij.';
+
+  @override
   String get aboutMostroVersionLabel => 'Mostro-versie';
 
   @override
@@ -1488,6 +1498,21 @@ class AppLocalizationsNl extends AppLocalizations {
   @override
   String get tradeTimerExpiryCancelled =>
       'Verloopt de tijd, dan wordt de order geannuleerd.';
+
+  @override
+  String get tradeTimerEscrowCancels =>
+      'Geschatte tijd. Is die om, dan annuleert Mostro de trade.';
+
+  @override
+  String get tradeTimerEscrowDisputes =>
+      'Geschatte tijd. Is die om, dan opent Mostro een dispuut.';
+
+  @override
+  String get tradeTimerEscrowCancelling =>
+      'Mostro annuleert zo de trade en geeft de sats terug aan de verkoper.';
+
+  @override
+  String get tradeTimerEscrowDisputing => 'Er wordt zo een dispuut geopend.';
 
   @override
   String get tradeStepOrderTaken => 'Order geaccepteerd';
@@ -2349,10 +2374,6 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get tradeTimerOrderHas => 'Resterende tijd';
-
-  @override
-  String get tradeTimerNoteCoordinate =>
-      'Heb je meer tijd nodig, overleg dat in de chat voordat de tijd om is.';
 
   @override
   String get tradeRoleBuyer => 'Koper';
@@ -4452,4 +4473,48 @@ class AppLocalizationsNl extends AppLocalizations {
   String myReputationOnNode(String node) {
     return 'Op $node';
   }
+
+  @override
+  String get orderLinkTitle => 'Orderlink';
+
+  @override
+  String get orderLinkLooking => 'Order zoeken…';
+
+  @override
+  String orderLinkSwitching(String nodeName) {
+    return 'Overschakelen naar $nodeName…';
+  }
+
+  @override
+  String get orderLinkInvalidTitle => 'Deze link kan niet worden geopend';
+
+  @override
+  String get orderLinkInvalidBody =>
+      'Het is geen link naar een Mostro-order, of er ontbreekt een deel.';
+
+  @override
+  String get orderLinkNotFoundBody =>
+      'Geen enkele relay antwoordde met deze order. Controleer je verbinding en probeer het opnieuw.';
+
+  @override
+  String get orderLinkUnavailableTitle => 'Order niet meer beschikbaar';
+
+  @override
+  String get orderLinkUnavailableBody =>
+      'Iemand heeft hem al geaccepteerd, of hij is geannuleerd of verlopen.';
+
+  @override
+  String get orderLinkFailedTitle => 'De order kon niet worden geopend';
+
+  @override
+  String get orderLinkOtherNodeTitle => 'Order op een andere node';
+
+  @override
+  String orderLinkOtherNodeBody(String nodeName) {
+    return 'Deze order is gepubliceerd op $nodeName. Schakel over naar die node om hem te zien en te accepteren.';
+  }
+
+  @override
+  String get orderLinkUnknownNodeWarning =>
+      'Deze node staat niet in je lijst. Schakel er alleen naar over als je vertrouwt wie je de link stuurde: de node waarop je handelt rondt je trades af en beslist over hun disputen.';
 }
