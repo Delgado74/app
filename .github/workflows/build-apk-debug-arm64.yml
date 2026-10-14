@@ -1,5 +1,11 @@
 name: Build Android APK (arm64-v8a debug)
 
+# This workflow lives on `main` on purpose. Dispatch it from `main` ("Use
+# workflow from: main") and then pick the branch to build from the dropdown
+# below. Manual dispatch only.
+#
+# Note: `type: choice` options are static, so a new branch has to be added here
+# to appear in the dropdown.
 on:
   workflow_dispatch:
     inputs:
@@ -11,6 +17,17 @@ on:
         options:
           - main
           - feat/effective-fiat-rate
+          - feat/about-price-source
+          - feat/escrow-deadline-countdown
+          - feat/reputation-import-ui
+          - feat/reputation-settings-ui
+          - feat/reputation-transfer-core
+          - fix/bond-qr-and-web-copy
+          - fix/ds-cmp-19-amount-fields
+          - fix/invoice-cancel-link-font
+          - fix/invoice-deadline-waits-for-daemon
+          - fix/payout-amount
+          - chore/changelog-v2.0.16
 
 jobs:
   build:
