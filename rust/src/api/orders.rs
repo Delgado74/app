@@ -2595,7 +2595,10 @@ async fn adopt_range_remainder(
     // start (#394). A later generation is a new trade and adopts normally.
     // The replay of a trade from before the last restore reads the same way:
     // history never becomes a row (`mostro::restore_history`).
-    if matches!(trade_row_state(order_id, trade_index).await, RowState::Wiped) {
+    if matches!(
+        trade_row_state(order_id, node, trade_index).await,
+        RowState::Wiped
+    ) {
         crate::api::logging::blog_debug(
             "orders",
             format!(
@@ -3811,7 +3814,7 @@ async fn dispatch_mostro_message(
     // incoming-chat subscription for a trade deleted on purpose. Take
     // replies consumed by the waiters pay one extra point read for it.
     let mut row_state = match &kind.id {
-        Some(order_id) => trade_row_state(&order_id.to_string(), trade_index).await,
+        Some(order_id) => trade_row_state(&order_id.to_string(), &sender_hex, trade_index).await,
         None => RowState::Unknown,
     };
 
@@ -7244,7 +7247,9 @@ fn tombstone_covers(value: &str, trade_index: u32) -> bool {
     trade_index <= wiped_index
 }
 
-async fn trade_row_state(order_id: &str, trade_index: u32) -> RowState {
+/// `node` is the daemon that sent the message being classified: with no row,
+/// the restore of that node decides whether the order is history.
+async fn trade_row_state(order_id: &str, node: &str, trade_index: u32) -> RowState {
     let Some(db) = crate::db::app_db::db() else {
         return RowState::Unknown;
     };
@@ -7257,7 +7262,8 @@ async fn trade_row_state(order_id: &str, trade_index: u32) -> RowState {
             Ok(Some(value)) if tombstone_covers(&value, trade_index) => RowState::Wiped,
             Ok(Some(_)) | Ok(None) => {
                 let snapshot = applicable_restore_snapshot(db).await;
-                unwritten_row_state(snapshot.as_ref(), order_id, trade_index)
+                let node = (!node.is_empty()).then_some(node);
+                unwritten_row_state(snapshot.as_ref(), node, order_id, trade_index)
             }
             Err(e) => {
                 crate::api::logging::blog_warn(
@@ -7285,10 +7291,11 @@ async fn trade_row_state(order_id: &str, trade_index: u32) -> RowState {
 /// for.
 fn unwritten_row_state(
     snapshot: Option<&crate::mostro::restore_history::RestoreSnapshot>,
+    node: Option<&str>,
     order_id: &str,
     trade_index: u32,
 ) -> RowState {
-    if snapshot.is_some_and(|s| s.is_history(order_id, trade_index)) {
+    if snapshot.is_some_and(|s| s.is_history(node, order_id, trade_index)) {
         RowState::Wiped
     } else {
         RowState::NeverWritten
@@ -8626,7 +8633,8 @@ async fn apply_restored_peers(snapshot: &crate::mostro::restore_history::Restore
             Ok(Some(trade)) if trade.counterparty_pubkey.is_empty() => trade,
             _ => continue,
         };
-        let Some(peer_hex) = snapshot.peer_of(order_id, trade.trade_key_index) else {
+        let node = crate::mostro::trade_node::trade_node(&trade);
+        let Some(peer_hex) = snapshot.peer_of(node, order_id, trade.trade_key_index) else {
             continue;
         };
         let trade_keys =
@@ -8731,7 +8739,8 @@ async fn drop_history_rows(
     let mut dropped = std::collections::HashSet::new();
     for trade in trades {
         let oid = trade.order.id.clone();
-        if !snapshot.is_history(&oid, trade.trade_key_index) {
+        let node = crate::mostro::trade_node::trade_node(&trade);
+        if !snapshot.is_history(node, &oid, trade.trade_key_index) {
             continue;
         }
         let _order = lock_order(&oid).await;
@@ -8756,7 +8765,13 @@ async fn drop_history_rows(
 /// Store what a restore reported as in progress, then settle the history
 /// its replay rebuilds: twice, as the relays deliver it, and on every stale
 /// sweep after that.
-async fn record_restore_snapshot(floor: u32, info: &mostro_core::message::RestoreSessionInfo) {
+///
+/// `node` is the node the restore was sent to.
+async fn record_restore_snapshot(
+    node: &str,
+    floor: u32,
+    info: &mostro_core::message::RestoreSessionInfo,
+) {
     let snapshot = crate::mostro::restore_history::RestoreSnapshot {
         floor,
         live: info
@@ -8771,6 +8786,7 @@ async fn record_restore_snapshot(floor: u32, info: &mostro_core::message::Restor
             .ok()
             .flatten()
             .map(|identity| identity.public_key),
+        node: Some(node.to_string()),
     };
     let stored = match (crate::db::app_db::db(), serde_json::to_string(&snapshot)) {
         (Some(db), Ok(json)) => db
@@ -10877,25 +10893,27 @@ pub async fn list_trades() -> Result<Vec<crate::api::types::TradeInfo>> {
     let Some(db) = crate::db::app_db::db() else {
         return Ok(vec![]);
     };
-    let snapshot = applicable_restore_snapshot(db).await;
-    let mut trades = visible_trades(db.list_trades().await?, snapshot.as_ref());
+    let snapshots: Vec<_> = applicable_restore_snapshot(db).await.into_iter().collect();
+    let mut trades = visible_trades(db.list_trades().await?, &snapshots);
     trades.sort_by_key(|t| std::cmp::Reverse(t.started_at));
     Ok(trades)
 }
 
-/// The trades the list shows, given the last restore's snapshot: all of
-/// them but history. Rows of it are not written any more, and a history pass
+/// The trades the list shows, given the restores' snapshots: all of them
+/// but history. Rows of it are not written any more, and a history pass
 /// drops the ones that were; until it runs, none of them shows.
 fn visible_trades(
     trades: Vec<crate::api::types::TradeInfo>,
-    snapshot: Option<&crate::mostro::restore_history::RestoreSnapshot>,
+    snapshots: &[crate::mostro::restore_history::RestoreSnapshot],
 ) -> Vec<crate::api::types::TradeInfo> {
-    let Some(snapshot) = snapshot else {
-        return trades;
-    };
     trades
         .into_iter()
-        .filter(|t| !snapshot.is_history(&t.order.id, t.trade_key_index))
+        .filter(|t| {
+            let node = crate::mostro::trade_node::trade_node(t);
+            !snapshots
+                .iter()
+                .any(|s| s.is_history(node, &t.order.id, t.trade_key_index))
+        })
         .collect()
 }
 
@@ -11513,7 +11531,7 @@ pub async fn restore_session() -> Result<mostro_core::message::RestoreSessionInf
                 crate::api::identity::ensure_trade_key_index_at_least(floor).await?;
                 // What is still in progress, so the history the replay below
                 // rebuilds can be told apart and settled.
-                record_restore_snapshot(floor, &info).await;
+                record_restore_snapshot(&mostro_pubkey.to_hex(), floor, &info).await;
                 // The raised counter owns keys the coverage was seeded
                 // without: derive them now and re-issue the kind-14
                 // filter, or every message addressed to a restored trade's
@@ -14224,6 +14242,7 @@ mod tests {
         ] {
             let mut row = seam_trade_row(oid, status);
             row.trade_key_index = index;
+            row.order.node_pubkey = RESTORED_NODE.to_string();
             db.save_trade(&row).await.unwrap();
             rows.push(row);
         }
@@ -14232,6 +14251,7 @@ mod tests {
             live: [live.clone()].into_iter().collect(),
             peers: Default::default(),
             identity: None,
+            node: Some(RESTORED_NODE.to_string()),
         };
 
         // Only this test's rows: the store is shared, and the floor covers
@@ -14264,9 +14284,13 @@ mod tests {
             live: ["live-order".to_string()].into_iter().collect(),
             peers: Default::default(),
             identity: None,
+            node: Some(RESTORED_NODE.to_string()),
         };
         let wiped = |s: Option<&RestoreSnapshot>, oid: &str, idx: u32| {
-            matches!(unwritten_row_state(s, oid, idx), RowState::Wiped)
+            matches!(
+                unwritten_row_state(s, Some(RESTORED_NODE), oid, idx),
+                RowState::Wiped
+            )
         };
         assert!(wiped(Some(&snapshot), "old-order", 40));
         assert!(!wiped(Some(&snapshot), "live-order", 40));
@@ -14797,12 +14821,17 @@ mod tests {
             live: ["live-order".to_string()].into_iter().collect(),
             peers: Default::default(),
             identity: Some("owner".into()),
+            node: Some(RESTORED_NODE.to_string()),
         }
     }
+
+    /// The node the restores of these tests were sent to, and their rows'.
+    const RESTORED_NODE: &str = "dddd4444dddd4444dddd4444dddd4444dddd4444dddd4444dddd4444dddd4444";
 
     fn history_row(order_id: &str, index: u32, status: OrderStatus) -> crate::api::types::TradeInfo {
         let mut row = seam_trade_row(order_id, status);
         row.trade_key_index = index;
+        row.order.node_pubkey = RESTORED_NODE.to_string();
         row
     }
 
@@ -14819,12 +14848,12 @@ mod tests {
             history_row("new-order", 51, OrderStatus::Pending),
         ];
 
-        let shown: Vec<_> = visible_trades(trades.clone(), Some(&snapshot))
+        let shown: Vec<_> = visible_trades(trades.clone(), std::slice::from_ref(&snapshot))
             .into_iter()
             .map(|t| t.order.id)
             .collect();
         assert_eq!(shown, vec!["live-order", "new-order"]);
-        assert_eq!(visible_trades(trades, None).len(), 4, "no restore hides nothing");
+        assert_eq!(visible_trades(trades, &[]).len(), 4, "no restore hides nothing");
     }
 
     #[tokio::test]

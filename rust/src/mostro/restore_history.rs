@@ -41,6 +41,11 @@ pub struct RestoreSnapshot {
     /// snapshots stored before the field existed (#614).
     #[serde(default)]
     pub identity: Option<String>,
+    /// The node (hex) the restore was sent to: the node whose trades the
+    /// floor and the live set describe. Absent in snapshots stored before
+    /// the field existed (#812).
+    #[serde(default)]
+    pub node: Option<String>,
 }
 
 impl RestoreSnapshot {
@@ -72,8 +77,9 @@ impl RestoreSnapshot {
     }
 
     /// True when the trade on [order_id] with [trade_index] predates the
-    /// restore and the daemon no longer counts it as in progress.
-    pub fn is_history(&self, order_id: &str, trade_index: u32) -> bool {
+    /// restore and the daemon no longer counts it as in progress. `_node` is
+    /// the trade's node, `None` when its row does not know it.
+    pub fn is_history(&self, _node: Option<&str>, order_id: &str, trade_index: u32) -> bool {
         trade_index <= self.floor && !self.live.contains(order_id)
     }
 
@@ -83,7 +89,8 @@ impl RestoreSnapshot {
     /// A trade started afterwards (an index above the floor) is a new take of
     /// the order, possibly by someone else: its peer comes from its own
     /// reveal, never from what the daemon said about the earlier one.
-    pub fn peer_of(&self, order_id: &str, trade_index: u32) -> Option<&str> {
+    /// `_node` is the trade's node, as for [is_history].
+    pub fn peer_of(&self, _node: Option<&str>, order_id: &str, trade_index: u32) -> Option<&str> {
         (trade_index <= self.floor)
             .then(|| self.peers.get(order_id))
             .flatten()
@@ -191,24 +198,27 @@ mod tests {
             live: ["disputed-order".to_string()].into_iter().collect(),
             peers: HashMap::new(),
             identity: Some("owner".to_string()),
+            node: Some(NODE.to_string()),
         }
     }
 
+    const NODE: &str = "node";
+
     #[test]
     fn an_old_trade_the_daemon_did_not_return_is_history() {
-        assert!(snapshot().is_history("old-order", 40));
-        assert!(snapshot().is_history("old-order", 97));
+        assert!(snapshot().is_history(Some(NODE), "old-order", 40));
+        assert!(snapshot().is_history(Some(NODE), "old-order", 97));
     }
 
     #[test]
     fn a_trade_the_daemon_returned_is_not_history() {
-        assert!(!snapshot().is_history("disputed-order", 16));
+        assert!(!snapshot().is_history(Some(NODE), "disputed-order", 16));
     }
 
     #[test]
     fn a_trade_started_after_the_restore_is_not_history() {
         // Its index is above the floor, whatever the daemon returned.
-        assert!(!snapshot().is_history("new-order", 98));
+        assert!(!snapshot().is_history(Some(NODE), "new-order", 98));
     }
 
     #[test]
@@ -216,10 +226,13 @@ mod tests {
         let mut snapshot = snapshot();
         snapshot.peers.insert("taken-order".into(), "peer".into());
 
-        assert_eq!(snapshot.peer_of("taken-order", 97), Some("peer"));
+        assert_eq!(
+            snapshot.peer_of(Some(NODE), "taken-order", 97),
+            Some("peer")
+        );
         // A retake after the restore: a new trade, maybe a new peer.
-        assert_eq!(snapshot.peer_of("taken-order", 98), None);
-        assert_eq!(snapshot.peer_of("untaken-order", 40), None);
+        assert_eq!(snapshot.peer_of(Some(NODE), "taken-order", 98), None);
+        assert_eq!(snapshot.peer_of(Some(NODE), "untaken-order", 40), None);
     }
 
     #[test]
@@ -275,6 +288,7 @@ mod tests {
             live: HashSet::new(),
             peers: HashMap::new(),
             identity: identity.map(str::to_string),
+            node: Some(NODE.to_string()),
         };
         let loaded = |pubkey: &str, trade_key_index: u32| IdentityInfo {
             public_key: pubkey.to_string(),
@@ -298,6 +312,7 @@ mod tests {
         let legacy: RestoreSnapshot =
             serde_json::from_str(r#"{"floor":97,"live":[]}"#).expect("old shape still reads");
         assert_eq!(legacy.identity, None);
+        assert_eq!(legacy.node, None, "nor does the node");
     }
 
     #[test]
