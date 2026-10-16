@@ -15,6 +15,13 @@
 //! like a wiped trade's, and a history pass drops any row that predates
 //! the snapshot. An imported account shows what the daemon still counts as
 //! in progress, and nothing that ended before this device knew it.
+//!
+//! A restore speaks only for the node it was sent to (#812). The trade-key
+//! counter is one per identity, so a node's floor covers the trades of every
+//! other node, and its reply does not list them: each node keeps its own
+//! snapshot, and a trade is judged only by its own node's
+//! ([`RestoreSnapshot::is_for`]). A trade whose node is not known may be any
+//! node's, and is never history.
 
 use std::collections::{HashMap, HashSet};
 
@@ -46,9 +53,9 @@ pub struct RestoreSnapshot {
 
 impl RestoreSnapshot {
     /// True when this snapshot describes the trades of [identity], the one
-    /// now loaded. [is_history] is only sound under that condition: "at or
-    /// below the floor and not listed" singles out history only while every
-    /// trade this identity starts gets an index above the floor. Read
+    /// now loaded. [`Self::is_history`] is only sound under that condition:
+    /// "at or below the floor and not listed" singles out history only while
+    /// every trade this identity starts gets an index above the floor. Read
     /// otherwise, it takes live trades for history and a pass wipes them
     /// mid-trade (#614). Two things must hold:
     ///
@@ -72,7 +79,7 @@ impl RestoreSnapshot {
         same_identity && identity.trade_key_index >= self.floor
     }
 
-    /// True when this snapshot describes the trades of [node]: the restore
+    /// True when this snapshot describes the trades of `node`: the restore
     /// was sent to it. A restore says nothing about another node's trades —
     /// trade indices are one counter per identity, so its floor covers them
     /// and its live set does not list them (#812). A trade whose node is not
@@ -85,11 +92,11 @@ impl RestoreSnapshot {
         )
     }
 
-    /// True when the trade on [order_id] with [trade_index], on [node],
+    /// True when the trade on [order_id] with [trade_index], on `node`,
     /// predates the restore and the daemon no longer counts it as in
     /// progress. `node` is the trade's node, `None` when its row does not
     /// know it: only a trade of this snapshot's node can be history
-    /// ([is_for]).
+    /// ([`Self::is_for`]).
     pub fn is_history(&self, node: Option<&str>, order_id: &str, trade_index: u32) -> bool {
         self.is_for(node) && trade_index <= self.floor && !self.live.contains(order_id)
     }
@@ -100,7 +107,7 @@ impl RestoreSnapshot {
     /// A trade started afterwards (an index above the floor) is a new take of
     /// the order, possibly by someone else: its peer comes from its own
     /// reveal, never from what the daemon said about the earlier one.
-    /// `node` is the trade's node, as for [is_history].
+    /// `node` is the trade's node, as for [`Self::is_history`].
     pub fn peer_of(&self, node: Option<&str>, order_id: &str, trade_index: u32) -> Option<&str> {
         (self.is_for(node) && trade_index <= self.floor)
             .then(|| self.peers.get(order_id))
