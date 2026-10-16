@@ -13166,6 +13166,28 @@ mod tests {
         }
     }
 
+    /// #812: a restore's answer describes the node it was sent to. The
+    /// sheet's Cancel only closes the sheet, so the user can switch nodes
+    /// while the restore still runs: filed then, the answer would land as
+    /// the new node's snapshot and its history pass would wipe that node's
+    /// trades. Once the active node is not the one asked, nothing is written.
+    #[test]
+    fn a_restore_reply_is_checked_against_the_asked_node_first() {
+        let session = fn_body("pub async fn restore_session()");
+        let check = session
+            .find("\"NodeChanged\"")
+            .expect("refuses a reply once the active node changed");
+        for effect in [
+            "restore_progress::found(",
+            "persist_restored_trade_rows(",
+            "ensure_trade_key_index_at_least(",
+            "record_restore_snapshot(",
+        ] {
+            let at = session.find(effect).expect(effect);
+            assert!(check < at, "{effect} runs before the node check");
+        }
+    }
+
     /// The restore sheet (design 20a–20d) follows the restore through these
     /// steps; a step that stops being reported leaves the sheet stuck on it.
     #[test]
@@ -14854,6 +14876,91 @@ mod tests {
             .collect();
         assert_eq!(shown, vec!["live-order", "new-order"]);
         assert_eq!(visible_trades(trades, &[]).len(), 4, "no restore hides nothing");
+    }
+
+    /// Another node than [RESTORED_NODE], with trades of its own.
+    const OTHER_NODE: &str = "eeee5555eeee5555eeee5555eeee5555eeee5555eeee5555eeee5555eeee5555";
+
+    fn row_on(
+        node: &str,
+        order_id: &str,
+        index: u32,
+        status: OrderStatus,
+    ) -> crate::api::types::TradeInfo {
+        let mut row = history_row(order_id, index, status);
+        row.order.node_pubkey = node.to_string();
+        row
+    }
+
+    /// #812: a restore on one node says nothing about another node's trades.
+    /// Trade indices are one counter per identity, so this node's floor
+    /// covers the other node's trades and its live set does not list them:
+    /// read against it, they were history, and the pass wiped live trades of
+    /// the other node. A row that does not know its node may be any node's.
+    #[tokio::test]
+    async fn a_restore_on_one_node_never_drops_another_nodes_trades() {
+        let db = bond_test_db().await;
+        let id = |tag: &str| format!("{tag}-{}", uuid::Uuid::new_v4());
+        let (own_old, own_live) = (id("own-old"), id("own-live"));
+        let (other_active, other_fiat, other_done) =
+            (id("other-active"), id("other-fiat"), id("other-done"));
+        let no_node = id("no-node");
+        let rows = vec![
+            row_on(RESTORED_NODE, &own_old, 3, OrderStatus::Success),
+            row_on(RESTORED_NODE, &own_live, 5, OrderStatus::Active),
+            row_on(OTHER_NODE, &other_active, 1, OrderStatus::Active),
+            row_on(OTHER_NODE, &other_fiat, 2, OrderStatus::FiatSent),
+            row_on(OTHER_NODE, &other_done, 4, OrderStatus::Success),
+            row_on("", &no_node, 4, OrderStatus::Active),
+        ];
+        for row in &rows {
+            db.save_trade(row).await.unwrap();
+        }
+        let mut snapshot = restore_snapshot_at(6);
+        snapshot.live = [own_live.clone()].into_iter().collect();
+
+        let dropped = drop_history_rows(&snapshot, rows).await;
+
+        assert_eq!(dropped, [own_old.clone()].into_iter().collect());
+        assert!(trade_row_gone(&own_old).await, "this node's history goes");
+        for oid in [&own_live, &other_active, &other_fiat, &other_done, &no_node] {
+            assert!(!trade_row_gone(oid).await, "{oid} keeps its row");
+        }
+    }
+
+    /// #812: the trade list judges a row by its own node's restore, so
+    /// another node's trades, and a row that does not know its node, stay
+    /// listed after a restore on this node.
+    #[test]
+    fn a_restore_on_one_node_never_hides_another_nodes_trades() {
+        let trades = vec![
+            row_on(OTHER_NODE, "other-active", 40, OrderStatus::Active),
+            row_on("", "no-node", 41, OrderStatus::Active),
+            row_on(RESTORED_NODE, "own-old", 42, OrderStatus::Pending),
+        ];
+
+        let shown: Vec<_> = visible_trades(trades, &[restore_snapshot_at(50)])
+            .into_iter()
+            .map(|t| t.order.id)
+            .collect();
+        assert_eq!(shown, vec!["other-active", "no-node"]);
+    }
+
+    /// #812: a message with no row is history only by the restore of the
+    /// node that sent it. Read against another node's snapshot, a live
+    /// trade's replay was dropped and the trade never came back.
+    #[test]
+    fn a_message_is_history_only_by_its_own_nodes_restore() {
+        let snapshot = restore_snapshot_at(97);
+        let wiped = |node: Option<&str>| {
+            matches!(
+                unwritten_row_state(Some(&snapshot), node, "old-order", 40),
+                RowState::Wiped
+            )
+        };
+        assert!(wiped(Some(RESTORED_NODE)));
+        assert!(!wiped(Some(OTHER_NODE)), "another node's message");
+        assert!(!wiped(None), "a message whose node is not known");
     }
 
     #[tokio::test]
