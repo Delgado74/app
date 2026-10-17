@@ -137,8 +137,7 @@ class AppLocalizationsIt extends AppLocalizations {
   }
 
   @override
-  String get disputeWaitingForAdmin =>
-      'In attesa di assegnazione amministratore';
+  String get disputeWaitingForAdmin => 'In attesa di un mediatore';
 
   @override
   String get disputeLostFundsToBuyer =>

@@ -138,8 +138,7 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
-  String get disputeWaitingForAdmin =>
-      'Wartet auf Zuweisung eines Administrators';
+  String get disputeWaitingForAdmin => 'Wartet auf einen Schlichter';
 
   @override
   String get disputeLostFundsToBuyer =>

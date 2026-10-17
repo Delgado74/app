@@ -38,7 +38,7 @@
   "disputeInstruction3": "Wenn du nicht antwortest, geht das System davon aus, dass du nicht kooperieren möchtest, und du könntest den Streitfall verlieren.",
   "disputeOpenedByYouAgainstSeller": "Du hast diesen Streitfall gegen den Verkäufer {counterparty} eröffnet, bitte lies das Folgende sorgfältig durch:",
   "disputeOpenedByYouAgainstBuyer": "Du hast diesen Streitfall gegen den Käufer {counterparty} eröffnet, bitte lies das Folgende sorgfältig durch:",
-  "disputeWaitingForAdmin": "Wartet auf Zuweisung eines Administrators",
+  "disputeWaitingForAdmin": "Wartet auf einen Schlichter",
   "disputeLostFundsToBuyer": "Der Schlichter hat den Streitfall zugunsten des Käufers entschieden. Die Sats wurden an den Käufer freigegeben.",
   "disputeLostFundsToSeller": "Der Schlichter hat die Order storniert und die Sats an den Verkäufer zurückgegeben. Du hast keine Sats erhalten.",
   "walkthroughWelcomeTitle": "P2P-Bitcoin ohne KYC",

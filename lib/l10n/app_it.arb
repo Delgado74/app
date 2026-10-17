@@ -38,7 +38,7 @@
   "disputeInstruction3": "Se non rispondi, il sistema presumerà che tu non voglia collaborare e potresti perdere la disputa.",
   "disputeOpenedByYouAgainstSeller": "Hai aperto questa disputa contro il venditore {counterparty}, leggi attentamente di seguito:",
   "disputeOpenedByYouAgainstBuyer": "Hai aperto questa disputa contro l'acquirente {counterparty}, leggi attentamente di seguito:",
-  "disputeWaitingForAdmin": "In attesa di assegnazione amministratore",
+  "disputeWaitingForAdmin": "In attesa di un mediatore",
   "disputeLostFundsToBuyer": "Il mediatore ha risolto la disputa a favore dell'acquirente. I sats sono stati rilasciati all'acquirente.",
   "disputeLostFundsToSeller": "Il mediatore ha annullato l'ordine e restituito i sats al venditore. Non hai ricevuto i sats.",
   "walkthroughWelcomeTitle": "Bitcoin P2P, senza KYC",
