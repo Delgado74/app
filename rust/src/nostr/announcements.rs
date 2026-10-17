@@ -32,7 +32,7 @@ const ALLOWLIST: &[&str] = &[];
 
 /// The locales every announcement carries, all of them and no others (§3.2).
 /// They are the app's locales — `lib/l10n/app_*.arb` — and change with them.
-pub const SUPPORTED_LOCALES: [&str; 6] = ["en", "es", "fr", "de", "it", "nl"];
+pub const SUPPORTED_LOCALES: [&str; 7] = ["en", "es", "fr", "de", "it", "nl", "pt"];
 
 /// The only content schema this build reads (`v`).
 pub const CONTENT_VERSION: u64 = 1;
@@ -464,6 +464,7 @@ mod tests {
             "locales": {
                 "en": locale("en"), "es": locale("es"), "fr": locale("fr"),
                 "de": locale("de"), "it": locale("it"), "nl": locale("nl"),
+                "pt": locale("pt"),
             },
             "url": "https://mostro.network/blog/2-1",
         })
@@ -869,11 +870,11 @@ mod tests {
     #[test]
     fn an_unknown_extra_locale_is_refused() {
         let mut content = valid_content();
-        content["locales"]["pt"] = json!({ "title": "Olá", "body": "Corpo" });
+        content["locales"]["ja"] = json!({ "title": "お知らせ", "body": "本文" });
 
         assert_eq!(
             parse_content(&content),
-            Err(AnnouncementError::UnknownLocale("pt".into()))
+            Err(AnnouncementError::UnknownLocale("ja".into()))
         );
     }
 
