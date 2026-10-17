@@ -7053,7 +7053,7 @@ abstract class AppLocalizations {
   /// Cashu wallet — permanent: an nsec-imported identity has no seed
   ///
   /// In en, this message translates to:
-  /// **'This account was imported from an nsec, so there is no recovery phrase to derive the wallet from. The Cashu wallet needs an account created from a recovery phrase.'**
+  /// **'This account was imported from a private key, so there are no secret words to derive the wallet from. The Cashu wallet needs an account created from secret words.'**
   String get cashuErrorNoMnemonic;
 
   /// Cashu wallet — a received token has no usable DLEQ proof

@@ -804,15 +804,15 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get cancelTradeDialogContent =>
-      'Stai richiedendo un annullamento cooperativo. Anche l\'altra parte deve accettare affinché l\'operazione venga annullata del tutto.';
+      'Stai richiedendo un annullamento cooperativo. Anche la controparte deve accettare affinché l\'operazione venga annullata del tutto.';
 
   @override
   String get cancelTradeDialogContentNotStarted =>
-      'L\'operazione non è ancora iniziata, quindi viene annullata subito. Non serve che l\'altra parte accetti.';
+      'L\'operazione non è ancora iniziata, quindi viene annullata subito. Non serve che la controparte accetti.';
 
   @override
   String get cancelTradeDialogContentMaybeStarted =>
-      'Se l\'operazione non è ancora iniziata, viene annullata subito. Se è già iniziata, anche l\'altra parte deve accettare.';
+      'Se l\'operazione non è ancora iniziata, viene annullata subito. Se è già iniziata, anche la controparte deve accettare.';
 
   @override
   String get noButtonLabel => 'No';
@@ -834,11 +834,11 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get tradeCardCancelRequestedByMeMessage =>
-      'Hai chiesto di annullare questa operazione. Resta aperta finché anche l\'altra parte non annulla. Se non risponde, puoi aprire una disputa.';
+      'Hai chiesto di annullare questa operazione. Resta aperta finché anche la controparte non annulla. Se non risponde, puoi aprire una disputa.';
 
   @override
   String get tradeCardCancelRequestedByPeerTitle =>
-      'L\'altra parte vuole annullare';
+      'La controparte vuole annullare';
 
   @override
   String get tradeCardCancelRequestedByPeerMessage =>
@@ -846,18 +846,18 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get tradeCancelRequestedByMeNotice =>
-      'Hai chiesto di annullare questa operazione. Resta aperta finché anche l\'altra parte non annulla. Se non risponde, puoi aprire una disputa.';
+      'Hai chiesto di annullare questa operazione. Resta aperta finché anche la controparte non annulla. Se non risponde, puoi aprire una disputa.';
 
   @override
   String get tradeCancelRequestedByPeerNotice =>
-      'L\'altra parte ha chiesto di annullare questa operazione. Accetta per concluderla senza spostare fondi, oppure continua l\'operazione.';
+      'La controparte ha chiesto di annullare questa operazione. Accetta per concluderla senza spostare fondi, oppure continua l\'operazione.';
 
   @override
   String get acceptCancelButton => 'Accetta annullamento';
 
   @override
   String get cancelTradeDialogContentAccept =>
-      'L\'altra parte ha chiesto di annullare. Se annulli ora, l\'operazione termina per entrambi e nessun fondo viene spostato.';
+      'La controparte ha chiesto di annullare. Se annulli ora, l\'operazione termina per entrambi e nessun fondo viene spostato.';
 
   @override
   String get fiatSentFailed =>
@@ -3334,7 +3334,7 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get bondClaimExplainer =>
-      'Il deposito dell\'altra parte è stato confiscato a tuo favore. Aggiungi una fattura per esattamente questo importo e il nodo te lo paga.';
+      'Il deposito della controparte è stato confiscato a tuo favore. Aggiungi una fattura per esattamente questo importo e il nodo te lo paga.';
 
   @override
   String get bondClaimFieldLabel => 'Fattura Lightning';
@@ -3422,7 +3422,7 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String bondBannerPendingBody(String sats) {
-    return 'Il deposito dell\'altra parte è stato confiscato a tuo favore. Aggiungi una fattura Lightning per $sats sats per reclamarlo.';
+    return 'Il deposito della controparte è stato confiscato a tuo favore. Aggiungi una fattura Lightning per $sats sats per reclamarlo.';
   }
 
   @override
@@ -3449,7 +3449,7 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String bondBannerExpired(String date) {
-    return 'La richiesta sul deposito dell\'altra parte si è chiusa il $date.';
+    return 'La richiesta sul deposito della controparte si è chiusa il $date.';
   }
 
   @override
@@ -4260,7 +4260,7 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get cashuErrorNoMnemonic =>
-      'Questo account è stato importato da un nsec, quindi non c\'è una frase di recupero da cui derivare il portafoglio. Il portafoglio Cashu richiede un account creato da una frase di recupero.';
+      'Questo account è stato importato da una chiave privata, quindi non ci sono parole segrete da cui derivare il portafoglio. Il portafoglio Cashu richiede un account creato da parole segrete.';
 
   @override
   String get cashuErrorTokenUnverified =>

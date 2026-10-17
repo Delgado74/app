@@ -4487,7 +4487,7 @@
   "@cashuLastTokenDone": {"description": "Cashu wallet \u2014 clears the exported-token reminder"},
   "cashuTokenTooLargeForQr": "This token is too large for a QR code. Copy it instead.",
   "@cashuTokenTooLargeForQr": {"description": "Cashu wallet — shown in place of the QR when the exported token exceeds QR capacity"},
-  "cashuErrorNoMnemonic": "This account was imported from an nsec, so there is no recovery phrase to derive the wallet from. The Cashu wallet needs an account created from a recovery phrase.",
+  "cashuErrorNoMnemonic": "This account was imported from a private key, so there are no secret words to derive the wallet from. The Cashu wallet needs an account created from secret words.",
   "@cashuErrorNoMnemonic": {"description": "Cashu wallet — permanent: an nsec-imported identity has no seed"},
   "cashuErrorTokenUnverified": "This token could not be verified: it carries no proof of the mint's signature, so it was not accepted.",
   "@cashuErrorTokenUnverified": {"description": "Cashu wallet — a received token has no usable DLEQ proof"},

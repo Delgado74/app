@@ -338,7 +338,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get tradeStatusCancelled => 'Storniert';
 
   @override
-  String get tradeStatusDisputed => 'Im Streitfall';
+  String get tradeStatusDisputed => 'Streitfall offen';
 
   @override
   String get accountScreenTitle => 'Konto';
@@ -806,15 +806,15 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get cancelTradeDialogContent =>
-      'Du fragst eine kooperative Stornierung an. Die andere Partei muss ebenfalls zustimmen, damit der Trade vollständig storniert wird.';
+      'Du fragst eine kooperative Stornierung an. Die Gegenpartei muss ebenfalls zustimmen, damit der Trade vollständig storniert wird.';
 
   @override
   String get cancelTradeDialogContentNotStarted =>
-      'Der Trade hat noch nicht begonnen und wird daher sofort storniert. Die andere Partei muss nicht zustimmen.';
+      'Der Trade hat noch nicht begonnen und wird daher sofort storniert. Die Gegenpartei muss nicht zustimmen.';
 
   @override
   String get cancelTradeDialogContentMaybeStarted =>
-      'Hat der Trade noch nicht begonnen, wird er sofort storniert. Hat er bereits begonnen, muss die andere Partei ebenfalls zustimmen.';
+      'Hat der Trade noch nicht begonnen, wird er sofort storniert. Hat er bereits begonnen, muss die Gegenpartei ebenfalls zustimmen.';
 
   @override
   String get noButtonLabel => 'Nein';
@@ -2997,7 +2997,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get tradeListChipWaitingSats => 'Warte auf Sats';
 
   @override
-  String get tradeListChipDispute => 'Im Streitfall';
+  String get tradeListChipDispute => 'Streitfall offen';
 
   @override
   String get tradeListChipCompleted => 'Abgeschlossen';
@@ -4273,7 +4273,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get cashuErrorNoMnemonic =>
-      'Dieses Konto wurde aus einem nsec importiert, daher gibt es keine Wiederherstellungsphrase, aus der die Wallet abgeleitet werden kann. Die Cashu-Wallet braucht ein Konto, das aus einer Wiederherstellungsphrase erstellt wurde.';
+      'Dieses Konto wurde aus einem privaten Schlüssel importiert, daher gibt es keine geheimen Wörter, aus denen die Wallet abgeleitet werden kann. Die Cashu-Wallet braucht ein Konto, das aus geheimen Wörtern erstellt wurde.';
 
   @override
   String get cashuErrorTokenUnverified =>

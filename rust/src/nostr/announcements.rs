@@ -185,9 +185,9 @@ pub enum AnnouncementError {
     MissingField(&'static str),
     #[error("content `locales` must be an object keyed by locale")]
     LocalesNotObject,
-    #[error("locale `{0}` is missing: every announcement carries all of en, es, fr, de, it, nl")]
+    #[error("locale `{0}` is missing: every announcement carries all of {}", SUPPORTED_LOCALES.join(", "))]
     MissingLocale(String),
-    #[error("locale `{0}` is not one the app has: send exactly en, es, fr, de, it, nl")]
+    #[error("locale `{0}` is not one the app has: send exactly {}", SUPPORTED_LOCALES.join(", "))]
     UnknownLocale(String),
     #[error("`locales.{locale}.{field}` is missing or not a string")]
     MissingText { locale: String, field: &'static str },
@@ -865,6 +865,22 @@ mod tests {
             parse_content(&content),
             Err(AnnouncementError::MissingLocale("it".into()))
         );
+    }
+
+    #[test]
+    fn the_locale_errors_name_every_locale_an_announcement_carries() {
+        // A publisher fixes the event from these messages; a list that
+        // stops short of SUPPORTED_LOCALES sends them round again.
+        for error in [
+            AnnouncementError::MissingLocale("pt".into()),
+            AnnouncementError::UnknownLocale("ja".into()),
+        ] {
+            let message = error.to_string();
+            let (_, list) = message.split_once(": ").expect("a list after the colon");
+            for locale in SUPPORTED_LOCALES {
+                assert!(list.contains(locale), "{message:?} lacks {locale}");
+            }
+        }
     }
 
     #[test]

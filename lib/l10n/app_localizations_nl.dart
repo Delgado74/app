@@ -49,7 +49,7 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get disputeSolverAssigned =>
-      'Een solver heeft je dispuut opgepakt. Hij neemt hier binnenkort contact met je op.';
+      'Een solver heeft je dispuut opgepakt en neemt hier binnenkort contact met je op.';
 
   @override
   String get disputeChatClosed =>
@@ -208,7 +208,7 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get walkthroughChatBody2 =>
-      'Bij een dispuut kan een solver de chat lezen als je de sleutel met hem deelt, en zo helpen de zaak op te lossen.';
+      'Bij een dispuut kan een solver de chat lezen als je de sleutel met de solver deelt, en zo helpen de zaak op te lossen.';
 
   @override
   String get walkthroughTakeTitle => 'Een order accepteren';
@@ -848,7 +848,7 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get tradeCardCancelRequestedByPeerMessage =>
-      'Hij heeft gevraagd deze trade te annuleren. Ga je akkoord, dan eindigt hij zonder dat er geld verschuift; anders gaat de trade door.';
+      'De tegenpartij heeft gevraagd deze trade te annuleren. Ga je akkoord, dan eindigt hij zonder dat er geld verschuift; anders gaat de trade door.';
 
   @override
   String get tradeCancelRequestedByMeNotice =>
@@ -1444,15 +1444,15 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get tradeInstructionActiveSeller =>
-      'Geef de koper via de chat hierboven door hoe hij moet betalen.';
+      'Laat de koper via de chat hierboven weten hoe er betaald moet worden.';
 
   @override
   String get tradeInstructionFiatSentSeller =>
-      'De koper heeft bevestigd dat hij de fiat heeft overgemaakt. Controleer of het binnen is en geef daarna de sats vrij.';
+      'De koper heeft bevestigd dat de fiat is overgemaakt. Controleer of het binnen is en geef daarna de sats vrij.';
 
   @override
   String get tradeInstructionDisputed =>
-      'Er is een solver toegewezen. Hij neemt via de app contact met je op.';
+      'Er is een solver toegewezen, die via de app contact met je opneemt.';
 
   @override
   String get tradeInstructionPending =>
@@ -2379,7 +2379,7 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get tradeBodyWaitingPaymentBuyer =>
-      'Hij zet de sats vast. Zodra ze vaststaan, is het aan jou om de fiat over te maken.';
+      'De verkoper zet de sats vast. Zodra ze vaststaan, is het aan jou om de fiat over te maken.';
 
   @override
   String tradeBodyActiveSeller(String method) {
@@ -2388,7 +2388,7 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String tradeBodyActiveBuyer(String method) {
-    return 'Via $method, met de gegevens die hij in de chat heeft gedeeld. Heb je het overgemaakt, meld dat dan hieronder.';
+    return 'Via $method, met de gegevens die de verkoper in de chat heeft gedeeld. Heb je het overgemaakt, meld dat dan hieronder.';
   }
 
   @override
@@ -2404,7 +2404,7 @@ class AppLocalizationsNl extends AppLocalizations {
   String get tradeTimerYouHave => 'Jij hebt nog';
 
   @override
-  String get tradeTimerTheyHave => 'Hij heeft nog';
+  String get tradeTimerTheyHave => 'De tegenpartij heeft nog';
 
   @override
   String get tradeTimerOrderHas => 'Resterende tijd';
@@ -4259,7 +4259,7 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get cashuErrorNoMnemonic =>
-      'Dit account is geïmporteerd vanuit een nsec, dus er is geen herstelzin om de wallet van af te leiden. De Cashu-wallet heeft een account nodig dat met een herstelzin is aangemaakt.';
+      'Dit account is geïmporteerd met een privésleutel, dus er zijn geen geheime woorden om de wallet van af te leiden. De Cashu-wallet heeft een account nodig dat met geheime woorden is aangemaakt.';
 
   @override
   String get cashuErrorTokenUnverified =>
@@ -4406,7 +4406,7 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get tradeBodyWaitingPaymentBuyerCashu =>
-      'Hij vergrendelt de sats in de escrow. Zodra die vergrendeld is, ben jij aan de beurt om de fiat te betalen.';
+      'De verkoper vergrendelt de sats in de escrow. Zodra die vergrendeld is, ben jij aan de beurt om de fiat te betalen.';
 
   @override
   String get shareChatKeyAction => 'Chatsleutel delen met de solver';

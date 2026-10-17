@@ -4219,7 +4219,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get cashuErrorNoMnemonic =>
-      'This account was imported from an nsec, so there is no recovery phrase to derive the wallet from. The Cashu wallet needs an account created from a recovery phrase.';
+      'This account was imported from a private key, so there are no secret words to derive the wallet from. The Cashu wallet needs an account created from secret words.';
 
   @override
   String get cashuErrorTokenUnverified =>

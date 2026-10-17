@@ -803,15 +803,15 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get cancelTradeDialogContent =>
-      'Vous allez demander une annulation coopérative. L\'autre partie doit également accepter pour que la transaction soit entièrement annulée.';
+      'Vous allez demander une annulation coopérative. La contrepartie doit également accepter pour que la transaction soit entièrement annulée.';
 
   @override
   String get cancelTradeDialogContentNotStarted =>
-      'La transaction n\'a pas encore commencé, elle est donc annulée immédiatement. L\'autre partie n\'a pas besoin d\'accepter.';
+      'La transaction n\'a pas encore commencé, elle est donc annulée immédiatement. La contrepartie n\'a pas besoin d\'accepter.';
 
   @override
   String get cancelTradeDialogContentMaybeStarted =>
-      'Si la transaction n\'a pas encore commencé, elle est annulée immédiatement. Si elle a déjà commencé, l\'autre partie doit également accepter.';
+      'Si la transaction n\'a pas encore commencé, elle est annulée immédiatement. Si elle a déjà commencé, la contrepartie doit également accepter.';
 
   @override
   String get noButtonLabel => 'Non';
@@ -834,11 +834,11 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get tradeCardCancelRequestedByMeMessage =>
-      'Vous avez demandé l\'annulation de cette transaction. Elle reste ouverte jusqu\'à ce que l\'autre partie annule aussi. Sans réponse de sa part, vous pouvez ouvrir un litige.';
+      'Vous avez demandé l\'annulation de cette transaction. Elle reste ouverte jusqu\'à ce que la contrepartie annule aussi. Sans réponse de sa part, vous pouvez ouvrir un litige.';
 
   @override
   String get tradeCardCancelRequestedByPeerTitle =>
-      'L\'autre partie veut annuler';
+      'La contrepartie veut annuler';
 
   @override
   String get tradeCardCancelRequestedByPeerMessage =>
@@ -846,18 +846,18 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get tradeCancelRequestedByMeNotice =>
-      'Vous avez demandé l\'annulation de cette transaction. Elle reste ouverte jusqu\'à ce que l\'autre partie annule aussi. Sans réponse de sa part, vous pouvez ouvrir un litige.';
+      'Vous avez demandé l\'annulation de cette transaction. Elle reste ouverte jusqu\'à ce que la contrepartie annule aussi. Sans réponse de sa part, vous pouvez ouvrir un litige.';
 
   @override
   String get tradeCancelRequestedByPeerNotice =>
-      'L\'autre partie a demandé l\'annulation de cette transaction. Acceptez pour y mettre fin sans mouvement de fonds, ou poursuivez la transaction.';
+      'La contrepartie a demandé l\'annulation de cette transaction. Acceptez pour y mettre fin sans mouvement de fonds, ou poursuivez la transaction.';
 
   @override
   String get acceptCancelButton => 'Accepter l\'annulation';
 
   @override
   String get cancelTradeDialogContentAccept =>
-      'L\'autre partie a demandé l\'annulation. Annuler maintenant met fin à la transaction pour vous deux, sans mouvement de fonds.';
+      'La contrepartie a demandé l\'annulation. Annuler maintenant met fin à la transaction pour vous deux, sans mouvement de fonds.';
 
   @override
   String get fiatSentFailed =>
@@ -3341,7 +3341,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get bondClaimExplainer =>
-      'Le dépôt de l\'autre partie a été confisqué en votre faveur. Ajoutez une facture pour exactement ce montant et le nœud vous le paie.';
+      'Le dépôt de la contrepartie a été confisqué en votre faveur. Ajoutez une facture pour exactement ce montant et le nœud vous le paie.';
 
   @override
   String get bondClaimFieldLabel => 'Facture Lightning';
@@ -3429,7 +3429,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String bondBannerPendingBody(String sats) {
-    return 'Le dépôt de l\'autre partie a été confisqué en votre faveur. Ajoutez une facture Lightning de $sats sats pour le réclamer.';
+    return 'Le dépôt de la contrepartie a été confisqué en votre faveur. Ajoutez une facture Lightning de $sats sats pour le réclamer.';
   }
 
   @override
@@ -3456,7 +3456,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String bondBannerExpired(String date) {
-    return 'La réclamation sur le dépôt de l\'autre partie s\'est terminée le $date.';
+    return 'La réclamation sur le dépôt de la contrepartie s\'est terminée le $date.';
   }
 
   @override
@@ -3677,7 +3677,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get tradeCardWaitingPaymentMessage =>
-      'La transaction reprend dès que le vendeur paie la facture.';
+      'La transaction reprend dès que le vendeur bloque les sats.';
 
   @override
   String get tradeCardWaitingTakerBondTitle => 'Paiement du dépôt en attente';
@@ -4281,7 +4281,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get cashuErrorNoMnemonic =>
-      'Ce compte a été importé depuis un nsec, il n\'y a donc pas de phrase de récupération pour en dériver le portefeuille. Le portefeuille Cashu nécessite un compte créé à partir d\'une phrase de récupération.';
+      'Ce compte a été importé depuis une clé privée, il n\'y a donc pas de mots secrets pour en dériver le portefeuille. Le portefeuille Cashu nécessite un compte créé à partir de mots secrets.';
 
   @override
   String get cashuErrorTokenUnverified =>

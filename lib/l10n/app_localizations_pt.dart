@@ -806,15 +806,15 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get cancelTradeDialogContent =>
-      'Será solicitado um cancelamento cooperativo. A outra parte também precisa concordar para que a operação seja totalmente cancelada.';
+      'Será solicitado um cancelamento cooperativo. A contraparte também precisa concordar para que a operação seja totalmente cancelada.';
 
   @override
   String get cancelTradeDialogContentNotStarted =>
-      'A operação ainda não começou, então será cancelada imediatamente. A outra parte não precisa concordar.';
+      'A operação ainda não começou, então será cancelada imediatamente. A contraparte não precisa concordar.';
 
   @override
   String get cancelTradeDialogContentMaybeStarted =>
-      'Se a operação ainda não começou, ela será cancelada imediatamente. Se já começou, a outra parte também precisa concordar.';
+      'Se a operação ainda não começou, ela será cancelada imediatamente. Se já começou, a contraparte também precisa concordar.';
 
   @override
   String get noButtonLabel => 'Não';
@@ -837,30 +837,30 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get tradeCardCancelRequestedByMeMessage =>
-      'Você pediu para cancelar esta operação. Ela continua aberta até que a outra parte também cancele. Se não houver resposta, você pode abrir uma disputa.';
+      'Você pediu para cancelar esta operação. Ela continua aberta até que a contraparte também cancele. Se não houver resposta, você pode abrir uma disputa.';
 
   @override
   String get tradeCardCancelRequestedByPeerTitle =>
-      'A outra parte quer cancelar';
+      'A contraparte quer cancelar';
 
   @override
   String get tradeCardCancelRequestedByPeerMessage =>
-      'A outra parte pediu para cancelar esta operação. Aceite para encerrá-la sem movimentar fundos, ou siga com a operação.';
+      'A contraparte pediu para cancelar esta operação. Aceite para encerrá-la sem movimentar fundos, ou siga com a operação.';
 
   @override
   String get tradeCancelRequestedByMeNotice =>
-      'Você pediu para cancelar esta operação. Ela continua aberta até que a outra parte também cancele. Se não houver resposta, você pode abrir uma disputa.';
+      'Você pediu para cancelar esta operação. Ela continua aberta até que a contraparte também cancele. Se não houver resposta, você pode abrir uma disputa.';
 
   @override
   String get tradeCancelRequestedByPeerNotice =>
-      'A outra parte pediu para cancelar esta operação. Aceite para encerrá-la sem movimentar fundos, ou siga com a operação.';
+      'A contraparte pediu para cancelar esta operação. Aceite para encerrá-la sem movimentar fundos, ou siga com a operação.';
 
   @override
   String get acceptCancelButton => 'Aceitar cancelamento';
 
   @override
   String get cancelTradeDialogContentAccept =>
-      'A outra parte pediu para cancelar. Se você cancelar agora, a operação termina para os dois e nenhum fundo é movimentado.';
+      'A contraparte pediu para cancelar. Se você cancelar agora, a operação termina para os dois e nenhum fundo é movimentado.';
 
   @override
   String get fiatSentFailed =>
@@ -3692,7 +3692,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get tradeCardWaitingPaymentMessage =>
-      'A operação continua quando o vendedor pagar a fatura que bloqueia os sats.';
+      'A operação continua quando o vendedor bloquear os sats.';
 
   @override
   String get tradeCardWaitingTakerBondTitle => 'Pagamento do depósito pendente';
@@ -4279,7 +4279,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get cashuErrorNoMnemonic =>
-      'Esta conta foi importada de uma nsec, então não há palavras secretas das quais derivar a carteira. A carteira Cashu precisa de uma conta criada a partir de palavras secretas.';
+      'Esta conta foi importada de uma chave privada, então não há palavras secretas das quais derivar a carteira. A carteira Cashu precisa de uma conta criada a partir de palavras secretas.';
 
   @override
   String get cashuErrorTokenUnverified =>
