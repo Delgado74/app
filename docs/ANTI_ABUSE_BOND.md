@@ -422,12 +422,23 @@ Rules:
   and the screen counts down to it. **Local expiry sweep** (T1.2): when `expires_at`
   elapses without a lock, the row is set to `Expired`, a `TradeUpdate { status:
   Expired, reason: BondExpired }` is emitted **before** the row is wiped, and the order
-  is restored to the local book only if the wire still reports it `pending`. That runs
-  **at the deadline, wherever the user is** (#849): every write of a window whose deadline
-  is still ahead arms a one-shot wake-up for it (`watch_bond_window`), and so does the
-  stale sweep for a window it finds open, as after a restart. The pay-bond screen also
-  closes the window when its own countdown ends. A window written already past its
-  deadline (a replay) is left to the sweep. If the
+  is restored to the local book only if the wire still reports it `pending`. For a
+  taker that runs **at the deadline, wherever the user is** (#849). Every write of a
+  taker's window whose deadline is still ahead arms a one-shot wake-up for it
+  (`watch_bond_window`), and so does the stale sweep for a window it finds open, as after a
+  restart. Past the deadline the wake-up closes the window only on the book's proof:
+  - The daemon republishes the order `pending` when its node cancels the bond invoice, at
+    the deadline. Such a revision dated no more than a minute before the deadline is the
+    proof.
+  - A take published (`in-progress`) means a bond locked: the wake-up leaves the row to the
+    daemon's messages.
+  - With no such revision yet it looks again every few seconds, for up to ten minutes.
+
+  The row's own "unpaid" cannot be trusted there: a bond paid just before the deadline
+  reads unpaid until the daemon's next message, and a wipe would drop that message. The
+  pay-bond screen also closes the window when its own countdown ends. A window written
+  already past its deadline (a replay), and a maker's window, are left to the sweep and
+  the daemon's messages. If the
   bolt11 cannot be decoded, `expires_at` is `None`, **no local cleanup runs**, and the
   screen shows no countdown — the user can still cancel. The existing
   `timeout_at = now + 900` seeding is not applied to a trade at `WaitingTakerBond`.

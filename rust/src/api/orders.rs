@@ -1016,6 +1016,15 @@ impl OrderBook {
         self.wire_notes().insert(order.id.clone(), order.clone());
     }
 
+    /// The daemon's latest public view of an order of ours: when the newest
+    /// revision claimed for it was published, and the status noted from the
+    /// wire ([`Self::note_wire_order`]). `None` until both are known.
+    pub(crate) async fn wire_revision(&self, order_id: &str) -> Option<(i64, OrderStatus)> {
+        let status = self.wire_notes().get(order_id)?.status.clone();
+        let (at, _) = *self.orders.read().await.newest_revision.get(order_id)?;
+        Some((i64::try_from(at).ok()?, status))
+    }
+
     /// Keep an existing note current. A no-op for orders never noted, so the
     /// relay firehose pays one map lookup per event.
     pub(crate) fn refresh_wire_order(&self, order: &OrderInfo) {
@@ -6030,19 +6039,85 @@ pub(crate) async fn close_expired_bond_trade(
     }
 }
 
-/// The deadline `trade`'s bond window is watched until (see
+/// The deadline a taker's bond window is watched until (see
 /// [`watch_bond_window`]): its [`bond_deadline`] while still ahead at `now`.
-/// One already past, as on a replay, is left to the sweep.
+/// One already past, as on a replay, is left to the sweep, and so is a
+/// maker's: nothing public proves a maker's bond lapsed, and a v0.20 node
+/// tells the maker itself.
 fn bond_watch_deadline(trade: &crate::api::types::TradeInfo, now: i64) -> Option<i64> {
+    if trade.order.status != OrderStatus::WaitingTakerBond {
+        return None;
+    }
     bond_deadline(trade).filter(|at| *at >= now)
 }
 
-/// Close `trade`'s bond window at its deadline (#849). The daemon says
-/// nothing when an unpaid bond lapses, and the pay-bond screen counts down
-/// only while it is open, so the window is watched from wherever it is
-/// written. The wake-up rereads the wall clock like the chat grace timer
-/// ([`grace_check_delay`]) and decides on the row as it is then: a window
-/// refreshed, paid or closed meanwhile is left alone.
+/// How long before a taker's bond deadline a `pending` republish may be
+/// dated and still be that bond's lapse: the daemon republishes when its
+/// node cancels the expired invoice, a little either side of the expiry.
+const LAPSE_REPUBLISH_SLACK_SECS: i64 = 60;
+
+/// How often a watcher past its deadline looks at the book again, and for
+/// how long; after that the window is the sweep's.
+const LAPSE_RECHECK_SECS: u64 = 5;
+const LAPSE_PROOF_PATIENCE_SECS: i64 = 10 * 60;
+
+/// What the book says about a taker's bond window past its deadline.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum TakerLapse {
+    /// The daemon put the order back on the book at the deadline: the bond
+    /// lapsed.
+    Lapsed,
+    /// The order was taken or closed: a bond locked, or the order ended,
+    /// and the daemon's messages say which. Not the watcher's to close.
+    Moved,
+    /// Nothing the book holds says yet.
+    Unproven,
+}
+
+/// [`TakerLapse`] from the book's latest public view of the order (`wire`:
+/// when it was published, and its status). mostrod sends the taker nothing
+/// when their bond lapses, but republishes the order `pending` when its node
+/// cancels the bond invoice, at that `deadline`; a `pending` from well
+/// before it is the order as it was taken, or another taker's lapse.
+fn taker_lapse(deadline: i64, wire: Option<(i64, OrderStatus)>) -> TakerLapse {
+    match wire {
+        Some((at, OrderStatus::Pending)) if at >= deadline - LAPSE_REPUBLISH_SLACK_SECS => {
+            TakerLapse::Lapsed
+        }
+        Some((_, OrderStatus::Pending)) | None => TakerLapse::Unproven,
+        Some(_) => TakerLapse::Moved,
+    }
+}
+
+/// One look at `order_id`'s taker window past its `deadline` (#849):
+/// `Some(closed)` once there is nothing more to wait for, `None` to look
+/// again. The row is closed only on the book's proof that the bond lapsed:
+/// a bond paid just before the deadline reads unpaid on the row until the
+/// daemon's next message, which a wipe would then drop.
+async fn settle_lapsed_take(order_id: &str, deadline: i64) -> Option<bool> {
+    let Some(db) = crate::db::app_db::db() else {
+        return Some(false);
+    };
+    let Ok(Some(row)) = db.get_trade_by_order_id(order_id).await else {
+        return Some(false);
+    };
+    // Refreshed, paid or moved on: a later write armed its own watcher.
+    if bond_watch_deadline(&row, i64::MIN) != Some(deadline) {
+        return Some(false);
+    }
+    match taker_lapse(deadline, order_book().wire_revision(order_id).await) {
+        TakerLapse::Lapsed => Some(close_expired_bond_trade(&row, crate::rt::unix_now()).await),
+        TakerLapse::Moved => Some(false),
+        TakerLapse::Unproven => None,
+    }
+}
+
+/// Close a taker's bond window once its deadline passed and the book shows
+/// the bond lapsed (#849). The daemon sends the taker nothing, and the
+/// pay-bond screen counts down only while it is open, so the window is
+/// watched from wherever it is written. The wake-up rereads the wall clock
+/// like the chat grace timer ([`grace_check_delay`]) and decides on the row
+/// as it is then ([`settle_lapsed_take`]).
 fn watch_bond_window(trade: &crate::api::types::TradeInfo) {
     let Some(deadline) = bond_watch_deadline(trade, crate::rt::unix_now()) else {
         return;
@@ -6057,11 +6132,11 @@ fn watch_bond_window(trade: &crate::api::types::TradeInfo) {
         while let Some(secs) = grace_check_delay(deadline + 1, crate::rt::unix_now()) {
             crate::rt::time::sleep(crate::rt::time::Duration::from_secs(secs)).await;
         }
-        let Some(db) = crate::db::app_db::db() else {
-            return;
-        };
-        if let Ok(Some(row)) = db.get_trade_by_order_id(&order_id).await {
-            close_expired_bond_trade(&row, crate::rt::unix_now()).await;
+        while settle_lapsed_take(&order_id, deadline).await.is_none() {
+            if crate::rt::unix_now() > deadline + LAPSE_PROOF_PATIENCE_SECS {
+                return;
+            }
+            crate::rt::time::sleep(crate::rt::time::Duration::from_secs(LAPSE_RECHECK_SECS)).await;
         }
     });
 }
@@ -22076,21 +22151,35 @@ mod tests {
         false
     }
 
+    /// The book as a taker's d-tag subscription leaves it once the daemon
+    /// published `order_id` with `status` at `at`: the wire note and the
+    /// newest revision claimed.
+    async fn book_saw(order_id: &str, status: OrderStatus, at: i64) {
+        order_book().note_wire_order(&wire_order(order_id, status));
+        order_book()
+            .orders
+            .write()
+            .await
+            .claim_revision(order_id, (at as u64, std::cmp::Reverse([0; 32])));
+    }
+
     /// A taker who left the pay-bond screen still loses the take when the
-    /// bond lapses (#849): the daemon says nothing, so the window closes at
-    /// its deadline without the screen's countdown or the 30-minute sweep.
+    /// bond lapses (#849): the daemon tells them nothing but puts the order
+    /// back on the book, and the window closes on that, at its deadline,
+    /// without the screen's countdown or the 30-minute sweep.
     #[tokio::test]
     async fn a_taken_bond_window_closes_at_its_deadline_on_its_own() {
         let db = bond_test_db().await;
         let order_id = uuid::Uuid::new_v4().to_string();
-        let deadline = crate::rt::unix_now() + 1;
+        let deadline = crate::rt::unix_now() + 2;
         let mut rx = trade_updates_tx().subscribe();
 
         persist_confirmed_take(&bonded_taker_row(&order_id, BOND_BOLT11, Some(deadline))).await;
+        book_saw(&order_id, OrderStatus::Pending, deadline).await;
 
         assert!(db.get_trade_by_order_id(&order_id).await.unwrap().is_some());
         assert!(
-            row_gone_within(db, &order_id, std::time::Duration::from_secs(5)).await,
+            row_gone_within(db, &order_id, std::time::Duration::from_secs(8)).await,
             "the take outlived its bond's deadline"
         );
         assert_eq!(
@@ -22103,15 +22192,17 @@ mod tests {
     }
 
     /// The deadline a window was written with closes nothing once the bond
-    /// moved on: a refreshed bolt11 brings a later one, a paid bond none.
+    /// moved on: a refreshed bolt11 brings a later one, a paid bond none,
+    /// even with the book showing the order back.
     #[tokio::test]
     async fn a_refreshed_or_paid_bond_outlives_its_first_deadline() {
         let db = bond_test_db().await;
-        let deadline = crate::rt::unix_now() + 1;
+        let deadline = crate::rt::unix_now() + 2;
         let refreshed = uuid::Uuid::new_v4().to_string();
         let paid = uuid::Uuid::new_v4().to_string();
         for order_id in [&refreshed, &paid] {
             persist_confirmed_take(&bonded_taker_row(order_id, BOND_BOLT11, Some(deadline))).await;
+            book_saw(order_id, OrderStatus::Pending, deadline).await;
         }
         let mut later = bonded_taker_row(&refreshed, BOND_BOLT11, Some(deadline + 3_600))
             .bond
@@ -22124,14 +22215,79 @@ mod tests {
         locked.state = crate::api::types::BondState::Locked;
         persist_bond(&paid, &locked).await;
 
-        assert!(!row_gone_within(db, &refreshed, std::time::Duration::from_secs(3)).await);
+        assert!(!row_gone_within(db, &refreshed, std::time::Duration::from_secs(4)).await);
         assert!(db.get_trade_by_order_id(&paid).await.unwrap().is_some());
     }
 
-    /// Only an unpaid window whose deadline is still ahead is watched; one
-    /// written past it (a replay) is the sweep's, as before.
+    /// The daemon puts a taken order back on the book when the bond it held
+    /// lapses, at that bond's deadline. Only such a revision proves the
+    /// lapse; a take published means a bond locked (the daemon's messages
+    /// say whose), and nothing new yet means look again.
     #[test]
-    fn only_a_deadline_still_ahead_is_watched() {
+    fn only_the_books_republish_proves_a_lapse() {
+        let deadline = 10_000;
+
+        assert_eq!(
+            taker_lapse(deadline, Some((deadline, OrderStatus::Pending))),
+            TakerLapse::Lapsed
+        );
+        assert_eq!(
+            taker_lapse(
+                deadline,
+                Some((deadline - LAPSE_REPUBLISH_SLACK_SECS, OrderStatus::Pending))
+            ),
+            TakerLapse::Lapsed
+        );
+        assert_eq!(
+            taker_lapse(deadline, Some((deadline - 600, OrderStatus::Pending))),
+            TakerLapse::Unproven,
+            "a pending revision from before the deadline is someone else's lapse, or the take's own"
+        );
+        assert_eq!(taker_lapse(deadline, None), TakerLapse::Unproven);
+        assert_eq!(
+            taker_lapse(deadline, Some((deadline + 5, OrderStatus::InProgress))),
+            TakerLapse::Moved
+        );
+        assert_eq!(
+            taker_lapse(deadline, Some((deadline + 5, OrderStatus::Canceled))),
+            TakerLapse::Moved
+        );
+    }
+
+    /// A bond paid just before its deadline whose progression message is
+    /// late (CodeRabbit on #850): past the deadline the row still reads
+    /// unpaid, and only the book can tell. Without the republish nothing is
+    /// closed; with the take published, nothing ever is.
+    #[tokio::test]
+    async fn a_window_past_its_deadline_closes_only_on_the_books_proof() {
+        let db = bond_test_db().await;
+        let deadline = crate::rt::unix_now() - 5;
+        let unproven = uuid::Uuid::new_v4().to_string();
+        let taken = uuid::Uuid::new_v4().to_string();
+        let lapsed = uuid::Uuid::new_v4().to_string();
+        for order_id in [&unproven, &taken, &lapsed] {
+            db.save_trade(&bonded_taker_row(order_id, BOND_BOLT11, Some(deadline)))
+                .await
+                .unwrap();
+        }
+        book_saw(&taken, OrderStatus::InProgress, deadline + 1).await;
+        book_saw(&lapsed, OrderStatus::Pending, deadline).await;
+
+        assert_eq!(settle_lapsed_take(&unproven, deadline).await, None);
+        assert_eq!(settle_lapsed_take(&taken, deadline).await, Some(false));
+        assert_eq!(settle_lapsed_take(&lapsed, deadline).await, Some(true));
+
+        assert!(db.get_trade_by_order_id(&unproven).await.unwrap().is_some());
+        assert!(db.get_trade_by_order_id(&taken).await.unwrap().is_some());
+        assert!(db.get_trade_by_order_id(&lapsed).await.unwrap().is_none());
+    }
+
+    /// Only a taker's unpaid window whose deadline is still ahead is
+    /// watched; one written past it (a replay) is the sweep's, as before. A
+    /// maker's has no public lapse to prove it by, and v0.20 nodes tell the
+    /// maker anyway.
+    #[test]
+    fn only_a_takers_deadline_still_ahead_is_watched() {
         let open = bonded_taker_row("o", BOND_BOLT11, Some(1_000));
         assert_eq!(bond_watch_deadline(&open, 999), Some(1_000));
         assert_eq!(bond_watch_deadline(&open, 1_000), Some(1_000));
@@ -22145,6 +22301,8 @@ mod tests {
             None,
             "an undecodable bolt11 gives no deadline to watch"
         );
+        let maker = bonded_maker_row("o", Some(BOND_BOLT11), Some(1_000), Some(1_000), 1);
+        assert_eq!(bond_watch_deadline(&maker, 999), None);
     }
 
     /// A maker's row parked on its bond, as `create_order` persists it.
