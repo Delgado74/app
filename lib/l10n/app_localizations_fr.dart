@@ -2327,11 +2327,11 @@ class AppLocalizationsFr extends AppLocalizations {
   String get tradeStatusPayoutPending => 'Paiement en attente';
 
   @override
-  String get tradeHeadlinePayoutPending => 'Mostro vous envoie vos sats';
+  String get tradeHeadlinePayoutPending => 'En attente de vos sats';
 
   @override
   String get tradeInstructionPayoutPending =>
-      'Le vendeur a libéré vos sats et Mostro vous les envoie. Une fois reçus, vous pourrez noter la transaction.';
+      'Le vendeur a libéré vos sats et Mostro vous les envoie. Si le paiement échoue, vous pouvez ajouter une nouvelle facture Lightning.';
 
   @override
   String get tradeScreenTitle => 'Votre transaction';

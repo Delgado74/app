@@ -2987,13 +2987,13 @@
   "@tradeStatusPayoutPending": {
     "description": "Status label while the seller has released the sats and the Lightning payment to the buyer is still on its way: on the user's own order and as an option of the My Trades status filter"
   },
-  "tradeHeadlinePayoutPending": "Mostro is sending you your sats",
+  "tradeHeadlinePayoutPending": "Waiting for your sats",
   "@tradeHeadlinePayoutPending": {
-    "description": "Buyer's trade screen headline while the seller has released the sats and the node is still paying the buyer, in the second person (the seller never sees this state)"
+    "description": "Buyer's trade screen headline once the seller has released the sats and the payout is pending, in the second person. True whether Mostro is paying or, after a restore, waiting for a new invoice for a payout it gave up on (the seller never sees this state)"
   },
-  "tradeInstructionPayoutPending": "The seller released your sats and Mostro is sending them to you. Once they arrive, you can rate the trade.",
+  "tradeInstructionPayoutPending": "The seller released your sats and Mostro sends them to you. If the payment fails, you can add a new Lightning invoice.",
   "@tradeInstructionPayoutPending": {
-    "description": "Buyer's trade screen text under the headline in the same state: the seller released the sats, the node is still paying the buyer, and rating opens once the payment arrives"
+    "description": "Buyer's trade screen text under the headline in the same state: the seller released the sats, Mostro sends them, and a failed payment can be replaced through the screen's Add Lightning invoice action. Promises no rating: privacy mode has none"
   },
   "tradeScreenTitle": "Your trade",
   "@tradeScreenTitle": {

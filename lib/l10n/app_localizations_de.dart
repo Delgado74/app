@@ -2331,12 +2331,11 @@ class AppLocalizationsDe extends AppLocalizations {
   String get tradeStatusPayoutPending => 'Auszahlung ausstehend';
 
   @override
-  String get tradeHeadlinePayoutPending =>
-      'Mostro sendet dir gerade deine Sats';
+  String get tradeHeadlinePayoutPending => 'Warten auf deine Sats';
 
   @override
   String get tradeInstructionPayoutPending =>
-      'Der Verkäufer hat deine Sats freigegeben und Mostro sendet sie dir. Sobald sie ankommen, kannst du den Trade bewerten.';
+      'Der Verkäufer hat deine Sats freigegeben und Mostro sendet sie dir. Schlägt die Zahlung fehl, kannst du eine neue Lightning-Rechnung hinzufügen.';
 
   @override
   String get tradeScreenTitle => 'Dein Trade';

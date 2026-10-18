@@ -2323,11 +2323,11 @@ class AppLocalizationsEs extends AppLocalizations {
   String get tradeStatusPayoutPending => 'Pago pendiente';
 
   @override
-  String get tradeHeadlinePayoutPending => 'Mostro te está enviando tus sats';
+  String get tradeHeadlinePayoutPending => 'Esperando tus sats';
 
   @override
   String get tradeInstructionPayoutPending =>
-      'El vendedor liberó tus sats y Mostro te los está enviando. Cuando lleguen, podrás calificar la operación.';
+      'El vendedor liberó tus sats y Mostro te los envía. Si el pago falla, puedes agregar una nueva factura Lightning.';
 
   @override
   String get tradeScreenTitle => 'Tu operación';

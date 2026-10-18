@@ -2321,11 +2321,11 @@ class AppLocalizationsIt extends AppLocalizations {
   String get tradeStatusPayoutPending => 'Pagamento in attesa';
 
   @override
-  String get tradeHeadlinePayoutPending => 'Mostro ti sta inviando i tuoi sats';
+  String get tradeHeadlinePayoutPending => 'In attesa dei tuoi sats';
 
   @override
   String get tradeInstructionPayoutPending =>
-      'Il venditore ha rilasciato i tuoi sats e Mostro te li sta inviando. Quando arrivano, potrai valutare l\'operazione.';
+      'Il venditore ha rilasciato i tuoi sats e Mostro te li invia. Se il pagamento non va a buon fine, puoi aggiungere una nuova fattura Lightning.';
 
   @override
   String get tradeScreenTitle => 'La tua operazione';

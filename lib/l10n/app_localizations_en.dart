@@ -2305,11 +2305,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tradeStatusPayoutPending => 'Payout pending';
 
   @override
-  String get tradeHeadlinePayoutPending => 'Mostro is sending you your sats';
+  String get tradeHeadlinePayoutPending => 'Waiting for your sats';
 
   @override
   String get tradeInstructionPayoutPending =>
-      'The seller released your sats and Mostro is sending them to you. Once they arrive, you can rate the trade.';
+      'The seller released your sats and Mostro sends them to you. If the payment fails, you can add a new Lightning invoice.';
 
   @override
   String get tradeScreenTitle => 'Your trade';

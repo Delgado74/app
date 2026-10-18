@@ -2325,11 +2325,11 @@ class AppLocalizationsNl extends AppLocalizations {
   String get tradeStatusPayoutPending => 'Uitbetaling wacht';
 
   @override
-  String get tradeHeadlinePayoutPending => 'Mostro stuurt je nu je sats';
+  String get tradeHeadlinePayoutPending => 'Wachten op je sats';
 
   @override
   String get tradeInstructionPayoutPending =>
-      'De verkoper heeft je sats vrijgegeven en Mostro stuurt ze nu naar je. Zodra ze binnen zijn, kun je de trade beoordelen.';
+      'De verkoper heeft je sats vrijgegeven en Mostro stuurt ze naar je. Mislukt de betaling, dan kun je een nieuwe Lightning-invoice toevoegen.';
 
   @override
   String get tradeScreenTitle => 'Jouw trade';

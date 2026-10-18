@@ -2336,11 +2336,11 @@ class AppLocalizationsPt extends AppLocalizations {
   String get tradeStatusPayoutPending => 'Pagamento pendente';
 
   @override
-  String get tradeHeadlinePayoutPending => 'O Mostro está enviando seus sats';
+  String get tradeHeadlinePayoutPending => 'Aguardando seus sats';
 
   @override
   String get tradeInstructionPayoutPending =>
-      'O vendedor liberou seus sats e o Mostro está enviando para você. Quando chegarem, você poderá avaliar a operação.';
+      'O vendedor liberou seus sats e o Mostro os envia para você. Se o pagamento falhar, você pode adicionar uma nova fatura Lightning.';
 
   @override
   String get tradeScreenTitle => 'Sua operação';

@@ -3978,16 +3978,16 @@ abstract class AppLocalizations {
   /// **'Payout pending'**
   String get tradeStatusPayoutPending;
 
-  /// Buyer's trade screen headline while the seller has released the sats and the node is still paying the buyer, in the second person (the seller never sees this state)
+  /// Buyer's trade screen headline once the seller has released the sats and the payout is pending, in the second person. True whether Mostro is paying or, after a restore, waiting for a new invoice for a payout it gave up on (the seller never sees this state)
   ///
   /// In en, this message translates to:
-  /// **'Mostro is sending you your sats'**
+  /// **'Waiting for your sats'**
   String get tradeHeadlinePayoutPending;
 
-  /// Buyer's trade screen text under the headline in the same state: the seller released the sats, the node is still paying the buyer, and rating opens once the payment arrives
+  /// Buyer's trade screen text under the headline in the same state: the seller released the sats, Mostro sends them, and a failed payment can be replaced through the screen's Add Lightning invoice action. Promises no rating: privacy mode has none
   ///
   /// In en, this message translates to:
-  /// **'The seller released your sats and Mostro is sending them to you. Once they arrive, you can rate the trade.'**
+  /// **'The seller released your sats and Mostro sends them to you. If the payment fails, you can add a new Lightning invoice.'**
   String get tradeInstructionPayoutPending;
 
   /// App bar title of the trade screen
