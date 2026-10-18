@@ -1541,8 +1541,12 @@ class AppLocalizationsDe extends AppLocalizations {
       'Ungefähre Zeit. Läuft sie ab, eröffnet Mostro einen Streitfall.';
 
   @override
-  String get tradeTimerEscrowCancelling =>
+  String get tradeTimerEscrowCancellingBuyer =>
       'Mostro storniert gleich den Trade und gibt die Sats an den Verkäufer zurück.';
+
+  @override
+  String get tradeTimerEscrowCancellingSeller =>
+      'Mostro storniert gleich den Trade. Deine Sats bleiben in deiner Wallet.';
 
   @override
   String get tradeTimerEscrowDisputing =>
@@ -1568,6 +1572,9 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get tradeStepReleaseSeller => 'Du bestätigst und gibst die Sats frei';
+
+  @override
+  String get tradeStepPayoutBuyer => 'Mostro sendet dir deine Sats';
 
   @override
   String get tradeStepRate => 'Trade bewerten';
@@ -2324,12 +2331,11 @@ class AppLocalizationsDe extends AppLocalizations {
   String get tradeStatusPayoutPending => 'Auszahlung ausstehend';
 
   @override
-  String get tradeHeadlinePayoutPending =>
-      'Warten auf die Auszahlung an den Käufer';
+  String get tradeHeadlinePayoutPending => 'Warten auf deine Sats';
 
   @override
   String get tradeInstructionPayoutPending =>
-      'Der Verkäufer hat die Treuhandmittel freigegeben. Die Lightning-Zahlung an den Käufer steht noch aus.';
+      'Der Verkäufer hat deine Sats freigegeben und Mostro sendet sie dir. Schlägt die Zahlung fehl, kannst du eine neue Lightning-Rechnung hinzufügen.';
 
   @override
   String get tradeScreenTitle => 'Dein Trade';

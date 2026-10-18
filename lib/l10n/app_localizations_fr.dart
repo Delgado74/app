@@ -1538,8 +1538,12 @@ class AppLocalizationsFr extends AppLocalizations {
       'Temps approximatif. S\'il expire, Mostro ouvre un litige.';
 
   @override
-  String get tradeTimerEscrowCancelling =>
+  String get tradeTimerEscrowCancellingBuyer =>
       'Mostro est sur le point d\'annuler la transaction et de rendre les sats au vendeur.';
+
+  @override
+  String get tradeTimerEscrowCancellingSeller =>
+      'Mostro est sur le point d\'annuler la transaction. Vos sats restent dans votre portefeuille.';
 
   @override
   String get tradeTimerEscrowDisputing =>
@@ -1565,6 +1569,9 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get tradeStepReleaseSeller => 'Vous confirmez et libérez les sats';
+
+  @override
+  String get tradeStepPayoutBuyer => 'Mostro vous envoie vos sats';
 
   @override
   String get tradeStepRate => 'Vous notez la transaction';
@@ -2320,12 +2327,11 @@ class AppLocalizationsFr extends AppLocalizations {
   String get tradeStatusPayoutPending => 'Paiement en attente';
 
   @override
-  String get tradeHeadlinePayoutPending =>
-      'En attente du paiement à l\'acheteur';
+  String get tradeHeadlinePayoutPending => 'En attente de vos sats';
 
   @override
   String get tradeInstructionPayoutPending =>
-      'Le vendeur a libéré les fonds en séquestre. En attente de la réussite du paiement Lightning à l\'acheteur.';
+      'Le vendeur a libéré vos sats et Mostro vous les envoie. Si le paiement échoue, vous pouvez ajouter une nouvelle facture Lightning.';
 
   @override
   String get tradeScreenTitle => 'Votre transaction';

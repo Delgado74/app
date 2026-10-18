@@ -1534,8 +1534,12 @@ class AppLocalizationsIt extends AppLocalizations {
       'Tempo approssimativo. Se si esaurisce, Mostro apre una disputa.';
 
   @override
-  String get tradeTimerEscrowCancelling =>
+  String get tradeTimerEscrowCancellingBuyer =>
       'Mostro sta per annullare l\'operazione e restituire i sats al venditore.';
+
+  @override
+  String get tradeTimerEscrowCancellingSeller =>
+      'Mostro sta per annullare l\'operazione. I tuoi sats restano nel tuo wallet.';
 
   @override
   String get tradeTimerEscrowDisputing => 'Sta per essere aperta una disputa.';
@@ -1560,6 +1564,9 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get tradeStepReleaseSeller => 'Confermi e rilasci i sats';
+
+  @override
+  String get tradeStepPayoutBuyer => 'Mostro ti invia i tuoi sats';
 
   @override
   String get tradeStepRate => 'Valuta l\'operazione';
@@ -2314,12 +2321,11 @@ class AppLocalizationsIt extends AppLocalizations {
   String get tradeStatusPayoutPending => 'Pagamento in attesa';
 
   @override
-  String get tradeHeadlinePayoutPending =>
-      'In attesa del pagamento all\'acquirente';
+  String get tradeHeadlinePayoutPending => 'In attesa dei tuoi sats';
 
   @override
   String get tradeInstructionPayoutPending =>
-      'Il venditore ha rilasciato i fondi in custodia. In attesa del completamento del pagamento Lightning all\'acquirente.';
+      'Il venditore ha rilasciato i tuoi sats e Mostro te li invia. Se il pagamento non va a buon fine, puoi aggiungere una nuova fattura Lightning.';
 
   @override
   String get tradeScreenTitle => 'La tua operazione';

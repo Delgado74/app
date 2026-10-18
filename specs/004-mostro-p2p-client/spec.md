@@ -126,7 +126,7 @@ A buyer (taker of a sell order) completes a trade. Without NWC, they manually en
 2. **Given** a buyer has taken a sell order and NWC IS configured, **When** the order is accepted, **Then** the invoice step is skipped entirely and the buyer proceeds to the active trade view.
 3. **Given** the trade is in "active" status, **When** the buyer views Trade Detail, **Then** they see: trade summary, payment method, order ID, instructions to contact the seller, a "Fiat Sent" primary CTA, a secondary row with outlined Cancel and Dispute buttons, and a persistent chat chip for Contact.
 4. **Given** the buyer has sent fiat payment, **When** they tap "Fiat Sent", **Then** the order status changes to "Fiat sent" and the seller sees instructions to verify and release.
-5. **Given** the seller releases sats, **When** the daemon settles the hold invoice, **Then** the seller is prompted to rate the buyer right away; the buyer sees the payout as pending and is prompted to rate the seller once the Lightning payment completes (#586).
+5. **Given** the seller releases sats, **When** the daemon settles the hold invoice, **Then** the seller is prompted to rate the buyer right away, on the last of their five timeline steps; the buyer sees the payout as pending and is prompted to rate the seller once the Lightning payment completes (#586). The buyer's timeline has six steps: while the payout is pending the release is done and "Mostro sends you your sats" is current, and it is done at `success`, when rating opens (#844).
 
 ---
 
