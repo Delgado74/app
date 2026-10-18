@@ -422,7 +422,12 @@ Rules:
   and the screen counts down to it. **Local expiry sweep** (T1.2): when `expires_at`
   elapses without a lock, the row is set to `Expired`, a `TradeUpdate { status:
   Expired, reason: BondExpired }` is emitted **before** the row is wiped, and the order
-  is restored to the local book only if the wire still reports it `pending`. If the
+  is restored to the local book only if the wire still reports it `pending`. That runs
+  **at the deadline, wherever the user is** (#849): every write of a window whose deadline
+  is still ahead arms a one-shot wake-up for it (`watch_bond_window`), and so does the
+  stale sweep for a window it finds open, as after a restart. The pay-bond screen also
+  closes the window when its own countdown ends. A window written already past its
+  deadline (a replay) is left to the sweep. If the
   bolt11 cannot be decoded, `expires_at` is `None`, **no local cleanup runs**, and the
   screen shows no countdown — the user can still cancel. The existing
   `timeout_at = now + 900` seeding is not applied to a trade at `WaitingTakerBond`.
