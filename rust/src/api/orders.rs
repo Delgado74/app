@@ -23028,11 +23028,14 @@ mod tests {
         .await
         .unwrap();
         order_book().upsert_order(dummy_order_info(&order_id)).await;
+        let mut rx = trade_updates_tx().subscribe();
+        let before = crate::rt::unix_now();
 
         let err = settle_refused_maker_cancel(&order_id, std::time::Duration::from_millis(50))
             .await
             .expect_err("the order is live");
 
+        let after = crate::rt::unix_now();
         assert_eq!(err.to_string(), "BondAlreadyLocked");
         let row = db.get_trade_by_order_id(&order_id).await.unwrap().unwrap();
         assert_eq!(row.order.status, crate::api::types::OrderStatus::Pending);
@@ -23040,6 +23043,17 @@ mod tests {
             row.bond.unwrap().state,
             crate::api::types::BondState::Locked
         );
+        // The reconcile says the order went out, as a `new-order` would: the
+        // update behind the "order published" notice, dated when it ran.
+        let updates = drain_dated_updates(&mut rx, &order_id);
+        assert_eq!(updates.len(), 1, "{updates:?}");
+        let (status, reason, at) = &updates[0];
+        assert_eq!(*status, crate::api::types::OrderStatus::Pending);
+        assert_eq!(
+            *reason,
+            Some(crate::api::types::TradeUpdateReason::OrderPublished)
+        );
+        assert!((before..=after).contains(at), "{at} not in {before}..={after}");
     }
 
     /// The user's explicit "remove from this device" never drops an order
