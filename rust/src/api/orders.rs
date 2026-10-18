@@ -20566,6 +20566,28 @@ mod tests {
         seen
     }
 
+    /// [`drain_updates`] with each update's reason and date.
+    fn drain_dated_updates(
+        rx: &mut broadcast::Receiver<crate::api::types::TradeUpdate>,
+        order_id: &str,
+    ) -> Vec<(
+        crate::api::types::OrderStatus,
+        Option<crate::api::types::TradeUpdateReason>,
+        i64,
+    )> {
+        let mut seen = Vec::new();
+        loop {
+            match rx.try_recv() {
+                Ok(update) if update.order_id == order_id => {
+                    seen.push((update.status, update.reason, update.occurred_at))
+                }
+                Ok(_) | Err(broadcast::error::TryRecvError::Lagged(_)) => {}
+                Err(_) => break,
+            }
+        }
+        seen
+    }
+
     /// #394: a Canceled over a pre-active trade wipes the row and leaves the
     /// tombstone; the SAME message replayed on the next start (the global
     /// feed carries no `since`) is then dropped whole — no write to nothing,
@@ -22283,9 +22305,15 @@ mod tests {
         assert_eq!(bond.state, crate::api::types::BondState::Locked);
         assert!(bond.locked_at.is_some());
         assert_eq!(bond.invoice.as_deref(), Some(BOND_BOLT11));
+        // The push that woke the maker was this message: the update says
+        // what it was about, dated when the node published the order.
         assert_eq!(
-            drain_updates(&mut rx, &order_id),
-            vec![crate::api::types::OrderStatus::Pending]
+            drain_dated_updates(&mut rx, &order_id),
+            vec![(
+                crate::api::types::OrderStatus::Pending,
+                Some(crate::api::types::TradeUpdateReason::OrderPublished),
+                2_000,
+            )]
         );
         assert!(
             take_matching_request(key, Some(803)).is_none(),
@@ -22351,8 +22379,12 @@ mod tests {
             Some(crate::api::types::BondState::Locked)
         );
         assert_eq!(
-            drain_updates(&mut rx, &order_id),
-            vec![crate::api::types::OrderStatus::Pending]
+            drain_dated_updates(&mut rx, &order_id),
+            vec![(
+                crate::api::types::OrderStatus::Pending,
+                Some(crate::api::types::TradeUpdateReason::OrderPublished),
+                2_001,
+            )]
         );
     }
 
@@ -23965,9 +23997,15 @@ mod tests {
             Some(14),
             "the arm binds the daemon id to this attempt's index",
         );
+        // The create already returned an error: that the order went out
+        // after all is news.
         assert_eq!(
-            drain_updates(&mut rx, &order_id),
-            vec![crate::api::types::OrderStatus::Pending],
+            drain_dated_updates(&mut rx, &order_id),
+            vec![(
+                crate::api::types::OrderStatus::Pending,
+                Some(crate::api::types::TradeUpdateReason::OrderPublished),
+                3_000,
+            )],
         );
     }
 
