@@ -133,10 +133,10 @@ void main() {
   });
 
   group('8e · completed', () {
-    test('unrated: inline rating with Close as a link, timeline at step 5', () {
+    test('unrated: inline rating with Close as a link, on the last step', () {
       final v = view(TradeStatus.pendingRating, isBuyer: true);
       expect(v.isCompleted, isTrue);
-      expect(v.step, kTradeStepCount - 1);
+      expect(v.step, tradeStepCount(isBuyer: true) - 1);
       expect(v.primary, TradePrimaryAction.sendRating);
       expect(v.showsCloseLink, isTrue);
       expect(v.showsChat, isFalse);
@@ -151,7 +151,7 @@ void main() {
 
     test('rated: every step done and Close', () {
       final v = view(TradeStatus.rated, isBuyer: false);
-      expect(v.step, kTradeStepCount);
+      expect(v.step, tradeStepCount(isBuyer: false));
       expect(v.primary, TradePrimaryAction.close);
       expect(v.secondary, isEmpty);
     });

@@ -1539,8 +1539,12 @@ class AppLocalizationsNl extends AppLocalizations {
       'Geschatte tijd. Is die om, dan opent Mostro een dispuut.';
 
   @override
-  String get tradeTimerEscrowCancelling =>
+  String get tradeTimerEscrowCancellingBuyer =>
       'Mostro annuleert zo de trade en geeft de sats terug aan de verkoper.';
+
+  @override
+  String get tradeTimerEscrowCancellingSeller =>
+      'Mostro annuleert zo de trade. Je sats blijven in je wallet.';
 
   @override
   String get tradeTimerEscrowDisputing => 'Er wordt zo een dispuut geopend.';
@@ -1565,6 +1569,9 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get tradeStepReleaseSeller => 'Jij bevestigt en geeft de sats vrij';
+
+  @override
+  String get tradeStepPayoutBuyer => 'Mostro stuurt je je sats';
 
   @override
   String get tradeStepRate => 'Beoordeel de trade';
@@ -2318,12 +2325,11 @@ class AppLocalizationsNl extends AppLocalizations {
   String get tradeStatusPayoutPending => 'Uitbetaling wacht';
 
   @override
-  String get tradeHeadlinePayoutPending =>
-      'Wachten op de uitbetaling aan de koper';
+  String get tradeHeadlinePayoutPending => 'Mostro stuurt je nu je sats';
 
   @override
   String get tradeInstructionPayoutPending =>
-      'De verkoper heeft de escrow vrijgegeven. Wachten tot de Lightning-betaling aan de koper slaagt.';
+      'De verkoper heeft je sats vrijgegeven en Mostro stuurt ze nu naar je. Zodra ze binnen zijn, kun je de trade beoordelen.';
 
   @override
   String get tradeScreenTitle => 'Jouw trade';

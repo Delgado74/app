@@ -1521,8 +1521,12 @@ class AppLocalizationsEn extends AppLocalizations {
       'Approximate time. If it runs out, Mostro opens a dispute.';
 
   @override
-  String get tradeTimerEscrowCancelling =>
+  String get tradeTimerEscrowCancellingBuyer =>
       'Mostro is about to cancel the trade and return the sats to the seller.';
+
+  @override
+  String get tradeTimerEscrowCancellingSeller =>
+      'Mostro is about to cancel the trade. Your sats stay in your wallet.';
 
   @override
   String get tradeTimerEscrowDisputing => 'A dispute is about to be opened.';
@@ -1547,6 +1551,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get tradeStepReleaseSeller => 'You confirm and release the sats';
+
+  @override
+  String get tradeStepPayoutBuyer => 'Mostro sends you your sats';
 
   @override
   String get tradeStepRate => 'Rate the trade';
@@ -2298,11 +2305,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tradeStatusPayoutPending => 'Payout pending';
 
   @override
-  String get tradeHeadlinePayoutPending => 'Waiting for the buyer payout';
+  String get tradeHeadlinePayoutPending => 'Mostro is sending you your sats';
 
   @override
   String get tradeInstructionPayoutPending =>
-      'The seller released the escrow. Waiting for the Lightning payment to the buyer to succeed.';
+      'The seller released your sats and Mostro is sending them to you. Once they arrive, you can rate the trade.';
 
   @override
   String get tradeScreenTitle => 'Your trade';

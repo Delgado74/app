@@ -389,7 +389,7 @@ void main() {
         );
 
         expect(find.text(_en.tradeScreenTitle), findsOneWidget);
-        expect(find.text(_en.stepIndicator(2, 5)), findsOneWidget);
+        expect(find.text(_en.stepIndicator(2, 6)), findsOneWidget);
         expect(find.text(_en.tradeChipWaiting), findsOneWidget);
         expect(find.text(_en.tradeHeadlineWaitingPaymentBuyer), findsOneWidget);
         expect(find.byType(TradeChatLockedLine), findsOneWidget);
@@ -613,8 +613,23 @@ void main() {
         escrowDeadlineIn: const Duration(seconds: -30),
       );
 
-      expect(find.text(_en.tradeTimerEscrowCancelling), findsOneWidget);
+      expect(find.text(_en.tradeTimerEscrowCancellingBuyer), findsOneWidget);
       expect(find.text(_en.tradeTimerEscrowCancels), findsNothing);
+    });
+
+    testWidgets('at zero, active tells the seller their sats stay', (
+      tester,
+    ) async {
+      await _pumpTradeDetail(
+        tester,
+        orderId: 'order-escrow-active-zero-seller',
+        isBuyer: false,
+        status: OrderStatus.active,
+        escrowDeadlineIn: const Duration(seconds: -30),
+      );
+
+      expect(find.text(_en.tradeTimerEscrowCancellingSeller), findsOneWidget);
+      expect(find.text(_en.tradeTimerEscrowCancellingBuyer), findsNothing);
     });
 
     testWidgets('at zero, fiat sent says a dispute is about to be opened', (

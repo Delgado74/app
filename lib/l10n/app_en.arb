@@ -1914,8 +1914,10 @@
   "@tradeTimerEscrowCancels": {"description": "Note under the countdown of an active trade: the time is estimated in Bitcoin blocks, and mostrod's escrow deadline guardian cancels the trade when it runs out"},
   "tradeTimerEscrowDisputes": "Approximate time. If it runs out, Mostro opens a dispute.",
   "@tradeTimerEscrowDisputes": {"description": "Note under the countdown of a fiat-sent trade: the time is estimated in Bitcoin blocks, and mostrod's escrow deadline guardian opens a dispute when it runs out"},
-  "tradeTimerEscrowCancelling": "Mostro is about to cancel the trade and return the sats to the seller.",
-  "@tradeTimerEscrowCancelling": {"description": "Note under the countdown of an active trade once it reaches zero: mostrod is about to cancel the trade and refund the seller's sats"},
+  "tradeTimerEscrowCancellingBuyer": "Mostro is about to cancel the trade and return the sats to the seller.",
+  "@tradeTimerEscrowCancellingBuyer": {"description": "Note under the buyer's countdown of an active trade once it reaches zero: mostrod is about to cancel the trade and refund the seller's sats"},
+  "tradeTimerEscrowCancellingSeller": "Mostro is about to cancel the trade. Your sats stay in your wallet.",
+  "@tradeTimerEscrowCancellingSeller": {"description": "Note under the seller's countdown of an active trade once it reaches zero: mostrod is about to cancel the trade, and the sats the hold invoice keeps stay in the seller's wallet"},
   "tradeTimerEscrowDisputing": "A dispute is about to be opened.",
   "@tradeTimerEscrowDisputing": {"description": "Note under the countdown of a fiat-sent trade once it reaches zero: mostrod is about to open a dispute"},
   "tradeStepOrderTaken": "Order taken",
@@ -1945,6 +1947,10 @@
   "tradeStepReleaseSeller": "You confirm and release the sats",
   "@tradeStepReleaseSeller": {
     "description": "Timeline step for seller: confirm and release"
+  },
+  "tradeStepPayoutBuyer": "Mostro sends you your sats",
+  "@tradeStepPayoutBuyer": {
+    "description": "Timeline step for buyer, after the release: Mostro pays the buyer's invoice; done once the payout succeeds"
   },
   "tradeStepRate": "Rate the trade",
   "@tradeStepRate": {
@@ -2981,13 +2987,13 @@
   "@tradeStatusPayoutPending": {
     "description": "Status label while the seller has released the sats and the Lightning payment to the buyer is still on its way: on the user's own order and as an option of the My Trades status filter"
   },
-  "tradeHeadlinePayoutPending": "Waiting for the buyer payout",
+  "tradeHeadlinePayoutPending": "Mostro is sending you your sats",
   "@tradeHeadlinePayoutPending": {
-    "description": "Trade screen headline while the seller has released the sats and the Lightning payment to the buyer is still on its way"
+    "description": "Buyer's trade screen headline while the seller has released the sats and the node is still paying the buyer, in the second person (the seller never sees this state)"
   },
-  "tradeInstructionPayoutPending": "The seller released the escrow. Waiting for the Lightning payment to the buyer to succeed.",
+  "tradeInstructionPayoutPending": "The seller released your sats and Mostro is sending them to you. Once they arrive, you can rate the trade.",
   "@tradeInstructionPayoutPending": {
-    "description": "Trade screen text under the headline in the same state: the seller released the sats and the node is still paying the buyer"
+    "description": "Buyer's trade screen text under the headline in the same state: the seller released the sats, the node is still paying the buyer, and rating opens once the payment arrives"
   },
   "tradeScreenTitle": "Your trade",
   "@tradeScreenTitle": {

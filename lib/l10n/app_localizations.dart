@@ -2760,11 +2760,17 @@ abstract class AppLocalizations {
   /// **'Approximate time. If it runs out, Mostro opens a dispute.'**
   String get tradeTimerEscrowDisputes;
 
-  /// Note under the countdown of an active trade once it reaches zero: mostrod is about to cancel the trade and refund the seller's sats
+  /// Note under the buyer's countdown of an active trade once it reaches zero: mostrod is about to cancel the trade and refund the seller's sats
   ///
   /// In en, this message translates to:
   /// **'Mostro is about to cancel the trade and return the sats to the seller.'**
-  String get tradeTimerEscrowCancelling;
+  String get tradeTimerEscrowCancellingBuyer;
+
+  /// Note under the seller's countdown of an active trade once it reaches zero: mostrod is about to cancel the trade, and the sats the hold invoice keeps stay in the seller's wallet
+  ///
+  /// In en, this message translates to:
+  /// **'Mostro is about to cancel the trade. Your sats stay in your wallet.'**
+  String get tradeTimerEscrowCancellingSeller;
 
   /// Note under the countdown of a fiat-sent trade once it reaches zero: mostrod is about to open a dispute
   ///
@@ -2813,6 +2819,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'You confirm and release the sats'**
   String get tradeStepReleaseSeller;
+
+  /// Timeline step for buyer, after the release: Mostro pays the buyer's invoice; done once the payout succeeds
+  ///
+  /// In en, this message translates to:
+  /// **'Mostro sends you your sats'**
+  String get tradeStepPayoutBuyer;
 
   /// Timeline step and CTA: rate your counterpart
   ///
@@ -3966,16 +3978,16 @@ abstract class AppLocalizations {
   /// **'Payout pending'**
   String get tradeStatusPayoutPending;
 
-  /// Trade screen headline while the seller has released the sats and the Lightning payment to the buyer is still on its way
+  /// Buyer's trade screen headline while the seller has released the sats and the node is still paying the buyer, in the second person (the seller never sees this state)
   ///
   /// In en, this message translates to:
-  /// **'Waiting for the buyer payout'**
+  /// **'Mostro is sending you your sats'**
   String get tradeHeadlinePayoutPending;
 
-  /// Trade screen text under the headline in the same state: the seller released the sats and the node is still paying the buyer
+  /// Buyer's trade screen text under the headline in the same state: the seller released the sats, the node is still paying the buyer, and rating opens once the payment arrives
   ///
   /// In en, this message translates to:
-  /// **'The seller released the escrow. Waiting for the Lightning payment to the buyer to succeed.'**
+  /// **'The seller released your sats and Mostro is sending them to you. Once they arrive, you can rate the trade.'**
   String get tradeInstructionPayoutPending;
 
   /// App bar title of the trade screen
