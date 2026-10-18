@@ -4904,6 +4904,13 @@ class AppLocalizationsFr extends AppLocalizations {
       'Mostro n\'a pas pu envoyer vos sats à l\'adresse ou à la facture que vous avez donnée. Ouvrez la transaction pour voir laquelle a échoué, et ajoutez une nouvelle facture si c\'est encore nécessaire.';
 
   @override
+  String get tradeCardOrderPublishedTitle => 'Ordre publié';
+
+  @override
+  String get tradeCardOrderPublishedMessage =>
+      'Votre ordre est maintenant dans le carnet d\'ordres, et d\'autres utilisateurs peuvent le prendre.';
+
+  @override
   String get payoutInvoiceLabel => 'Facture';
 
   @override

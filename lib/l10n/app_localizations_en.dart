@@ -4840,6 +4840,13 @@ class AppLocalizationsEn extends AppLocalizations {
       'Mostro could not send your sats to the address or invoice you gave. Open the trade to see which one failed, and add a new invoice if it is still needed.';
 
   @override
+  String get tradeCardOrderPublishedTitle => 'Order published';
+
+  @override
+  String get tradeCardOrderPublishedMessage =>
+      'Your order is in the order book now, and other users can take it.';
+
+  @override
   String get payoutInvoiceLabel => 'Invoice';
 
   @override

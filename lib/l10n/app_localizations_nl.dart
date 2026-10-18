@@ -4883,6 +4883,13 @@ class AppLocalizationsNl extends AppLocalizations {
       'Mostro kon je sats niet versturen naar het adres of de invoice die je gaf. Open de trade om te zien welke mislukte, en voeg een nieuwe invoice toe als dat nog nodig is.';
 
   @override
+  String get tradeCardOrderPublishedTitle => 'Order gepubliceerd';
+
+  @override
+  String get tradeCardOrderPublishedMessage =>
+      'Je order staat nu in het orderboek en andere gebruikers kunnen hem aannemen.';
+
+  @override
   String get payoutInvoiceLabel => 'Invoice';
 
   @override

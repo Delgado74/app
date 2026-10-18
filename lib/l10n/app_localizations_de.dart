@@ -4898,6 +4898,13 @@ class AppLocalizationsDe extends AppLocalizations {
       'Mostro konnte deine Sats nicht an die angegebene Adresse oder Rechnung senden. Öffne den Trade, um zu sehen, welche fehlgeschlagen ist, und füge eine neue Rechnung hinzu, falls noch nötig.';
 
   @override
+  String get tradeCardOrderPublishedTitle => 'Order veröffentlicht';
+
+  @override
+  String get tradeCardOrderPublishedMessage =>
+      'Deine Order ist jetzt im Orderbuch, und andere Nutzer können sie annehmen.';
+
+  @override
   String get payoutInvoiceLabel => 'Rechnung';
 
   @override

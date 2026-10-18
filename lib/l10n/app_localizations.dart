@@ -8010,6 +8010,18 @@ abstract class AppLocalizations {
   /// **'Mostro could not send your sats to the address or invoice you gave. Open the trade to see which one failed, and add a new invoice if it is still needed.'**
   String get tradeCardPayoutFailedMessage;
 
+  /// Notifications card title: the node published the user's own order, once their deposit (bond) locked or after creating it timed out. Only the maker sees it
+  ///
+  /// In en, this message translates to:
+  /// **'Order published'**
+  String get tradeCardOrderPublishedTitle;
+
+  /// Notifications card body: the user's own order is now public in the order book and can be taken. Only the maker sees it
+  ///
+  /// In en, this message translates to:
+  /// **'Your order is in the order book now, and other users can take it.'**
+  String get tradeCardOrderPublishedMessage;
+
   /// Trade detail payout card (#823): row label before the invoice an NWC wallet generated, shortened; the whole row copies it
   ///
   /// In en, this message translates to:
