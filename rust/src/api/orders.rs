@@ -6030,6 +6030,42 @@ pub(crate) async fn close_expired_bond_trade(
     }
 }
 
+/// The deadline `trade`'s bond window is watched until (see
+/// [`watch_bond_window`]): its [`bond_deadline`] while still ahead at `now`.
+/// One already past, as on a replay, is left to the sweep.
+fn bond_watch_deadline(trade: &crate::api::types::TradeInfo, now: i64) -> Option<i64> {
+    bond_deadline(trade).filter(|at| *at >= now)
+}
+
+/// Close `trade`'s bond window at its deadline (#849). The daemon says
+/// nothing when an unpaid bond lapses, and the pay-bond screen counts down
+/// only while it is open, so the window is watched from wherever it is
+/// written. The wake-up rereads the wall clock like the chat grace timer
+/// ([`grace_check_delay`]) and decides on the row as it is then: a window
+/// refreshed, paid or closed meanwhile is left alone.
+fn watch_bond_window(trade: &crate::api::types::TradeInfo) {
+    let Some(deadline) = bond_watch_deadline(trade, crate::rt::unix_now()) else {
+        return;
+    };
+    #[cfg(not(target_arch = "wasm32"))]
+    if tokio::runtime::Handle::try_current().is_err() {
+        return;
+    }
+    let order_id = trade.order.id.clone();
+    crate::rt::spawn(async move {
+        // A window has lapsed once the clock is past its deadline.
+        while let Some(secs) = grace_check_delay(deadline + 1, crate::rt::unix_now()) {
+            crate::rt::time::sleep(crate::rt::time::Duration::from_secs(secs)).await;
+        }
+        let Some(db) = crate::db::app_db::db() else {
+            return;
+        };
+        if let Ok(Some(row)) = db.get_trade_by_order_id(&order_id).await {
+            close_expired_bond_trade(&row, crate::rt::unix_now()).await;
+        }
+    });
+}
+
 /// Whether the public book carries `order_id` as a live order: the positive
 /// signal that the daemon published a maker's order (only a paid bond gets
 /// one there). The local book only — the sweep runs this under the order's
@@ -6461,14 +6497,20 @@ async fn persist_bond(order_id: &str, bond: &crate::api::types::BondInfo) {
     let Some(db) = crate::db::app_db::db() else {
         return;
     };
-    if let Err(e) = db.update_trade_bond(order_id, bond).await {
-        crate::api::logging::blog_warn(
+    match db.update_trade_bond(order_id, bond).await {
+        // A refreshed bolt11 moves the window's deadline.
+        Ok(()) => {
+            if let Ok(Some(row)) = db.get_trade_by_order_id(order_id).await {
+                watch_bond_window(&row);
+            }
+        }
+        Err(e) => crate::api::logging::blog_warn(
             "orders",
             format!(
                 "bond not persisted for order={}: {e}",
                 crate::api::logging::short_id(order_id),
             ),
-        );
+        ),
     }
     crate::api::trade_touch::touch_trade(order_id);
 }
@@ -7478,6 +7520,9 @@ async fn persist_trade_row_in(
         TradeWrite::Save => db.save_trade(trade).await,
         TradeWrite::ReplaceForOrder => db.replace_trades_for_order(&trade.order.id, trade).await,
     };
+    if saved.is_ok() {
+        watch_bond_window(trade);
+    }
     crate::api::trade_touch::touch_trade(&trade.order.id);
     crate::api::push::request_reconcile();
     saved
@@ -8970,6 +9015,10 @@ async fn run_stale_sweep_once() {
         ) {
             if close_expired_bond_trade(&trade, now).await {
                 wiped += 1;
+            } else {
+                // Still open, as after a restart: closed at its deadline,
+                // not a sweep later.
+                watch_bond_window(&trade);
             }
             continue;
         }
@@ -22050,6 +22099,51 @@ mod tests {
                 crate::api::types::OrderStatus::Expired,
                 Some(crate::api::types::TradeUpdateReason::BondExpired)
             )]
+        );
+    }
+
+    /// The deadline a window was written with closes nothing once the bond
+    /// moved on: a refreshed bolt11 brings a later one, a paid bond none.
+    #[tokio::test]
+    async fn a_refreshed_or_paid_bond_outlives_its_first_deadline() {
+        let db = bond_test_db().await;
+        let deadline = crate::rt::unix_now() + 1;
+        let refreshed = uuid::Uuid::new_v4().to_string();
+        let paid = uuid::Uuid::new_v4().to_string();
+        for order_id in [&refreshed, &paid] {
+            persist_confirmed_take(&bonded_taker_row(order_id, BOND_BOLT11, Some(deadline))).await;
+        }
+        let mut later = bonded_taker_row(&refreshed, BOND_BOLT11, Some(deadline + 3_600))
+            .bond
+            .unwrap();
+        later.requested_at = 2;
+        persist_bond(&refreshed, &later).await;
+        let mut locked = bonded_taker_row(&paid, BOND_BOLT11, Some(deadline))
+            .bond
+            .unwrap();
+        locked.state = crate::api::types::BondState::Locked;
+        persist_bond(&paid, &locked).await;
+
+        assert!(!row_gone_within(db, &refreshed, std::time::Duration::from_secs(3)).await);
+        assert!(db.get_trade_by_order_id(&paid).await.unwrap().is_some());
+    }
+
+    /// Only an unpaid window whose deadline is still ahead is watched; one
+    /// written past it (a replay) is the sweep's, as before.
+    #[test]
+    fn only_a_deadline_still_ahead_is_watched() {
+        let open = bonded_taker_row("o", BOND_BOLT11, Some(1_000));
+        assert_eq!(bond_watch_deadline(&open, 999), Some(1_000));
+        assert_eq!(bond_watch_deadline(&open, 1_000), Some(1_000));
+        assert_eq!(bond_watch_deadline(&open, 1_001), None);
+
+        let mut paid = open.clone();
+        paid.bond.as_mut().unwrap().state = crate::api::types::BondState::Locked;
+        assert_eq!(bond_watch_deadline(&paid, 999), None);
+        assert_eq!(
+            bond_watch_deadline(&bonded_taker_row("o", BOND_BOLT11, None), 999),
+            None,
+            "an undecodable bolt11 gives no deadline to watch"
         );
     }
 
