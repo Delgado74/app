@@ -123,6 +123,13 @@ void main() {
       expect(v.secondary, [TradeSecondaryAction.addInvoice]);
       expect(v.showsTimer, isFalse);
     });
+
+    // The seller has released: the buyer's current step is Mostro paying
+    // them, which `success` completes (#844).
+    test('payout pending: the buyer is past the release', () {
+      final v = view(TradeStatus.payoutPending, isBuyer: true);
+      expect(v.step, 4);
+    });
   });
 
   group('8e · completed', () {
