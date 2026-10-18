@@ -6064,8 +6064,8 @@ const LAPSE_PROOF_PATIENCE_SECS: i64 = 10 * 60;
 /// What the book says about a taker's bond window past its deadline.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum TakerLapse {
-    /// The daemon put the order back on the book at the deadline: the bond
-    /// lapsed.
+    /// The daemon republished the order, still `pending`, at the deadline:
+    /// the bond lapsed.
     Lapsed,
     /// The order was taken or closed: a bond locked, or the order ended,
     /// and the daemon's messages say which. Not the watcher's to close.
@@ -6075,10 +6075,12 @@ enum TakerLapse {
 }
 
 /// [`TakerLapse`] from the book's latest public view of the order (`wire`:
-/// when it was published, and its status). mostrod sends the taker nothing
-/// when their bond lapses, but republishes the order `pending` when its node
-/// cancels the bond invoice, at that `deadline`; a `pending` from well
-/// before it is the order as it was taken, or another taker's lapse.
+/// when it was published, and its status). A take parked on its bond never
+/// leaves `pending` on the book (others can still take the order), and
+/// mostrod sends the taker nothing when the bond lapses. But once its node
+/// cancels the last unpaid taker bond on the order, at that `deadline`, it
+/// republishes the order: a new `pending` revision. One from well before
+/// the deadline is the order as it was taken, or another taker's lapse.
 fn taker_lapse(deadline: i64, wire: Option<(i64, OrderStatus)>) -> TakerLapse {
     match wire {
         Some((at, OrderStatus::Pending)) if at >= deadline - LAPSE_REPUBLISH_SLACK_SECS => {
@@ -22164,9 +22166,9 @@ mod tests {
     }
 
     /// A taker who left the pay-bond screen still loses the take when the
-    /// bond lapses (#849): the daemon tells them nothing but puts the order
-    /// back on the book, and the window closes on that, at its deadline,
-    /// without the screen's countdown or the 30-minute sweep.
+    /// bond lapses (#849): the daemon tells them nothing but republishes
+    /// the order, still `pending`, and the window closes on that, at its
+    /// deadline, without the screen's countdown or the 30-minute sweep.
     #[tokio::test]
     async fn a_taken_bond_window_closes_at_its_deadline_on_its_own() {
         let db = bond_test_db().await;
@@ -22219,10 +22221,11 @@ mod tests {
         assert!(db.get_trade_by_order_id(&paid).await.unwrap().is_some());
     }
 
-    /// The daemon puts a taken order back on the book when the bond it held
-    /// lapses, at that bond's deadline. Only such a revision proves the
-    /// lapse; a take published means a bond locked (the daemon's messages
-    /// say whose), and nothing new yet means look again.
+    /// A take parked on its bond stays `pending` on the book; when the last
+    /// unpaid taker bond on the order lapses, at that bond's deadline, the
+    /// daemon republishes it, still `pending`. Only such a revision proves
+    /// the lapse; a take published means a bond locked (the daemon's
+    /// messages say whose), and nothing new yet means look again.
     #[test]
     fn only_the_books_republish_proves_a_lapse() {
         let deadline = 10_000;

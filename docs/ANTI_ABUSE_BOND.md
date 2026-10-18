@@ -427,9 +427,11 @@ Rules:
   taker's window whose deadline is still ahead arms a one-shot wake-up for it
   (`watch_bond_window`), and so does the stale sweep for a window it finds open, as after a
   restart. Past the deadline the wake-up closes the window only on the book's proof:
-  - The daemon republishes the order `pending` when its node cancels the bond invoice, at
-    the deadline. Such a revision dated no more than a minute before the deadline is the
-    proof.
+  - The take never moved the order off `pending` on the book (§2.7: others can still take
+    it). When its node cancels the last unpaid taker bond on the order, at that deadline,
+    the daemon republishes the order: a new `pending` revision. Such a revision dated no
+    more than a minute before the deadline is the proof. While another taker's bond is
+    still unpaid there is no republish, and the wake-up waits for it.
   - A take published (`in-progress`) means a bond locked: the wake-up leaves the row to the
     daemon's messages.
   - With no such revision yet it looks again every few seconds, for up to ten minutes.
