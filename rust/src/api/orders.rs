@@ -22010,6 +22010,49 @@ mod tests {
         );
     }
 
+    /// Whether `order_id`'s row is gone within `limit`, looked at every
+    /// 100 ms.
+    async fn row_gone_within(
+        db: &impl crate::db::Storage,
+        order_id: &str,
+        limit: std::time::Duration,
+    ) -> bool {
+        let start = std::time::Instant::now();
+        while start.elapsed() < limit {
+            if db.get_trade_by_order_id(order_id).await.unwrap().is_none() {
+                return true;
+            }
+            tokio::time::sleep(std::time::Duration::from_millis(100)).await;
+        }
+        false
+    }
+
+    /// A taker who left the pay-bond screen still loses the take when the
+    /// bond lapses (#849): the daemon says nothing, so the window closes at
+    /// its deadline without the screen's countdown or the 30-minute sweep.
+    #[tokio::test]
+    async fn a_taken_bond_window_closes_at_its_deadline_on_its_own() {
+        let db = bond_test_db().await;
+        let order_id = uuid::Uuid::new_v4().to_string();
+        let deadline = crate::rt::unix_now() + 1;
+        let mut rx = trade_updates_tx().subscribe();
+
+        persist_confirmed_take(&bonded_taker_row(&order_id, BOND_BOLT11, Some(deadline))).await;
+
+        assert!(db.get_trade_by_order_id(&order_id).await.unwrap().is_some());
+        assert!(
+            row_gone_within(db, &order_id, std::time::Duration::from_secs(5)).await,
+            "the take outlived its bond's deadline"
+        );
+        assert_eq!(
+            drain_reasoned(&mut rx, &order_id),
+            vec![(
+                crate::api::types::OrderStatus::Expired,
+                Some(crate::api::types::TradeUpdateReason::BondExpired)
+            )]
+        );
+    }
+
     /// A maker's row parked on its bond, as `create_order` persists it.
     fn bonded_maker_row(
         order_id: &str,
