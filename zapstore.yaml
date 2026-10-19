@@ -7,7 +7,7 @@ description: |
   Key Features:
 
     - Non-custodial: Your keys stay on your device — no exchange ever holds your funds
-    - Privacy-first: End-to-end encrypted over Nostr — NIP-44 direct messages with the Mostro daemon and NIP-59 Gift Wrap for peer-to-peer chat
+    - Privacy-first: End-to-end encrypted over Nostr — NIP-44 for messages with the Mostro daemon and for peer-to-peer chat
     - Lightning-native: All Bitcoin settlements happen via Lightning invoices, with Nostr Wallet Connect (NWC) support for automated invoicing
     - Hierarchical Key Management: BIP-32 / BIP-39 key derivation with a unique key per trade
     - Censorship-resistant: Built on Nostr — no central server or domain to block
@@ -46,7 +46,6 @@ supported_nips:
     - "17"
     - "44"
     - "47"
-    - "59"
     - "69"
 metadata_sources:
     - github
