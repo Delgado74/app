@@ -891,7 +891,7 @@ class _TradeDetailScreenState extends ConsumerState<TradeDetailScreen>
                     CounterpartReputationRow(
                       rating: peerRating,
                       reviews: trade!.peerReviews ?? 0,
-                      days: trade.peerDaysOnMostro,
+                      since: trade.peerFirstTrade,
                       counterpartIsBuyer: !isBuyer,
                     ),
                   ],

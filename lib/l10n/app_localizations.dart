@@ -3078,36 +3078,6 @@ abstract class AppLocalizations {
   /// **'Take order'**
   String get rangeAmountTakeAction;
 
-  /// Title of the counterpart reputation card when the taker is the buyer
-  ///
-  /// In en, this message translates to:
-  /// **'Buyer reputation'**
-  String get buyerReputation;
-
-  /// Title of the counterpart reputation card when the taker is the seller
-  ///
-  /// In en, this message translates to:
-  /// **'Seller reputation'**
-  String get sellerReputation;
-
-  /// Reputation stat label: rating
-  ///
-  /// In en, this message translates to:
-  /// **'rating'**
-  String get ratingStatLabel;
-
-  /// Reputation stat label: trades
-  ///
-  /// In en, this message translates to:
-  /// **'trades'**
-  String get tradesStatLabel;
-
-  /// Reputation stat label: days active
-  ///
-  /// In en, this message translates to:
-  /// **'days active'**
-  String get daysActiveStatLabel;
-
   /// Shown when a fixed-sats order amount is outside the node min/max order amount
   ///
   /// In en, this message translates to:
@@ -3534,18 +3504,6 @@ abstract class AppLocalizations {
   /// **'Market price'**
   String get marketPriceCaption;
 
-  /// Unit word after the trade count in the order-book reputation row
-  ///
-  /// In en, this message translates to:
-  /// **'{count, plural, =1{trade} other{trades}}'**
-  String reputationTradesLabel(int count);
-
-  /// Unit word after the active-days count in the order-book reputation row
-  ///
-  /// In en, this message translates to:
-  /// **'{count, plural, =1{day} other{days}}'**
-  String reputationDaysLabel(int count);
-
   /// Sort caption on the order-book filter row; must describe the ordering actually applied (newest first)
   ///
   /// In en, this message translates to:
@@ -3599,12 +3557,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'New'**
   String get reputationNew;
-
-  /// Replaces the trade count on an order-book card when the maker has no trades yet
-  ///
-  /// In en, this message translates to:
-  /// **'no trades'**
-  String get reputationNoTrades;
 
   /// Bottom navigation label for the order book tab (short)
   ///
@@ -4140,18 +4092,6 @@ abstract class AppLocalizations {
   /// **'Seller'**
   String get tradeRoleSeller;
 
-  /// Number of trades on the reputation row
-  ///
-  /// In en, this message translates to:
-  /// **'{count, plural, =1{1 trade} other{{count} trades}}'**
-  String reputationTradesCount(int count);
-
-  /// Account age on the reputation row
-  ///
-  /// In en, this message translates to:
-  /// **'{count, plural, =1{1 day on Mostro} other{{count} days on Mostro}}'**
-  String reputationDaysOnMostro(int count);
-
   /// Primary action of the buyer once the fiat is sent
   ///
   /// In en, this message translates to:
@@ -4349,18 +4289,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Buyer'**
   String get counterpartyBuyer;
-
-  /// Completed trades of the maker on the counterparty card
-  ///
-  /// In en, this message translates to:
-  /// **'{count, plural, =1{{count} trade} other{{count} trades}}'**
-  String counterpartyTrades(int count);
-
-  /// Seniority of the maker on the counterparty card
-  ///
-  /// In en, this message translates to:
-  /// **'{count, plural, =1{{count} day on Mostro} other{{count} days on Mostro}}'**
-  String counterpartyDaysOnMostro(int count);
 
   /// Payment-method row label when the taker buys BTC
   ///
@@ -6036,12 +5964,6 @@ abstract class AppLocalizations {
   /// **'You receive'**
   String get invoiceYouGetLabel;
 
-  /// Counterpart reputation when they have no rated trade (instead of 0.0 stars)
-  ///
-  /// In en, this message translates to:
-  /// **'no trades'**
-  String get invoiceNoTrades;
-
   /// 13a primary action
   ///
   /// In en, this message translates to:
@@ -7446,17 +7368,17 @@ abstract class AppLocalizations {
   /// **'Your reputation'**
   String get myReputationTitle;
 
-  /// Number of ratings the user has received, on their own reputation card
+  /// How many ratings a user has received, wherever their reputation shows (DS-L10N-5); zero reads as none
   ///
   /// In en, this message translates to:
-  /// **'{count, plural, =1{1 rating} other{{count} ratings}}'**
-  String myReputationReviews(int count);
+  /// **'{count, plural, =0{no ratings} =1{1 rating} other{{count} ratings}}'**
+  String reputationRatingsCount(int count);
 
-  /// Date of the user's first trade on their reputation card; date is a localized month and year
+  /// Month of a user's first trade, wherever their reputation shows (DS-L10N-5); date is a localized month and year
   ///
   /// In en, this message translates to:
   /// **'since {date}'**
-  String myReputationSince(String date);
+  String reputationSince(String date);
 
   /// Own reputation card when the node has no ratings for the user
   ///
@@ -7667,12 +7589,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Import into this Mostro'**
   String get reputationImportConfirm;
-
-  /// Import reputation screen: the figures of a checked attestation. {rating} is already formatted for the locale
-  ///
-  /// In en, this message translates to:
-  /// **'{reviews, plural, =1{1 rating received} other{{reviews} ratings received}}, {rating} on average, {days, plural, =1{trading for 1 day} other{trading for {days} days}}'**
-  String reputationFigures(int reviews, String rating, int days);
 
   /// Under the figures: imported reputation is merged with the one on this node
   ///

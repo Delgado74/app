@@ -256,10 +256,14 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String filtersActiveCount(int count) {
+    final intl.NumberFormat countNumberFormat = intl
+        .NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count filtres actifs',
+      other: '$countString filtres actifs',
       one: '1 filtre actif',
     );
     return '$_temp0';
@@ -615,10 +619,14 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String nodeStatusOnline(int count) {
+    final intl.NumberFormat countNumberFormat = intl
+        .NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count ordres',
+      other: '$countString ordres',
       one: '1 ordre',
     );
     return 'En ligne · $_temp0';
@@ -1074,11 +1082,15 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String aboutBondClaimWindowValue(int count) {
+    final intl.NumberFormat countNumberFormat = intl
+        .NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count jours',
-      one: '$count jour',
+      other: '$countString jours',
+      one: '$countString jour',
     );
     return '$_temp0';
   }
@@ -1722,21 +1734,6 @@ class AppLocalizationsFr extends AppLocalizations {
   String get rangeAmountTakeAction => 'Prendre l\'ordre';
 
   @override
-  String get buyerReputation => 'Réputation de l\'acheteur';
-
-  @override
-  String get sellerReputation => 'Réputation du vendeur';
-
-  @override
-  String get ratingStatLabel => 'note';
-
-  @override
-  String get tradesStatLabel => 'transactions';
-
-  @override
-  String get daysActiveStatLabel => 'jours actifs';
-
-  @override
   String orderAmountOutOfRange(int min, int max) {
     return 'Le montant doit être compris entre $min et $max sats pour ce nœud Mostro';
   }
@@ -1797,10 +1794,14 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String paymentMethodsChosenCount(int count) {
+    final intl.NumberFormat countNumberFormat = intl
+        .NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count sélectionnés',
+      other: '$countString sélectionnés',
       one: '1 sélectionné',
       zero: 'aucun sélectionné',
     );
@@ -1933,10 +1934,14 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String selectStarTooltip(int count) {
+    final intl.NumberFormat countNumberFormat = intl
+        .NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: 'Sélectionner $count étoiles',
+      other: 'Sélectionner $countString étoiles',
       one: 'Sélectionner 1 étoile',
     );
     return '$_temp0';
@@ -2015,37 +2020,19 @@ class AppLocalizationsFr extends AppLocalizations {
   String get marketPriceCaption => 'Prix du marché';
 
   @override
-  String reputationTradesLabel(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: 'transactions',
-      one: 'transaction',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String reputationDaysLabel(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: 'jours',
-      one: 'jour',
-    );
-    return '$_temp0';
-  }
-
-  @override
   String get sortNewest => 'Plus récents';
 
   @override
   String ordersCount(int count) {
+    final intl.NumberFormat countNumberFormat = intl
+        .NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count ordres',
-      one: '$count ordre',
+      other: '$countString ordres',
+      one: '$countString ordre',
     );
     return '$_temp0';
   }
@@ -2072,9 +2059,6 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get reputationNew => 'Nouveau';
-
-  @override
-  String get reputationNoTrades => 'aucune transaction';
 
   @override
   String get bottomNavBook => 'Carnet';
@@ -2104,10 +2088,14 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String viewEarlierEvents(int count) {
+    final intl.NumberFormat countNumberFormat = intl
+        .NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: 'Voir $count événements précédents',
+      other: 'Voir $countString événements précédents',
       one: 'Voir 1 événement précédent',
     );
     return '$_temp0';
@@ -2127,10 +2115,14 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String notificationDeletedSnack(int count) {
+    final intl.NumberFormat countNumberFormat = intl
+        .NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count notifications supprimées',
+      other: '$countString notifications supprimées',
       one: 'Notification supprimée',
     );
     return '$_temp0';
@@ -2189,10 +2181,14 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String notificationsBellUnread(int count) {
+    final intl.NumberFormat countNumberFormat = intl
+        .NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: 'Notifications, $count non lues',
+      other: 'Notifications, $countString non lues',
       one: 'Notifications, 1 non lue',
     );
     return '$_temp0';
@@ -2200,10 +2196,14 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String drawerBadgeNewCount(int count) {
+    final intl.NumberFormat countNumberFormat = intl
+        .NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count nouveaux',
+      other: '$countString nouveaux',
       one: '1 nouveau',
     );
     return '$_temp0';
@@ -2261,11 +2261,15 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String aboutDaysValue(int count) {
+    final intl.NumberFormat countNumberFormat = intl
+        .NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count jours',
-      one: '$count jour',
+      other: '$countString jours',
+      one: '$countString jour',
     );
     return '$_temp0';
   }
@@ -2372,10 +2376,14 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String tradeChatNewMessages(int count) {
+    final intl.NumberFormat countNumberFormat = intl
+        .NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count nouveaux messages',
+      other: '$countString nouveaux messages',
       one: '1 nouveau message',
     );
     return '$_temp0';
@@ -2425,28 +2433,6 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get tradeRoleSeller => 'Vendeur';
-
-  @override
-  String reputationTradesCount(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count transactions',
-      one: '$count transaction',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String reputationDaysOnMostro(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count jours sur Mostro',
-      one: '$count jour sur Mostro',
-    );
-    return '$_temp0';
-  }
 
   @override
   String get tradeFiatSentAction => 'J\'ai envoyé le paiement';
@@ -2567,28 +2553,6 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get counterpartyBuyer => 'Acheteur';
-
-  @override
-  String counterpartyTrades(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count transactions',
-      one: '$count transaction',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String counterpartyDaysOnMostro(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count jours sur Mostro',
-      one: '$count jour sur Mostro',
-    );
-    return '$_temp0';
-  }
 
   @override
   String get takeOrderPayWithLabel => 'Vous payez avec';
@@ -2759,10 +2723,15 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String pushStatusCleanupPending(int count) {
+    final intl.NumberFormat countNumberFormat = intl
+        .NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: 'Désactivées — suppression de $count inscriptions push en attente',
+      other:
+          'Désactivées — suppression de $countString inscriptions push en attente',
       one: 'Désactivées — suppression de 1 inscription push en attente',
     );
     return '$_temp0';
@@ -2777,10 +2746,14 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String pushStatusRegistered(int count) {
+    final intl.NumberFormat countNumberFormat = intl
+        .NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: 'Enregistré pour $count transactions',
+      other: 'Enregistré pour $countString transactions',
       one: 'Enregistré pour 1 transaction',
     );
     return '$_temp0';
@@ -2902,11 +2875,15 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String aboutFieldCount(int count) {
+    final intl.NumberFormat countNumberFormat = intl
+        .NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count champs',
-      one: '$count champ',
+      other: '$countString champs',
+      one: '$countString champ',
     );
     return '$_temp0';
   }
@@ -3621,9 +3598,6 @@ class AppLocalizationsFr extends AppLocalizations {
   String get invoiceYouGetLabel => 'Vous recevez';
 
   @override
-  String get invoiceNoTrades => 'aucune transaction';
-
-  @override
   String get invoiceSendButton => 'Envoyer la facture';
 
   @override
@@ -3799,10 +3773,14 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String chatCardMessage(int count) {
+    final intl.NumberFormat countNumberFormat = intl
+        .NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count nouveaux messages de votre contrepartie',
+      other: '$countString nouveaux messages de votre contrepartie',
       one: '1 nouveau message de votre contrepartie',
     );
     return '$_temp0';
@@ -3810,10 +3788,14 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String chatCardSolverMessage(int count) {
+    final intl.NumberFormat countNumberFormat = intl
+        .NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count nouveaux messages du médiateur du litige',
+      other: '$countString nouveaux messages du médiateur du litige',
       one: '1 nouveau message du médiateur du litige',
     );
     return '$_temp0';
@@ -3833,10 +3815,14 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String recoveredTradesMessage(int count) {
+    final intl.NumberFormat countNumberFormat = intl
+        .NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: 'Compte importé. $count transactions récupérées',
+      other: 'Compte importé. $countString transactions récupérées',
       one: 'Compte importé. 1 transaction récupérée',
       zero: 'Compte importé. Vous n\'aviez aucune transaction en cours',
     );
@@ -3852,10 +3838,14 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String paymentMethodsSelectedCount(int count) {
+    final intl.NumberFormat countNumberFormat = intl
+        .NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count moyens sélectionnés',
+      other: '$countString moyens sélectionnés',
       one: '1 moyen sélectionné',
       zero: 'Sélectionnez au moins un moyen',
     );
@@ -3941,11 +3931,15 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String restoreStageFound(int count) {
+    final intl.NumberFormat countNumberFormat = intl
+        .NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count ordres trouvés',
-      one: '$count ordre trouvé',
+      other: '$countString ordres trouvés',
+      one: '$countString ordre trouvé',
     );
     return '$_temp0';
   }
@@ -4000,11 +3994,15 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String restoreActionNotice(int count) {
+    final intl.NumberFormat countNumberFormat = intl
+        .NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: 'Vous avez $count ordres actifs qui attendent votre action',
-      one: 'Vous avez $count ordre actif qui attend votre action',
+      other: 'Vous avez $countString ordres actifs qui attendent votre action',
+      one: 'Vous avez $countString ordre actif qui attend votre action',
     );
     return '$_temp0';
   }
@@ -4515,18 +4513,23 @@ class AppLocalizationsFr extends AppLocalizations {
   String get myReputationTitle => 'Votre réputation';
 
   @override
-  String myReputationReviews(int count) {
+  String reputationRatingsCount(int count) {
+    final intl.NumberFormat countNumberFormat = intl
+        .NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count notes',
+      other: '$countString notes',
       one: '1 note',
+      zero: 'aucune note',
     );
     return '$_temp0';
   }
 
   @override
-  String myReputationSince(String date) {
+  String reputationSince(String date) {
     return 'depuis $date';
   }
 
@@ -4658,31 +4661,6 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get reputationImportConfirm => 'Importer sur ce Mostro';
-
-  @override
-  String reputationFigures(int reviews, String rating, int days) {
-    final intl.NumberFormat reviewsNumberFormat = intl
-        .NumberFormat.decimalPattern(localeName);
-    final String reviewsString = reviewsNumberFormat.format(reviews);
-    final intl.NumberFormat daysNumberFormat = intl.NumberFormat.decimalPattern(
-      localeName,
-    );
-    final String daysString = daysNumberFormat.format(days);
-
-    String _temp0 = intl.Intl.pluralLogic(
-      reviews,
-      locale: localeName,
-      other: '$reviewsString évaluations reçues',
-      one: '$reviewsString évaluation reçue',
-    );
-    String _temp1 = intl.Intl.pluralLogic(
-      days,
-      locale: localeName,
-      other: 'actif depuis $daysString jours',
-      one: 'actif depuis $daysString jour',
-    );
-    return '$_temp0, $rating en moyenne, $_temp1';
-  }
 
   @override
   String get reputationFiguresNote =>
@@ -4818,10 +4796,14 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String payoutOutcomeFailedAttempts(int count) {
+    final intl.NumberFormat countNumberFormat = intl
+        .NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: 'Échec après $count essais',
+      other: 'Échec après $countString essais',
       one: 'Échec après 1 essai',
     );
     return '$_temp0';
@@ -4882,10 +4864,14 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String invoicePayoutFailedAttempts(String destination, int count) {
+    final intl.NumberFormat countNumberFormat = intl
+        .NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: 'Le paiement à $destination a échoué après $count essais.',
+      other: 'Le paiement à $destination a échoué après $countString essais.',
       one: 'Le paiement à $destination a échoué après 1 essai.',
     );
     return '$_temp0';
