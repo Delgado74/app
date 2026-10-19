@@ -2784,6 +2784,12 @@ abstract class AppLocalizations {
   /// **'Order taken'**
   String get tradeStepOrderTaken;
 
+  /// Timeline step 1 while the user's own order is still in the book and nobody has taken it; once taken the same step reads tradeStepOrderTaken
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for a taker'**
+  String get tradeStepWaitingTaker;
+
   /// Trade screen timeline, step 2 for the buyer: the seller locks the sats (the seller's version is tradeStepInvoiceSeller)
   ///
   /// In en, this message translates to:

@@ -447,6 +447,7 @@
   "tradeTimerEscrowCancellingSeller": "Mostro sta per annullare l'operazione. I tuoi sats restano nel tuo wallet.",
   "tradeTimerEscrowDisputing": "Sta per essere aperta una disputa.",
   "tradeStepOrderTaken": "Ordine preso",
+  "tradeStepWaitingTaker": "In attesa di una controparte",
   "tradeStepInvoiceBuyer": "Il venditore blocca i sats",
   "tradeStepInvoiceSeller": "Blocchi i sats",
   "tradeStepFiatBuyer": "Invii il pagamento fiat",

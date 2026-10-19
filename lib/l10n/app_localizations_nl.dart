@@ -1553,6 +1553,9 @@ class AppLocalizationsNl extends AppLocalizations {
   String get tradeStepOrderTaken => 'Order geaccepteerd';
 
   @override
+  String get tradeStepWaitingTaker => 'Wacht op een tegenpartij';
+
+  @override
   String get tradeStepInvoiceBuyer => 'De verkoper zet de sats vast';
 
   @override
