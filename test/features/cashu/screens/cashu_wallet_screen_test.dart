@@ -11,6 +11,7 @@ import 'package:mostro/features/cashu/providers/cashu_wallet_provider.dart';
 import 'package:mostro/features/cashu/screens/cashu_wallet_screen.dart';
 import 'package:mostro/l10n/app_localizations.dart';
 import 'package:mostro/shared/widgets/mostro_modal.dart';
+import 'package:mostro/shared/widgets/mostro_qr.dart';
 import 'package:mostro/src/rust/api/types.dart';
 
 import '../../../support/provider_harness.dart';
@@ -613,11 +614,26 @@ void main() {
       expect(find.text("I've sent it"), findsNothing);
     });
 
+    testWidgets('a token is a Mostro QR without a logo: it is no node\'s',
+        (tester) async {
+      await _pump(tester, status: _status(connected: true, balance: 100));
+
+      await tester.tap(find.text('Send'));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField), '10');
+      await tester.tap(find.text('Confirm'));
+      await tester.pumpAndSettle();
+
+      final qr = tester.widget<MostroQr>(find.byType(MostroQr));
+      expect(qr.data, 'cashuBtesttoken');
+      expect(qr.logo, isNull);
+    });
+
     testWidgets('a token too large for a QR is shown as text, never as an error',
         (tester) async {
       // A cdk token from many small proofs runs to tens of KB; a QR holds
       // ~2.9 KB. The dialog must degrade to the copyable text, not paint
-      // qr_flutter's exception on the one dialog showing the user's money.
+      // the encoder's exception on the one dialog showing the user's money.
       final huge = 'cashuB${'A' * 4096}';
       await _pump(
         tester,

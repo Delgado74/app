@@ -38,6 +38,11 @@ class NodeAvatar extends StatelessWidget {
   /// themes, so its centre takes [NodeSelectorPalette.light].
   final NodeSelectorPalette? palette;
 
+  /// One decode width for every size: the node selector and a QR's centre
+  /// share the image cache's entry, so the picture is fetched once, not once
+  /// per screen. Sharp up to 42 dp at 3x.
+  static const int _cacheWidth = 128;
+
   @override
   Widget build(BuildContext context) {
     final pal = palette ?? NodeSelectorPalette.of(context);
@@ -70,7 +75,7 @@ class NodeAvatar extends StatelessWidget {
         width: size,
         height: size,
         fit: BoxFit.cover,
-        cacheWidth: (size * 3).round(),
+        cacheWidth: _cacheWidth,
         errorBuilder: (_, __, ___) => fallback,
       ),
     );
