@@ -4255,11 +4255,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'The send failed and the wallet could not confirm the funds are back. Sync with the mint before trying again.';
 
   @override
-  String get cashuSendChoiceBody =>
-      'Export ecash as a token for another Cashu wallet, or use it to pay a Lightning invoice.';
-
-  @override
-  String get cashuSendEcashOption => 'Ecash token';
+  String get cashuSendEcashOption => 'Ecash';
 
   @override
   String get cashuSendLightningOption => 'Lightning';

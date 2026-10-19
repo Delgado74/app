@@ -4294,11 +4294,7 @@ class AppLocalizationsNl extends AppLocalizations {
       'Het versturen is mislukt en de wallet kon niet bevestigen dat het geld terug is. Synchroniseer met de mint voordat je het opnieuw probeert.';
 
   @override
-  String get cashuSendChoiceBody =>
-      'Exporteer ecash als token voor een andere Cashu-wallet, of betaal er een Lightning-factuur mee.';
-
-  @override
-  String get cashuSendEcashOption => 'Ecash-token';
+  String get cashuSendEcashOption => 'Ecash';
 
   @override
   String get cashuSendLightningOption => 'Lightning';

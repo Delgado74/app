@@ -4284,11 +4284,7 @@ class AppLocalizationsEs extends AppLocalizations {
       'El envío falló y la billetera no pudo confirmar que los fondos volvieron. Sincroniza con el mint antes de intentar de nuevo.';
 
   @override
-  String get cashuSendChoiceBody =>
-      'Exporta ecash como un token para otra billetera Cashu, o úsalo para pagar una factura Lightning.';
-
-  @override
-  String get cashuSendEcashOption => 'Token de ecash';
+  String get cashuSendEcashOption => 'Ecash';
 
   @override
   String get cashuSendLightningOption => 'Lightning';

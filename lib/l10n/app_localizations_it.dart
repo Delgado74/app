@@ -4294,11 +4294,7 @@ class AppLocalizationsIt extends AppLocalizations {
       'L\'invio non è riuscito e il portafoglio non ha potuto confermare che i fondi siano tornati. Sincronizza con la mint prima di riprovare.';
 
   @override
-  String get cashuSendChoiceBody =>
-      'Esporta ecash come token per un altro portafoglio Cashu, oppure usalo per pagare una fattura Lightning.';
-
-  @override
-  String get cashuSendEcashOption => 'Token ecash';
+  String get cashuSendEcashOption => 'Ecash';
 
   @override
   String get cashuSendLightningOption => 'Lightning';

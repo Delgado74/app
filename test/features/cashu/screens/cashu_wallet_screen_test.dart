@@ -1169,11 +1169,26 @@ void main() {
 
       await tester.tap(find.text('Send'));
       await tester.pumpAndSettle();
-      expect(find.text('Ecash token'), findsOneWidget);
+
+      // A dialog, like the rest of the screen, with two rows of equal weight,
+      // each with its icon — no primary button that would rank one option
+      // over the other (DS-CMP-2); Cancel is the only button.
+      expect(find.byType(MostroDialog), findsOneWidget);
+      expect(find.text('Ecash'), findsOneWidget);
       expect(find.text('Lightning'), findsOneWidget);
+      expect(find.byIcon(Icons.toll_outlined), findsOneWidget);
+      expect(find.byIcon(Icons.bolt), findsOneWidget);
+      expect(
+        find.descendant(
+          of: find.byType(MostroDialog),
+          matching: find.byType(FilledButton),
+        ),
+        findsNothing,
+      );
+      expect(find.text('Cancel'), findsOneWidget);
 
       // Ecash is the token flow it always was.
-      await tester.tap(find.text('Ecash token'));
+      await tester.tap(find.text('Ecash'));
       await tester.pumpAndSettle();
       expect(find.text('Amount in sats'), findsOneWidget);
     });

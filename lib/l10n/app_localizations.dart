@@ -7110,16 +7110,10 @@ abstract class AppLocalizations {
   /// **'The send failed and the wallet could not confirm the funds are back. Sync with the mint before trying again.'**
   String get cashuErrorSendUnresolved;
 
-  /// Cashu wallet — Send dialog body: choose between exporting a token and paying a Lightning invoice
-  ///
-  /// In en, this message translates to:
-  /// **'Export ecash as a token for another Cashu wallet, or use it to pay a Lightning invoice.'**
-  String get cashuSendChoiceBody;
-
   /// Cashu wallet — Send dialog: export ecash as a token
   ///
   /// In en, this message translates to:
-  /// **'Ecash token'**
+  /// **'Ecash'**
   String get cashuSendEcashOption;
 
   /// Cashu wallet — Send dialog: pay a Lightning invoice from the wallet

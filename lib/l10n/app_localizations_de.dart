@@ -4307,11 +4307,7 @@ class AppLocalizationsDe extends AppLocalizations {
       'Das Senden ist fehlgeschlagen und die Wallet konnte nicht bestätigen, dass das Guthaben zurück ist. Synchronisiere mit der Mint, bevor du es erneut versuchst.';
 
   @override
-  String get cashuSendChoiceBody =>
-      'Exportiere Ecash als Token für eine andere Cashu-Wallet oder bezahle damit eine Lightning-Rechnung.';
-
-  @override
-  String get cashuSendEcashOption => 'Ecash-Token';
+  String get cashuSendEcashOption => 'Ecash';
 
   @override
   String get cashuSendLightningOption => 'Lightning';

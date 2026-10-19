@@ -4314,11 +4314,7 @@ class AppLocalizationsPt extends AppLocalizations {
       'O envio falhou e a carteira não conseguiu confirmar que os fundos voltaram. Sincronize com o mint antes de tentar novamente.';
 
   @override
-  String get cashuSendChoiceBody =>
-      'Exporte ecash como token para outra carteira Cashu ou use-o para pagar uma fatura Lightning.';
-
-  @override
-  String get cashuSendEcashOption => 'Token de ecash';
+  String get cashuSendEcashOption => 'Ecash';
 
   @override
   String get cashuSendLightningOption => 'Lightning';

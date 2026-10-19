@@ -143,6 +143,11 @@ class _CashuWalletScreenState extends ConsumerState<CashuWalletScreen> {
   /// Send: ecash as a token, or — when the mint melts to Lightning — a
   /// Lightning payment. Without that capability the choice is not offered and
   /// Send goes straight to the token, as before.
+  ///
+  /// A dialog like every other one on this screen, with the two options as
+  /// rows of equal weight rather than as a primary and a secondary button,
+  /// which would read as "accept" and "cancel" (DS-CMP-2). Cancel is the way
+  /// out, as in the Receive dialog.
   Future<void> _send(CashuWalletStatus status, int balanceSats) async {
     if (status.canSendLightning) {
       final l10n = AppLocalizations.of(context);
@@ -152,17 +157,25 @@ class _CashuWalletScreenState extends ConsumerState<CashuWalletScreen> {
           builder:
               (dialogContext) => MostroDialog(
                 title: l10n.cashuSendButton,
-                body: l10n.cashuSendChoiceBody,
-                secondary: ModalAction(
-                  label: l10n.cashuSendEcashOption,
-                  onPressed:
-                      () => Navigator.of(dialogContext).pop(_SendKind.ecash),
+                content: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    _SendKindRow(
+                      icon: Icons.toll_outlined,
+                      label: l10n.cashuSendEcashOption,
+                      kind: _SendKind.ecash,
+                    ),
+                    _SendKindRow(
+                      icon: Icons.bolt,
+                      label: l10n.cashuSendLightningOption,
+                      kind: _SendKind.lightning,
+                    ),
+                  ],
                 ),
-                primary: ModalAction(
-                  label: l10n.cashuSendLightningOption,
-                  onPressed:
-                      () =>
-                          Navigator.of(dialogContext).pop(_SendKind.lightning),
+                secondary: ModalAction(
+                  label: l10n.cancel,
+                  onPressed: () => Navigator.of(dialogContext).pop(),
                 ),
               ),
         ),
@@ -886,6 +899,32 @@ class _ReceiveDialogState extends State<_ReceiveDialog> {
 
 /// What Send does with the ecash.
 enum _SendKind { ecash, lightning }
+
+/// One option of the Send dialog: its icon and name. The whole row is the
+/// target, and tapping it is the choice — the same rows as the chat's attach
+/// sheet.
+class _SendKindRow extends StatelessWidget {
+  const _SendKindRow({
+    required this.icon,
+    required this.label,
+    required this.kind,
+  });
+
+  final IconData icon;
+  final String label;
+  final _SendKind kind;
+
+  @override
+  Widget build(BuildContext context) {
+    final book = OrderBookPalette.of(context);
+    return ListTile(
+      contentPadding: const EdgeInsets.symmetric(horizontal: 4),
+      leading: Icon(icon, color: book.limeIcon),
+      title: Text(label, style: TextStyle(color: book.textPrimary)),
+      onTap: () => Navigator.of(context).pop(kind),
+    );
+  }
+}
 
 /// The Lightning invoice to pay: the field, Paste and Scan QR as its links —
 /// the same way in as the Receive dialog — then Cancel and Continue.
