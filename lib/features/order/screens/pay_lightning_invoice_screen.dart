@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:qr_flutter/qr_flutter.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -21,6 +20,7 @@ import 'package:mostro/features/order/widgets/explanatory_note.dart';
 import 'package:mostro/features/order/widgets/invoice_clock.dart';
 import 'package:mostro/features/order/widgets/invoice_widgets.dart';
 import 'package:mostro/features/order/widgets/order_detail_cards.dart';
+import 'package:mostro/features/order/widgets/order_node_qr.dart';
 import 'package:mostro/features/settings/providers/nwc_provider.dart';
 import 'package:mostro/features/trades/providers/trades_providers.dart'
     show refreshTrades, tradeInfoProvider;
@@ -462,7 +462,7 @@ class _PayLightningInvoiceScreenState
                       // the settlement against.
                       automationId: AutomationIds.payInvoiceText,
                       automationLabel: invoice,
-                      child: _qr(l10n, invoice),
+                      child: _qr(l10n, invoice, node: peer.order.nodePubkey),
                     ),
                     if (remaining != null) ...[
                       const SizedBox(height: 12),
@@ -520,30 +520,18 @@ class _PayLightningInvoiceScreenState
     child: body,
   );
 
-  /// 168 dp of code inside a 12 dp white quiet zone. The tight box also
-  /// answers the page's intrinsic-height pass, which `QrImageView` (built on
-  /// a `LayoutBuilder`) cannot.
-  Widget _qr(AppLocalizations l10n, String invoice) => Center(
-    child: SizedBox.square(
-      dimension: 168 + 2 * 12,
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          // design-check: ignore DS-COL-1 — a QR code must be pure black on white to scan
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(14),
-        ),
-        child: QrImageView(
+  /// 168 dp of code inside the Mostro QR's white quiet zone, the order's node
+  /// in its centre (#851). Its fixed size also answers the page's
+  /// intrinsic-height pass.
+  Widget _qr(AppLocalizations l10n, String invoice, {required String node}) =>
+      Center(
+        child: OrderNodeQr(
           data: invoice,
+          nodePubkey: node,
           size: 168,
-          padding: EdgeInsets.zero,
-          // design-check: ignore DS-COL-1 — a QR code must be pure black on white to scan
-          backgroundColor: Colors.white,
           semanticsLabel: l10n.invoiceQrSemantics(invoice),
         ),
-      ),
-    ),
-  );
+      );
 
   /// What both payment paths show once the sats are on their way and only
   /// mostrod's confirmation is missing. Shared so the wallet branch and the
