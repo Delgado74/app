@@ -423,18 +423,25 @@ Rules:
   elapses without a lock, the row is set to `Expired`, a `TradeUpdate { status:
   Expired, reason: BondExpired }` is emitted **before** the row is wiped, and the order
   is restored to the local book only if the wire still reports it `pending`. For a
-  taker that runs **at the deadline, wherever the user is** (#849). Every write of a
+  taker that runs **at the deadline, whatever screen is open** (#849), while the app
+  process runs; a suspended app closes it when it resumes. Every write of a
   taker's window whose deadline is still ahead arms a one-shot wake-up for it
   (`watch_bond_window`), and so does the stale sweep for a window it finds open, as after a
-  restart. Past the deadline the wake-up closes the window only on the book's proof:
+  restart. Past the deadline the wake-up closes the window only on the daemon's public proof:
   - The take never moved the order off `pending` on the book (§2.7: others can still take
-    it). When its node cancels the last unpaid taker bond on the order, at that deadline,
-    the daemon republishes the order: a new `pending` revision. Such a revision dated no
-    more than a minute before the deadline is the proof. While another taker's bond is
-    still unpaid there is no republish, and the wake-up waits for it.
+    it). When its node cancels the last unpaid taker bond on the order, the daemon
+    republishes the order: a new `pending` revision. A revision newer than the bond
+    invoice itself (its bolt11 timestamp, on the same node's clock) is the proof. One no
+    newer is the order as it was taken, however short the window. While another taker's bond
+    is still unpaid there is no republish, and the wake-up waits for it.
   - A take published (`in-progress`) means a bond locked: the wake-up leaves the row to the
     daemon's messages.
-  - With no such revision yet it looks again every few seconds, for up to ten minutes.
+  - The revision is read from the book while the node the window was armed on is the
+    active one and the book holds the order, under the order's revision guard. Otherwise
+    it is read from the relays: after a node switch, or a restart before the order's feed
+    replayed.
+  - With no proof yet it looks again every few seconds, for up to ten minutes. Then it
+    stops, and the window is the stale sweep's, as on a node that never republished.
 
   The row's own "unpaid" cannot be trusted there: a bond paid just before the deadline
   reads unpaid until the daemon's next message, and a wipe would drop that message. The

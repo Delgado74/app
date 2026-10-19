@@ -6051,21 +6051,16 @@ fn bond_watch_deadline(trade: &crate::api::types::TradeInfo, now: i64) -> Option
     bond_deadline(trade).filter(|at| *at >= now)
 }
 
-/// How long before a taker's bond deadline a `pending` republish may be
-/// dated and still be that bond's lapse: the daemon republishes when its
-/// node cancels the expired invoice, a little either side of the expiry.
-const LAPSE_REPUBLISH_SLACK_SECS: i64 = 60;
-
-/// How often a watcher past its deadline looks at the book again, and for
-/// how long; after that the window is the sweep's.
+/// How often a watcher past its deadline looks again, and for how long;
+/// after that it stops, and the window is the stale sweep's.
 const LAPSE_RECHECK_SECS: u64 = 5;
 const LAPSE_PROOF_PATIENCE_SECS: i64 = 10 * 60;
 
 /// What the book says about a taker's bond window past its deadline.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum TakerLapse {
-    /// The daemon republished the order, still `pending`, at the deadline:
-    /// the bond lapsed.
+    /// The daemon republished the order, still `pending`, after the bond
+    /// was issued: the bond lapsed.
     Lapsed,
     /// The order was taken or closed: a bond locked, or the order ended,
     /// and the daemon's messages say which. Not the watcher's to close.
@@ -6074,29 +6069,29 @@ enum TakerLapse {
     Unproven,
 }
 
-/// [`TakerLapse`] from the book's latest public view of the order (`wire`:
-/// when it was published, and its status). A take parked on its bond never
-/// leaves `pending` on the book (others can still take the order), and
-/// mostrod sends the taker nothing when the bond lapses. But once its node
-/// cancels the last unpaid taker bond on the order, at that `deadline`, it
-/// republishes the order: a new `pending` revision. One from well before
-/// the deadline is the order as it was taken, or another taker's lapse.
-fn taker_lapse(deadline: i64, wire: Option<(i64, OrderStatus)>) -> TakerLapse {
+/// [`TakerLapse`] from the order's latest public view (`wire`: when it was
+/// published, and its status). A take parked on its bond never leaves
+/// `pending` on the book (others can still take the order), and mostrod
+/// sends the taker nothing when the bond lapses. But once its node cancels
+/// the last unpaid taker bond on the order it republishes the order: a new
+/// `pending` revision, newer than the bond invoice (`issued`, its bolt11
+/// timestamp, on the same node's clock). One no newer is the order as it
+/// was taken, however short the bond's window.
+fn taker_lapse(issued: i64, wire: Option<(i64, OrderStatus)>) -> TakerLapse {
     match wire {
-        Some((at, OrderStatus::Pending)) if at >= deadline - LAPSE_REPUBLISH_SLACK_SECS => {
-            TakerLapse::Lapsed
-        }
+        Some((at, OrderStatus::Pending)) if at > issued => TakerLapse::Lapsed,
         Some((_, OrderStatus::Pending)) | None => TakerLapse::Unproven,
         Some(_) => TakerLapse::Moved,
     }
 }
 
-/// One look at `order_id`'s taker window past its `deadline` (#849):
-/// `Some(closed)` once there is nothing more to wait for, `None` to look
-/// again. The row is closed only on the book's proof that the bond lapsed:
-/// a bond paid just before the deadline reads unpaid on the row until the
-/// daemon's next message, which a wipe would then drop.
-async fn settle_lapsed_take(order_id: &str, deadline: i64) -> Option<bool> {
+/// One look at `order_id`'s taker window past its `deadline` (#849), armed
+/// while `node` was the active node: `Some(closed)` once there is nothing
+/// more to wait for, `None` to look again. The row is closed only on the
+/// daemon's public proof that the bond lapsed: a bond paid just before the
+/// deadline reads unpaid on the row until the daemon's next message, which
+/// a wipe would then drop.
+async fn settle_lapsed_take(order_id: &str, deadline: i64, node: &str) -> Option<bool> {
     let Some(db) = crate::db::app_db::db() else {
         return Some(false);
     };
@@ -6107,11 +6102,35 @@ async fn settle_lapsed_take(order_id: &str, deadline: i64) -> Option<bool> {
     if bond_watch_deadline(&row, i64::MIN) != Some(deadline) {
         return Some(false);
     }
-    match taker_lapse(deadline, wire_revision_whole(order_id).await) {
+    let Some(issued) = row
+        .bond
+        .as_ref()
+        .and_then(|bond| bond.invoice.as_deref())
+        .and_then(crate::api::invoice::bolt11_issued_at)
+    else {
+        return Some(false);
+    };
+    match taker_lapse(issued, lapse_view(order_id, node).await) {
         TakerLapse::Lapsed => Some(close_expired_bond_trade(&row, crate::rt::unix_now()).await),
         TakerLapse::Moved => Some(false),
         TakerLapse::Unproven => None,
     }
+}
+
+/// `order_id`'s newest public revision from `node`, the node its window
+/// was armed on: from the book while `node` is the active node and the book
+/// holds the order, from the relays otherwise — after a node switch the
+/// book is another node's, and after a restart it may not have replayed
+/// the order yet.
+async fn lapse_view(order_id: &str, node: &str) -> Option<(i64, OrderStatus)> {
+    if node == active_mostro_pubkey() {
+        if let Some(view) = wire_revision_whole(order_id).await {
+            return Some(view);
+        }
+    }
+    fetch_public_order_revision_from(node, order_id)
+        .await
+        .map(|(at, order)| (at, order.status))
 }
 
 /// [`OrderBook::wire_revision`] read under `order_id`'s revision guard. An
@@ -6147,12 +6166,17 @@ fn watch_bond_window_from(trade: &crate::api::types::TradeInfo, now: i64) {
         return;
     }
     let order_id = trade.order.id.clone();
+    // The node the bond was asked on; its republish is the proof.
+    let node = active_mostro_pubkey();
     crate::rt::spawn(async move {
         // A window has lapsed once the clock is past its deadline.
         while let Some(secs) = grace_check_delay(deadline + 1, crate::rt::unix_now()) {
             crate::rt::time::sleep(crate::rt::time::Duration::from_secs(secs)).await;
         }
-        while settle_lapsed_take(&order_id, deadline).await.is_none() {
+        while settle_lapsed_take(&order_id, deadline, &node)
+            .await
+            .is_none()
+        {
             if crate::rt::unix_now() > deadline + LAPSE_PROOF_PATIENCE_SECS {
                 return;
             }
@@ -9002,10 +9026,16 @@ fn public_lookup_slots() -> &'static tokio::sync::Semaphore {
 /// The daemon's newest public event for `order_id`, as an order with the time
 /// of that revision.
 async fn fetch_public_order_revision(order_id: &str) -> Option<(i64, OrderInfo)> {
+    fetch_public_order_revision_from(&active_mostro_pubkey(), order_id).await
+}
+
+/// [`fetch_public_order_revision`] from the node `node` (hex pubkey), which
+/// need not be the active one.
+async fn fetch_public_order_revision_from(node: &str, order_id: &str) -> Option<(i64, OrderInfo)> {
     // Never closed, so acquiring only waits.
     let _slot = public_lookup_slots().acquire().await.ok()?;
     let pool = crate::api::nostr::get_pool().ok()?;
-    let mostro_pubkey = nostr_sdk::prelude::PublicKey::from_hex(&active_mostro_pubkey()).ok()?;
+    let mostro_pubkey = nostr_sdk::prelude::PublicKey::from_hex(node).ok()?;
     let filter = crate::nostr::order_events::trade_order_filter(&mostro_pubkey, order_id);
     let events = match pool
         .client()
@@ -22240,40 +22270,91 @@ mod tests {
         assert!(db.get_trade_by_order_id(&paid).await.unwrap().is_some());
     }
 
+    /// When [`BOND_BOLT11`] was issued: its bolt11 timestamp.
+    const BOND_BOLT11_AT: i64 = 1_496_314_658;
+
     /// A take parked on its bond stays `pending` on the book; when the last
-    /// unpaid taker bond on the order lapses, at that bond's deadline, the
-    /// daemon republishes it, still `pending`. Only such a revision proves
-    /// the lapse; a take published means a bond locked (the daemon's
-    /// messages say whose), and nothing new yet means look again.
+    /// unpaid taker bond on the order lapses the daemon republishes it,
+    /// still `pending`. Only a revision newer than the bond invoice itself
+    /// proves the lapse, whatever the window's length: anything older is
+    /// the order as it was taken. A take published means a bond locked (the
+    /// daemon's messages say whose), and nothing new yet means look again.
     #[test]
-    fn only_the_books_republish_proves_a_lapse() {
-        let deadline = 10_000;
+    fn only_a_republish_newer_than_the_bond_proves_a_lapse() {
+        let issued = 10_000;
 
         assert_eq!(
-            taker_lapse(deadline, Some((deadline, OrderStatus::Pending))),
+            taker_lapse(issued, Some((issued + 60, OrderStatus::Pending))),
             TakerLapse::Lapsed
         );
         assert_eq!(
-            taker_lapse(
-                deadline,
-                Some((deadline - LAPSE_REPUBLISH_SLACK_SECS, OrderStatus::Pending))
-            ),
+            taker_lapse(issued, Some((issued + 1, OrderStatus::Pending))),
             TakerLapse::Lapsed
         );
         assert_eq!(
-            taker_lapse(deadline, Some((deadline - 600, OrderStatus::Pending))),
+            taker_lapse(issued, Some((issued, OrderStatus::Pending))),
             TakerLapse::Unproven,
-            "a pending revision from before the deadline is someone else's lapse, or the take's own"
+            "a revision no newer than the bond is the order as it was taken"
         );
-        assert_eq!(taker_lapse(deadline, None), TakerLapse::Unproven);
         assert_eq!(
-            taker_lapse(deadline, Some((deadline + 5, OrderStatus::InProgress))),
+            taker_lapse(issued, Some((issued - 30, OrderStatus::Pending))),
+            TakerLapse::Unproven
+        );
+        assert_eq!(taker_lapse(issued, None), TakerLapse::Unproven);
+        assert_eq!(
+            taker_lapse(issued, Some((issued + 5, OrderStatus::InProgress))),
             TakerLapse::Moved
         );
         assert_eq!(
-            taker_lapse(deadline, Some((deadline + 5, OrderStatus::Canceled))),
+            taker_lapse(issued, Some((issued + 5, OrderStatus::Canceled))),
             TakerLapse::Moved
         );
+    }
+
+    /// A node with short bond windows (Codex on #850): with a 60-second
+    /// invoice, the order's revision from just before the take sits within
+    /// a minute of the deadline. It is still older than the bond, so it
+    /// proves nothing, and the paid-but-unconfirmed take survives it.
+    #[tokio::test]
+    async fn a_short_window_is_not_closed_by_the_revision_it_was_taken_from() {
+        let db = bond_test_db().await;
+        let order_id = uuid::Uuid::new_v4().to_string();
+        let deadline = BOND_BOLT11_AT + 60;
+        db.save_trade(&bonded_taker_row(&order_id, BOND_BOLT11, Some(deadline)))
+            .await
+            .unwrap();
+        book_saw(&order_id, OrderStatus::Pending, BOND_BOLT11_AT - 10).await;
+        let node = crate::config::active_mostro_pubkey();
+
+        assert_eq!(settle_lapsed_take(&order_id, deadline, &node).await, None);
+        assert!(db.get_trade_by_order_id(&order_id).await.unwrap().is_some());
+
+        book_saw(&order_id, OrderStatus::Pending, deadline).await;
+        assert_eq!(
+            settle_lapsed_take(&order_id, deadline, &node).await,
+            Some(true)
+        );
+    }
+
+    /// After a node switch the active book is another node's (Codex on
+    /// #850): it is never read for a window armed on the first node, which
+    /// is asked through the relays instead (no pool here, so no answer).
+    #[tokio::test]
+    async fn a_window_from_another_node_is_never_judged_by_the_active_book() {
+        let db = bond_test_db().await;
+        let order_id = uuid::Uuid::new_v4().to_string();
+        let deadline = crate::rt::unix_now() - 5;
+        db.save_trade(&bonded_taker_row(&order_id, BOND_BOLT11, Some(deadline)))
+            .await
+            .unwrap();
+        book_saw(&order_id, OrderStatus::Pending, deadline).await;
+        let other_node = "11".repeat(32);
+
+        assert_eq!(
+            settle_lapsed_take(&order_id, deadline, &other_node).await,
+            None
+        );
+        assert!(db.get_trade_by_order_id(&order_id).await.unwrap().is_some());
     }
 
     /// A bond paid just before its deadline whose progression message is
@@ -22294,10 +22375,17 @@ mod tests {
         }
         book_saw(&taken, OrderStatus::InProgress, deadline + 1).await;
         book_saw(&lapsed, OrderStatus::Pending, deadline).await;
+        let node = crate::config::active_mostro_pubkey();
 
-        assert_eq!(settle_lapsed_take(&unproven, deadline).await, None);
-        assert_eq!(settle_lapsed_take(&taken, deadline).await, Some(false));
-        assert_eq!(settle_lapsed_take(&lapsed, deadline).await, Some(true));
+        assert_eq!(settle_lapsed_take(&unproven, deadline, &node).await, None);
+        assert_eq!(
+            settle_lapsed_take(&taken, deadline, &node).await,
+            Some(false)
+        );
+        assert_eq!(
+            settle_lapsed_take(&lapsed, deadline, &node).await,
+            Some(true)
+        );
 
         assert!(db.get_trade_by_order_id(&unproven).await.unwrap().is_some());
         assert!(db.get_trade_by_order_id(&taken).await.unwrap().is_some());
