@@ -37,6 +37,9 @@ pub struct MintCapabilities {
     pub nut11_p2pk: bool,
     pub nut12_dleq: bool,
     pub has_sat_keyset: bool,
+    pub nut05_bolt11: bool,
+    pub melt_min_sats: Option<u64>,
+    pub melt_max_sats: Option<u64>,
 }
 
 #[cfg(target_arch = "wasm32")]
@@ -97,6 +100,9 @@ impl CashuWallet {
             nut11_p2pk: false,
             nut12_dleq: false,
             has_sat_keyset: false,
+            nut05_bolt11: false,
+            melt_min_sats: None,
+            melt_max_sats: None,
         };
         NONE
     }

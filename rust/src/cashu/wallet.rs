@@ -5,7 +5,7 @@ use std::sync::Arc;
 use anyhow::{anyhow, bail, Result};
 use cdk::amount::SplitTarget;
 use cdk::nuts::nut10::SpendingConditions;
-use cdk::nuts::{CurrencyUnit, KeySetInfo, Proof, Token};
+use cdk::nuts::{CurrencyUnit, KeySetInfo, MeltMethodSettings, PaymentMethod, Proof, Token};
 use cdk::wallet::types::KeysetLoadPolicy;
 use cdk::wallet::{ReceiveOptions, SendMemo, SendOptions, Wallet};
 use cdk::Amount;
@@ -29,6 +29,18 @@ pub struct MintCapabilities {
     pub nut12_dleq: bool,
     /// A keyset denominated in `sat`. Mostro amounts are satoshis.
     pub has_sat_keyset: bool,
+    /// NUT-05 — melt to a `bolt11` invoice in `sat`, and melting not
+    /// `disabled`. What "send to Lightning" needs (phase C3b-1).
+    ///
+    /// **Optional, unlike the four above**: it is not part of
+    /// [`Self::is_usable`]. An escrow never melts, so a mint without it still
+    /// trades; the wallet screen hides "to Lightning" instead of refusing the
+    /// mint.
+    pub nut05_bolt11: bool,
+    /// The smallest melt the mint accepts, in sats, when it states one.
+    pub melt_min_sats: Option<u64>,
+    /// The largest melt the mint accepts, in sats, when it states one.
+    pub melt_max_sats: Option<u64>,
 }
 
 impl MintCapabilities {
@@ -143,6 +155,7 @@ impl CashuWallet {
             .await
             .map_err(|e| anyhow!("CashuMintUnreachable: {e}"))?;
 
+        let melt = bolt11_sat_melt(&info.nuts.nut05);
         Ok(MintCapabilities {
             nut07_state_check: info.nuts.nut07.supported,
             nut11_p2pk: info.nuts.nut11.supported,
@@ -150,6 +163,9 @@ impl CashuWallet {
             has_sat_keyset: keysets
                 .iter()
                 .any(|k| k.unit == CurrencyUnit::Sat && k.active == Some(true)),
+            nut05_bolt11: melt.is_some(),
+            melt_min_sats: melt.as_ref().and_then(|m| m.min_amount).map(u64::from),
+            melt_max_sats: melt.as_ref().and_then(|m| m.max_amount).map(u64::from),
         })
     }
 
@@ -350,7 +366,7 @@ impl CashuWallet {
     /// for the quote to read `Paid` before minting.
     #[cfg(test)]
     pub(crate) async fn mint_for_test(&self, amount_sats: u64) -> Result<u64> {
-        use cdk::nuts::{MintQuoteState, PaymentMethod};
+        use cdk::nuts::MintQuoteState;
 
         let quote = self
             .inner
@@ -420,6 +436,16 @@ impl CashuWallet {
         log::info!("[cashu] swept spent proofs ({unresolved} sat still unresolved)");
         Ok(())
     }
+}
+
+/// The mint's NUT-05 settings for melting `sat` to a `bolt11` invoice, or
+/// `None` when it does not offer that — melting `disabled` included, whatever
+/// methods it still lists.
+fn bolt11_sat_melt(nut05: &cdk::nuts::nut05::Settings) -> Option<MeltMethodSettings> {
+    if nut05.disabled {
+        return None;
+    }
+    nut05.get_settings(&CurrencyUnit::Sat, &PaymentMethod::BOLT11)
 }
 
 /// The sats held in the proof store at `db_path` — at `mint_url`, or across
@@ -619,6 +645,7 @@ mod tests {
             nut11_p2pk: true,
             nut12_dleq: true,
             has_sat_keyset: true,
+            ..MintCapabilities::default()
         };
 
         // Assert
@@ -784,6 +811,75 @@ mod tests {
             unit: None,
         });
         assert!(parse_received_token(&unitless.to_string()).is_ok());
+    }
+
+    #[test]
+    fn a_mint_without_melt_still_trades() {
+        // Arrange — every escrow requirement, and no NUT-05.
+        let no_melt = MintCapabilities {
+            nut07_state_check: true,
+            nut11_p2pk: true,
+            nut12_dleq: true,
+            has_sat_keyset: true,
+            nut05_bolt11: false,
+            melt_min_sats: None,
+            melt_max_sats: None,
+        };
+
+        // Assert — "send to Lightning" is hidden, the mint is not refused.
+        assert!(no_melt.is_usable());
+        assert!(no_melt.missing().is_empty());
+    }
+
+    #[test]
+    fn melting_counts_only_for_bolt11_in_sats_and_not_disabled() {
+        use cdk::nuts::nut05::Settings;
+
+        let method = |method: PaymentMethod, unit: CurrencyUnit| MeltMethodSettings {
+            method,
+            unit,
+            method_name: None,
+            min_amount: Some(Amount::from(10)),
+            max_amount: Some(Amount::from(500_000)),
+            options: None,
+        };
+        let offering =
+            |methods: Vec<MeltMethodSettings>, disabled: bool| Settings { methods, disabled };
+
+        // bolt11 in sats: offered, with its limits.
+        let melt = bolt11_sat_melt(&offering(
+            vec![method(PaymentMethod::BOLT11, CurrencyUnit::Sat)],
+            false,
+        ))
+        .expect("bolt11/sat is a melt this wallet can use");
+        assert_eq!(melt.min_amount, Some(Amount::from(10)));
+        assert_eq!(melt.max_amount, Some(Amount::from(500_000)));
+
+        // The same method with melting disabled, another unit, another
+        // method, or nothing listed: not offered.
+        for (settings, why) in [
+            (
+                offering(vec![method(PaymentMethod::BOLT11, CurrencyUnit::Sat)], true),
+                "disabled",
+            ),
+            (
+                offering(
+                    vec![method(PaymentMethod::BOLT11, CurrencyUnit::Usd)],
+                    false,
+                ),
+                "usd only",
+            ),
+            (
+                offering(
+                    vec![method(PaymentMethod::BOLT12, CurrencyUnit::Sat)],
+                    false,
+                ),
+                "bolt12 only",
+            ),
+            (offering(Vec::new(), false), "nothing listed"),
+        ] {
+            assert!(bolt11_sat_melt(&settings).is_none(), "{why}");
+        }
     }
 
     #[test]
