@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:mostro/core/app_theme.dart';
@@ -19,15 +18,13 @@ void main() {
     required int reviews,
     required int days,
     required bool counterpartIsBuyer,
+    Locale locale = const Locale('en'),
   }) async {
     await tester.pumpWidget(
       MaterialApp(
         theme: buildDarkTheme(),
-        localizationsDelegates: const [
-          AppLocalizations.delegate,
-          GlobalMaterialLocalizations.delegate,
-          GlobalWidgetsLocalizations.delegate,
-        ],
+        locale: locale,
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         home: Scaffold(
           body: CounterpartReputationRow(
@@ -57,6 +54,23 @@ void main() {
     expect(find.text(en.reputationNew), findsNothing);
     expect(find.textContaining(en.reputationTradesCount(2)), findsOneWidget);
     expect(find.textContaining(en.reputationDaysOnMostro(1)), findsOneWidget);
+  });
+
+  // The order book shows the same user at 4,97 (DS-L10N-5).
+  testWidgets('the grade keeps its second decimal, as the order book does', (
+    tester,
+  ) async {
+    await pump(
+      tester,
+      rating: 4.97,
+      reviews: 687,
+      days: 1323,
+      counterpartIsBuyer: true,
+      locale: const Locale('es'),
+    );
+
+    expect(find.text('4,97'), findsOneWidget);
+    expect(find.text('5.0'), findsNothing);
   });
 
   testWidgets('a seller nobody rated reads New instead of a grade', (

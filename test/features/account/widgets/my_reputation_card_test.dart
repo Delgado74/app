@@ -91,6 +91,20 @@ void main() {
     expect(find.text('4,8'), findsOneWidget);
   });
 
+  // The order book shows the same user at 4,97 (DS-L10N-5).
+  testWidgets('keeps the second decimal, as the order book does', (
+    tester,
+  ) async {
+    await _pump(
+      tester,
+      state: MyReputationState(reputation: _rep(rating: 4.97)),
+      locale: const Locale('es'),
+    );
+
+    expect(find.text('4,97'), findsOneWidget);
+    expect(find.text('5,0'), findsNothing);
+  });
+
   testWidgets('falls back to the day count when the node sends no since', (
     tester,
   ) async {

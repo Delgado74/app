@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:mostro/core/app_theme.dart';
@@ -17,15 +16,13 @@ void main() {
     required int reviews,
     required int days,
     required bool counterpartIsBuyer,
+    Locale locale = const Locale('en'),
   }) async {
     await tester.pumpWidget(
       MaterialApp(
         theme: buildDarkTheme(),
-        localizationsDelegates: const [
-          AppLocalizations.delegate,
-          GlobalMaterialLocalizations.delegate,
-          GlobalWidgetsLocalizations.delegate,
-        ],
+        locale: locale,
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         home: Scaffold(
           body: PeerReputationCard(
@@ -57,14 +54,25 @@ void main() {
     expect(find.text('Buyer reputation'), findsNothing);
   });
 
-  testWidgets('rounds the rating to one decimal and shows reviews and days',
+  testWidgets('shows the rating as the order book does, with reviews and days',
       (tester) async {
     await pump(tester,
         rating: 4.375, reviews: 4, days: 64, counterpartIsBuyer: true);
 
-    expect(find.text('4.4'), findsOneWidget); // 4.375 → one decimal
+    expect(find.text('4.38'), findsOneWidget); // two decimals (DS-L10N-5)
     expect(find.text('4'), findsOneWidget); // reviews
     expect(find.text('64'), findsOneWidget); // days
+  });
+
+  testWidgets('formats the rating for the locale', (tester) async {
+    await pump(tester,
+        rating: 4.97,
+        reviews: 4,
+        days: 64,
+        counterpartIsBuyer: true,
+        locale: const Locale('es'));
+
+    expect(find.text('4,97'), findsOneWidget);
   });
 
   testWidgets('shows all-zeros verbatim rather than hiding a new/private taker',
@@ -72,8 +80,7 @@ void main() {
     await pump(tester,
         rating: 0.0, reviews: 0, days: 0, counterpartIsBuyer: true);
 
-    expect(find.text('0.0'), findsOneWidget); // rating, not blank
-    // Two zero stats (reviews + days) render the same string.
-    expect(find.text('0'), findsNWidgets(2));
+    // Rating, reviews and days all read 0: nothing is left blank.
+    expect(find.text('0'), findsNWidgets(3));
   });
 }
