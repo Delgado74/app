@@ -1,4 +1,5 @@
 import 'package:flutter/widgets.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:mostro/features/account/restore/restore_run.dart';
 import 'package:mostro/features/account/restore/restore_sheet.dart';
@@ -26,3 +27,10 @@ Future<void> restoreAfterNodeSwitch(
   if (private || !context.mounted) return;
   await showRestoreSheet(context, run: run());
 }
+
+/// [restoreAfterNodeSwitch], for the screens that switch node through a
+/// provider; a test replaces it.
+final restoreAfterNodeSwitchProvider =
+    Provider<Future<void> Function(BuildContext)>(
+      (ref) => restoreAfterNodeSwitch,
+    );

@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 
 import 'package:mostro/core/app_routes.dart';
 import 'package:mostro/core/app_theme.dart';
+import 'package:mostro/features/account/restore/restore_after_switch.dart';
 import 'package:mostro/features/deep_links/models/order_link_rules.dart';
 import 'package:mostro/features/deep_links/providers/order_link_providers.dart';
 import 'package:mostro/features/deep_links/widgets/order_link_node_dialog.dart';
@@ -159,6 +160,10 @@ class _OrderLinkScreenState extends ConsumerState<OrderLinkScreen> {
       AppLocalizations.of(context).nodeSwitchedSuccess(nodeName),
     );
     setState(() => _changingTo = null);
+    // The account on the new node first, as a switch from Settings does
+    // (#813); the order opens once the restore sheet closes.
+    await ref.read(restoreAfterNodeSwitchProvider)(context);
+    if (!mounted) return;
     await _open(afterNodeChange: true);
   }
 
