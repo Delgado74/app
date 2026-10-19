@@ -321,7 +321,8 @@
     "description": "Screen-reader addition to the order-book filter chip when filters narrow the book; the chip itself shows only the number in a badge. Read after the chip label, e.g. 'Filter, 2 filters on'",
     "placeholders": {
       "count": {
-        "type": "int"
+        "type": "int",
+        "format": "decimalPattern"
       }
     }
   },
@@ -792,7 +793,8 @@
     "description": "Availability line of a node card",
     "placeholders": {
       "count": {
-        "type": "int"
+        "type": "int",
+        "format": "decimalPattern"
       }
     }
   },
@@ -1376,7 +1378,8 @@
     "description": "About screen — bond payout claim window value with a pluralized day count",
     "placeholders": {
       "count": {
-        "type": "int"
+        "type": "int",
+        "format": "decimalPattern"
       }
     }
   },
@@ -2154,26 +2157,6 @@
   "@rangeAmountTakeAction": {
     "description": "Answer of the range amount dialog, opened from the take-order button. Same wording as takeOrderButton (DS-CMP-26)."
   },
-  "buyerReputation": "Buyer reputation",
-  "@buyerReputation": {
-    "description": "Title of the counterpart reputation card when the taker is the buyer"
-  },
-  "sellerReputation": "Seller reputation",
-  "@sellerReputation": {
-    "description": "Title of the counterpart reputation card when the taker is the seller"
-  },
-  "ratingStatLabel": "rating",
-  "@ratingStatLabel": {
-    "description": "Reputation stat label: rating"
-  },
-  "tradesStatLabel": "trades",
-  "@tradesStatLabel": {
-    "description": "Reputation stat label: trades"
-  },
-  "daysActiveStatLabel": "days active",
-  "@daysActiveStatLabel": {
-    "description": "Reputation stat label: days active"
-  },
   "orderAmountOutOfRange": "Amount must be between {min} and {max} sats for this Mostro node",
   "@orderAmountOutOfRange": {
     "description": "Shown when a fixed-sats order amount is outside the node min/max order amount",
@@ -2272,7 +2255,8 @@
     "description": "Counter in the payment-methods card header. Says \"selected\" (glossary, DS-L10N-4); the key name predates the glossary",
     "placeholders": {
       "count": {
-        "type": "int"
+        "type": "int",
+        "format": "decimalPattern"
       }
     }
   },
@@ -2521,7 +2505,8 @@
     "description": "Tooltip for a star in the rating selector",
     "placeholders": {
       "count": {
-        "type": "int"
+        "type": "int",
+        "format": "decimalPattern"
       }
     }
   },
@@ -2623,24 +2608,6 @@
   "@marketPriceCaption": {
     "description": "Caption under an order-book card amount"
   },
-  "reputationTradesLabel": "{count, plural, =1{trade} other{trades}}",
-  "@reputationTradesLabel": {
-    "description": "Unit word after the trade count in the order-book reputation row",
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "reputationDaysLabel": "{count, plural, =1{day} other{days}}",
-  "@reputationDaysLabel": {
-    "description": "Unit word after the active-days count in the order-book reputation row",
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
   "sortNewest": "Newest",
   "@sortNewest": {
     "description": "Sort caption on the order-book filter row; must describe the ordering actually applied (newest first)"
@@ -2650,7 +2617,8 @@
     "description": "Number of orders listed on the order-book filter row",
     "placeholders": {
       "count": {
-        "type": "int"
+        "type": "int",
+        "format": "decimalPattern"
       }
     }
   },
@@ -2687,10 +2655,6 @@
   "reputationNew": "New",
   "@reputationNew": {
     "description": "Replaces the rating on an order-book card when the maker has no trades yet"
-  },
-  "reputationNoTrades": "no trades",
-  "@reputationNoTrades": {
-    "description": "Replaces the trade count on an order-book card when the maker has no trades yet"
   },
   "bottomNavBook": "Book",
   "@bottomNavBook": {
@@ -2729,7 +2693,8 @@
     "description": "Notification group action to expand earlier events",
     "placeholders": {
       "count": {
-        "type": "int"
+        "type": "int",
+        "format": "decimalPattern"
       }
     }
   },
@@ -2754,7 +2719,8 @@
     "description": "Snack bar after swiping a notification card away; count is how many notices the card held (issue #610)",
     "placeholders": {
       "count": {
-        "type": "int"
+        "type": "int",
+        "format": "decimalPattern"
       }
     }
   },
@@ -2823,7 +2789,8 @@
     "description": "Notification bell accessibility label with the unread count",
     "placeholders": {
       "count": {
-        "type": "int"
+        "type": "int",
+        "format": "decimalPattern"
       }
     }
   },
@@ -2832,7 +2799,8 @@
     "description": "Drawer menu item badge accessibility hint with the number of new items",
     "placeholders": {
       "count": {
-        "type": "int"
+        "type": "int",
+        "format": "decimalPattern"
       }
     }
   },
@@ -2905,7 +2873,8 @@
     "description": "About screen — a pluralized day count",
     "placeholders": {
       "count": {
-        "type": "int"
+        "type": "int",
+        "format": "decimalPattern"
       }
     }
   },
@@ -3044,7 +3013,8 @@
     "description": "Second line of the trade screen's chat card while it has unread messages; count is the number of unread messages",
     "placeholders": {
       "count": {
-        "type": "int"
+        "type": "int",
+        "format": "decimalPattern"
       }
     }
   },
@@ -3110,24 +3080,6 @@
   "tradeRoleSeller": "Seller",
   "@tradeRoleSeller": {
     "description": "Counterpart role on the reputation row"
-  },
-  "reputationTradesCount": "{count, plural, =1{1 trade} other{{count} trades}}",
-  "@reputationTradesCount": {
-    "description": "Number of trades on the reputation row",
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "reputationDaysOnMostro": "{count, plural, =1{1 day on Mostro} other{{count} days on Mostro}}",
-  "@reputationDaysOnMostro": {
-    "description": "Account age on the reputation row",
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
   },
   "tradeFiatSentAction": "I've sent the payment",
   "@tradeFiatSentAction": {
@@ -3311,24 +3263,6 @@
   "counterpartyBuyer": "Buyer",
   "@counterpartyBuyer": {
     "description": "Role of the maker on the counterparty card when they buy BTC"
-  },
-  "counterpartyTrades": "{count, plural, =1{{count} trade} other{{count} trades}}",
-  "@counterpartyTrades": {
-    "description": "Completed trades of the maker on the counterparty card",
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "counterpartyDaysOnMostro": "{count, plural, =1{{count} day on Mostro} other{{count} days on Mostro}}",
-  "@counterpartyDaysOnMostro": {
-    "description": "Seniority of the maker on the counterparty card",
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
   },
   "takeOrderPayWithLabel": "You pay with",
   "@takeOrderPayWithLabel": {
@@ -3548,7 +3482,8 @@
     "description": "Push is off locally, but the server has not confirmed removing these registrations",
     "placeholders": {
       "count": {
-        "type": "int"
+        "type": "int",
+        "format": "decimalPattern"
       }
     }
   },
@@ -3565,7 +3500,8 @@
     "description": "Status line: how many open trades the push server holds this device's token for",
     "placeholders": {
       "count": {
-        "type": "int"
+        "type": "int",
+        "format": "decimalPattern"
       }
     }
   },
@@ -3725,7 +3661,8 @@
     "description": "About screen — number of node fields listed on the technical data screen",
     "placeholders": {
       "count": {
-        "type": "int"
+        "type": "int",
+        "format": "decimalPattern"
       }
     }
   },
@@ -4149,7 +4086,6 @@
   "@invoiceYouPayLabel": {"description": "13a counterpart card row label for the fiat the buyer pays"},
   "invoiceYouGetLabel": "You receive",
   "@invoiceYouGetLabel": {"description": "13b counterpart card row label for the fiat the seller receives"},
-  "invoiceNoTrades": "no trades",
   "@invoiceNoTrades": {"description": "Counterpart reputation when they have no rated trade (instead of 0.0 stars)"},
   "invoiceSendButton": "Send invoice",
   "@invoiceSendButton": {"description": "13a primary action"},
@@ -4248,9 +4184,9 @@
   "chatCardSolverTitle": "Messages from the resolver",
   "@chatCardSolverTitle": {"description": "Notifications card copy for trades and chat (issue #474)"},
   "chatCardMessage": "{count, plural, =1{1 new message from your counterpart} other{{count} new messages from your counterpart}}",
-  "@chatCardMessage": {"description": "Notifications chat card body; count is the number of unread messages", "placeholders": {"count": {"type": "int"}}},
+  "@chatCardMessage": {"description": "Notifications chat card body; count is the number of unread messages", "placeholders": {"count": {"type": "int", "format": "decimalPattern"}}},
   "chatCardSolverMessage": "{count, plural, =1{1 new message from the dispute resolver} other{{count} new messages from the dispute resolver}}",
-  "@chatCardSolverMessage": {"description": "Notifications chat card body; count is the number of unread messages", "placeholders": {"count": {"type": "int"}}},
+  "@chatCardSolverMessage": {"description": "Notifications chat card body; count is the number of unread messages", "placeholders": {"count": {"type": "int", "format": "decimalPattern"}}},
   "invalidTradeIndexError": "Your account is out of sync with this Mostro node, so it refused the order. Try again in a moment",
   "@invalidTradeIndexError": {"description": "Error shown when the Mostro node refuses a new order or take with CantDo(InvalidTradeIndex) even after the app resynced its trade-key counter and retried once"},
   "invalidFiatCurrencyError": "This Mostro node does not accept that currency, so it refused the order. Pick another currency",
@@ -4258,13 +4194,13 @@
   "recoveringTradesMessage": "Account imported. Recovering your trades from Mostro…",
   "@recoveringTradesMessage": {"description": "Snackbar shown on the Account screen right after a mnemonic import, while the app asks Mostro for the identity's trades in progress"},
   "recoveredTradesMessage": "{count, plural, =0{Account imported. You had no trades in progress} =1{Account imported. 1 trade recovered} other{Account imported. {count} trades recovered}}",
-  "@recoveredTradesMessage": {"description": "Snackbar shown after a mnemonic import once Mostro returned the identity's trades in progress; count is how many orders and disputes came back", "placeholders": {"count": {"type": "int"}}},
+  "@recoveredTradesMessage": {"description": "Snackbar shown after a mnemonic import once Mostro returned the identity's trades in progress; count is how many orders and disputes came back", "placeholders": {"count": {"type": "int", "format": "decimalPattern"}}},
   "recoverTradesFailedMessage": "Account imported, but Mostro did not answer, so your trades in progress were not recovered",
   "@recoverTradesFailedMessage": {"description": "Snackbar shown after a mnemonic import when Mostro did not answer the recovery request; the import itself succeeded"},
   "paymentMethodsChosenLabel": "Selected",
   "@paymentMethodsChosenLabel": {"description": "Label in front of the chips summarising the methods selected so far on the payment-method picker screen (glossary: selected, DS-L10N-4)"},
   "paymentMethodsSelectedCount": "{count, plural, =0{Select at least one method} =1{1 method selected} other{{count} methods selected}}",
-  "@paymentMethodsSelectedCount": {"description": "Count line above the confirm button of the payment-method picker screen", "placeholders": {"count": {"type": "int"}}},
+  "@paymentMethodsSelectedCount": {"description": "Count line above the confirm button of the payment-method picker screen", "placeholders": {"count": {"type": "int", "format": "decimalPattern"}}},
   "paymentMethodsConfirm": "Confirm methods",
   "@paymentMethodsConfirm": {"description": "Button that saves the payment-method selection and closes the picker screen"},
   "paymentMethodAddCustom": "Add custom payment method",
@@ -4310,7 +4246,7 @@
   "restoreStageRequesting": "Requesting your orders",
   "@restoreStageRequesting": {"description": "Restore stage 2 while waiting for the node to answer"},
   "restoreStageFound": "{count, plural, =1{1 order found} other{{count} orders found}}",
-  "@restoreStageFound": {"description": "Restore stage 2 once the node answered; count is every order and dispute it returned", "placeholders": {"count": {"type": "int"}}},
+  "@restoreStageFound": {"description": "Restore stage 2 once the node answered; count is every order and dispute it returned", "placeholders": {"count": {"type": "int", "format": "decimalPattern"}}},
   "restoreStageLoading": "Loading details",
   "@restoreStageLoading": {"description": "Restore stage 3: loading each order's details"},
   "restoreStageNoResponse": "No response",
@@ -4336,7 +4272,7 @@
   "restoreSummaryInProgress": "In progress",
   "@restoreSummaryInProgress": {"description": "Label of the trades-in-progress count in the restore summary"},
   "restoreActionNotice": "{count, plural, =1{You have 1 active order waiting for you} other{You have {count} active orders waiting for you}}",
-  "@restoreActionNotice": {"description": "Restore summary notice: trades waiting for the user's next step", "placeholders": {"count": {"type": "int"}}},
+  "@restoreActionNotice": {"description": "Restore summary notice: trades waiting for the user's next step", "placeholders": {"count": {"type": "int", "format": "decimalPattern"}}},
   "restorePartialNotice": "{missing} of {total} orders couldn't be loaded",
   "@restorePartialNotice": {"description": "Restore summary warning when some orders' details did not load; missing and total are counts", "placeholders": {"missing": {"type": "int"}, "total": {"type": "int"}}},
   "attachSheetTitle": "Send a file",
@@ -4659,18 +4595,19 @@
   "@myReputationTitle": {
     "description": "Title of the Account card showing the user's own reputation on the active node"
   },
-  "myReputationReviews": "{count, plural, =1{1 rating} other{{count} ratings}}",
-  "@myReputationReviews": {
-    "description": "Number of ratings the user has received, on their own reputation card",
+  "reputationRatingsCount": "{count, plural, =0{no ratings} =1{1 rating} other{{count} ratings}}",
+  "@reputationRatingsCount": {
+    "description": "How many ratings a user has received, wherever their reputation shows (DS-L10N-5); zero reads as none",
     "placeholders": {
       "count": {
-        "type": "int"
+        "type": "int",
+        "format": "decimalPattern"
       }
     }
   },
-  "myReputationSince": "since {date}",
-  "@myReputationSince": {
-    "description": "Date of the user's first trade on their reputation card; date is a localized month and year",
+  "reputationSince": "since {date}",
+  "@reputationSince": {
+    "description": "Month of a user's first trade, wherever their reputation shows (DS-L10N-5); date is a localized month and year",
     "placeholders": {
       "date": {
         "type": "String"
@@ -4781,23 +4718,6 @@
   "reputationCheck": "Check",
   "reputationImported": "Your reputation was imported.",
   "reputationImportConfirm": "Import into this Mostro",
-  "reputationFigures": "{reviews, plural, =1{1 rating received} other{{reviews} ratings received}}, {rating} on average, {days, plural, =1{trading for 1 day} other{trading for {days} days}}",
-  "@reputationFigures": {
-    "description": "Import reputation screen: the figures of a checked attestation. {rating} is already formatted for the locale",
-    "placeholders": {
-      "reviews": {
-        "type": "int",
-      "format": "decimalPattern"
-      },
-      "rating": {
-        "type": "String"
-      },
-      "days": {
-        "type": "int",
-      "format": "decimalPattern"
-      }
-    }
-  },
   "reputationFiguresNote": "Imported reputation is added to the one you have here; your counterparts see them merged.",
   "@reputationNodeDoesNotExport": {
     "description": "Reputation portability (#674): the active node does not advertise reputation_issuer, so it cannot export"
@@ -5030,7 +4950,8 @@
     "description": "Trade detail payout card (#823): the node gave up after trying count times",
     "placeholders": {
       "count": {
-        "type": "int"
+        "type": "int",
+        "format": "decimalPattern"
       }
     }
   },
@@ -5117,7 +5038,8 @@
         "type": "String"
       },
       "count": {
-        "type": "int"
+        "type": "int",
+        "format": "decimalPattern"
       }
     }
   },

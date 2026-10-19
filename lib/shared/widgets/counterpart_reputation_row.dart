@@ -7,7 +7,7 @@ import 'package:mostro/shared/utils/rating_format.dart';
 import 'package:mostro/shared/utils/reputation_age.dart';
 
 /// One-row counterpart reputation: the grade on the avatar, the role, and
-/// `2 trades · 1 day on Mostro`. Shared by the trade screen (8b, 8c) and the
+/// `687 ratings · since Mar 2023` (DS-L10N-5). Shared by the trade screen (8b, 8c) and the
 /// take-order detail, so both render identically.
 ///
 /// A counterpart nobody has rated shows `New` in place of the grade. That is
@@ -24,6 +24,7 @@ class CounterpartReputationRow extends StatelessWidget {
 
   final double rating;
   final int reviews;
+
   /// The counterpart's first trade (`peerFirstTrade`, `makerFirstTrade`).
   final DateTime since;
   final bool counterpartIsBuyer;
@@ -111,14 +112,12 @@ class CounterpartReputationRow extends StatelessWidget {
                   TextSpan(
                     children: [
                       ...highlightFigures(
-                        l10n.reputationTradesCount(reviews),
+                        l10n.reputationRatingsCount(reviews),
                         figure,
                       ),
                       const TextSpan(text: ' · '),
                       ...highlightFigures(
-                        l10n.reputationDaysOnMostro(
-                          daysOnMostro(since, fallbackDays: 0),
-                        ),
+                        reputationSinceText(l10n, since),
                         figure,
                       ),
                     ],

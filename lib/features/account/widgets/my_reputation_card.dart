@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 
 import 'package:mostro/core/app_theme.dart';
 import 'package:mostro/features/account/providers/my_reputation_provider.dart';
@@ -74,17 +73,17 @@ class _Figures extends StatelessWidget {
     final book = OrderBookPalette.of(context);
     final l10n = AppLocalizations.of(context);
     final locale = Localizations.localeOf(context).toLanguageTag();
-    final since = reputationSince(reputation.since);
+    final firstTrade = firstTradeDay(
+      reputationSince(reputation.since),
+      fallbackDays: reputation.operatingDays,
+    );
 
     final summary = TextStyle(fontSize: 12, color: book.textSecondary);
     final figure = summary.copyWith(
       color: book.textBody,
       fontWeight: FontWeight.w500,
     );
-    final age =
-        since == null
-            ? l10n.reputationDaysOnMostro(reputation.operatingDays)
-            : l10n.myReputationSince(DateFormat.yMMM(locale).format(since));
+    final age = reputationSinceText(l10n, firstTrade);
 
     return Row(
       children: [
@@ -105,7 +104,7 @@ class _Figures extends StatelessWidget {
             TextSpan(
               children: [
                 ...highlightFigures(
-                  l10n.myReputationReviews(reputation.reviews),
+                  l10n.reputationRatingsCount(reputation.reviews),
                   figure,
                 ),
                 const TextSpan(text: ' · '),

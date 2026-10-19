@@ -58,7 +58,7 @@ Widget invoiceCounterpartRow(
                     trade.peerReviews,
                     l10n.localeName,
                   ) ??
-                  l10n.invoiceNoTrades
+                  l10n.reputationRatingsCount(0)
               : null,
     ),
   );

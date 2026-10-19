@@ -32,7 +32,10 @@ import 'package:mostro/features/trades/providers/trades_providers.dart'
 import 'package:mostro/l10n/app_localizations.dart';
 import 'package:mostro/shared/mascot/mascot_cues.dart';
 import 'package:mostro/shared/utils/countdown.dart';
+import 'package:mostro/shared/utils/reputation_age.dart';
 import 'package:mostro/shared/widgets/countdown_urgency_announcer.dart';
+import 'package:mostro/shared/widgets/counterpart_reputation_row.dart'
+    show highlightFigures;
 import 'package:mostro/src/rust/api/types.dart';
 
 /// What the single button is doing.
@@ -807,9 +810,6 @@ class _CounterpartyCard extends StatelessWidget {
     );
     final isNew = order.tradeCount == 0;
     final figure = TextStyle(color: book.textBody, fontWeight: FontWeight.w500);
-    final trades = formats.decimal.format(order.tradeCount);
-    final daysOnMostro = order.makerDaysOnMostro;
-    final days = formats.decimal.format(daysOnMostro);
 
     return OrderDetailCard(
       padding: const EdgeInsets.all(14),
@@ -875,18 +875,13 @@ class _CounterpartyCard extends StatelessWidget {
                 Text.rich(
                   TextSpan(
                     children: [
-                      if (isNew)
-                        TextSpan(text: l10n.reputationNoTrades)
-                      else
-                        ...figureSpans(
-                          l10n.counterpartyTrades(order.tradeCount),
-                          trades,
-                          figure,
-                        ),
+                      ...highlightFigures(
+                        l10n.reputationRatingsCount(order.tradeCount),
+                        figure,
+                      ),
                       const TextSpan(text: ' · '),
-                      ...figureSpans(
-                        l10n.counterpartyDaysOnMostro(daysOnMostro),
-                        days,
+                      ...highlightFigures(
+                        reputationSinceText(l10n, order.makerFirstTrade),
                         figure,
                       ),
                     ],
