@@ -601,44 +601,58 @@ class _ReputationStrip extends StatelessWidget {
       ),
       child: DefaultTextStyle.merge(
         style: TextStyle(fontSize: 12, color: palette.textSecondary),
-        child: Wrap(
-          spacing: 10,
-          runSpacing: 4,
-          crossAxisAlignment: WrapCrossAlignment.center,
-          children: [
-            Icon(
-              Icons.star_rounded,
-              size: 14,
-              color: order.rating > 0 ? palette.yellow : palette.starEmpty,
-            ),
-            if (isNew)
-              Text(
-                l10n.reputationNew,
-                style: TextStyle(
-                  fontWeight: FontWeight.w600,
-                  color: palette.textNew,
-                ),
-              )
-            else
-              Text(
-                formats.rating.format(order.rating),
-                style: TextStyle(
-                  fontFamily: AppFonts.figures,
-                  fontWeight: FontWeight.w600,
-                  color: palette.textStrong,
-                ),
+        // Rating and count on the left, the age on the right; on a strip too
+        // narrow for both (`desde mar 2023` at 360 dp in Spanish) the age
+        // takes its own line instead of following a dangling separator.
+        child: SizedBox(
+          width: double.infinity,
+          child: Wrap(
+            alignment: WrapAlignment.spaceBetween,
+            spacing: 12,
+            runSpacing: 4,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              Wrap(
+                spacing: 10,
+                runSpacing: 4,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [
+                  Icon(
+                    Icons.star_rounded,
+                    size: 14,
+                    color:
+                        order.rating > 0 ? palette.yellow : palette.starEmpty,
+                  ),
+                  if (isNew)
+                    Text(
+                      l10n.reputationNew,
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        color: palette.textNew,
+                      ),
+                    )
+                  else
+                    Text(
+                      formats.rating.format(order.rating),
+                      style: TextStyle(
+                        fontFamily: AppFonts.figures,
+                        fontWeight: FontWeight.w600,
+                        color: palette.textStrong,
+                      ),
+                    ),
+                  separator,
+                  _Stat(
+                    text: l10n.reputationRatingsCount(order.tradeCount),
+                    palette: palette,
+                  ),
+                ],
               ),
-            separator,
-            _Stat(
-              text: l10n.reputationRatingsCount(order.tradeCount),
-              palette: palette,
-            ),
-            separator,
-            _Stat(
-              text: reputationSinceText(l10n, order.makerFirstTrade),
-              palette: palette,
-            ),
-          ],
+              _Stat(
+                text: reputationSinceText(l10n, order.makerFirstTrade),
+                palette: palette,
+              ),
+            ],
+          ),
         ),
       ),
     );
