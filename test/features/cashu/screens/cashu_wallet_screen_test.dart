@@ -68,6 +68,7 @@ CashuWalletStatus _status({required bool connected, required int? balance}) {
     mintUrl: connected ? 'https://mint.example.com' : null,
     balanceSats: balance == null ? null : BigInt.from(balance),
     missingCapabilities: const [],
+    canSendLightning: false,
   );
 }
 
@@ -494,6 +495,7 @@ void main() {
         mintUrl: 'https://mint.example.com',
         balanceSats: BigInt.parse('9007199254740993'),
         missingCapabilities: const [],
+        canSendLightning: false,
       );
 
       // Act
@@ -950,6 +952,7 @@ void main() {
           mintUrl: 'https://mint.example.com',
           balanceSats: BigInt.from(500),
           missingCapabilities: const [],
+          canSendLightning: false,
         ),
         controller: _FakeController(connectError: 'CashuMintUnreachable'),
       );

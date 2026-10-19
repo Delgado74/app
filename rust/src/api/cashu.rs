@@ -21,7 +21,7 @@ use std::sync::{Arc, OnceLock};
 use tokio::sync::broadcast::error::RecvError;
 use tokio::sync::{broadcast, RwLock};
 
-use crate::api::types::CashuWalletStatus;
+use crate::api::types::{CashuMeltQuote, CashuMeltResult, CashuWalletStatus};
 use crate::cashu::CashuWallet;
 use crate::db::{settings_keys, Storage};
 use crate::mostro::escrow_mode;
@@ -418,6 +418,7 @@ async fn snapshot() -> CashuWalletStatus {
                 .into_iter()
                 .map(str::to_string)
                 .collect(),
+            can_send_lightning: wallet.capabilities().nut05_bolt11,
         },
         None => {
             // Not bound, but a mint may be set that is not answering right
@@ -434,6 +435,7 @@ async fn snapshot() -> CashuWalletStatus {
                 mint_url,
                 balance_sats,
                 missing_capabilities: Vec::new(),
+                can_send_lightning: false,
             }
         }
     }
@@ -611,6 +613,52 @@ pub async fn cashu_sweep_spent_proofs() -> Result<()> {
     wallet.finalize_pending_melts().await?;
     notify().await;
     Ok(())
+}
+
+/// Quote paying the BOLT11 `invoice` from the wallet — phase C3b-1.
+///
+/// Reserves nothing: the quote is priced against the wallet's proofs and
+/// released at once, so the balance is untouched while the user decides.
+///
+/// **Errors**: `CashuNotConnected`, `CashuInvalidInvoice`,
+/// `CashuInvoiceNoAmount` (open-amount invoices are not supported),
+/// `CashuInvoiceExpired`, `CashuMeltUnsupported`, `CashuMeltAmountOutOfRange`,
+/// `CashuMeltQuoteFailed`, `CashuMeltInsufficientFunds`, `CashuMeltFailed`.
+pub async fn cashu_melt_quote(invoice: String) -> Result<CashuMeltQuote> {
+    let quote = active_wallet().await?.melt_quote(&invoice).await?;
+    Ok(CashuMeltQuote {
+        quote_id: quote.quote_id,
+        amount_sats: quote.amount_sats,
+        fee_reserve_sats: quote.fee_reserve_sats,
+        input_fee_sats: quote.input_fee_sats,
+        max_total_sats: quote.max_total_sats,
+        expiry_unix: i64::try_from(quote.expiry_unix).unwrap_or(i64::MAX),
+    })
+}
+
+/// Pay the quote `quote_id` from [`cashu_melt_quote`], provided it costs no
+/// more than `max_total_sats` — the total the user confirmed.
+///
+/// The wallet's change is broadcast after every attempt, failed ones
+/// included: a failure may have gone through cdk's recovery and moved proofs.
+///
+/// **Errors**: `CashuNotConnected`, `CashuMeltQuoteExpired` and
+/// `CashuMeltFeeChanged` (refused before paying — ask for a new quote),
+/// `CashuMeltInsufficientFunds`, `CashuMeltFailed`.
+pub async fn cashu_melt(quote_id: String, max_total_sats: u64) -> Result<CashuMeltResult> {
+    let wallet = active_wallet().await?;
+    let outcome = wallet.melt(&quote_id, max_total_sats).await;
+    notify().await;
+    Ok(match outcome? {
+        crate::cashu::MeltOutcomeInfo::Paid {
+            amount_sats,
+            fee_paid_sats,
+        } => CashuMeltResult::Paid {
+            amount_sats,
+            fee_paid_sats,
+        },
+        crate::cashu::MeltOutcomeInfo::Pending => CashuMeltResult::Pending,
+    })
 }
 
 /// Drop the in-memory wallet. Proofs stay on disk and the wallet's mint stays

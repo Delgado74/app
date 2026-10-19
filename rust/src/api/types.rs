@@ -1337,6 +1337,47 @@ pub struct CashuWalletStatus {
     /// a mint missing any of them is refused at connect, so a non-empty list
     /// here means the wallet is bound to a mint that has since changed.
     pub missing_capabilities: Vec<String>,
+    /// Whether the mint melts to `bolt11` invoices (NUT-05), so the wallet
+    /// can pay one — phase C3b-1. False when not connected. Optional: a mint
+    /// without it is still usable, and the UI hides "to Lightning" instead.
+    pub can_send_lightning: bool,
+}
+
+/// What paying a Lightning invoice from the Cashu wallet costs — phase C3b-1.
+///
+/// Shown for confirmation before anything is spent. Nothing is reserved
+/// while it is on screen; [`crate::api::cashu::cashu_melt`] prices the quote
+/// again and refuses one that now costs more than `max_total_sats`.
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct CashuMeltQuote {
+    /// The mint's quote id, handed back to pay it.
+    pub quote_id: String,
+    /// What the invoice asks for.
+    pub amount_sats: u64,
+    /// The most the mint may spend on Lightning routing; what it does not
+    /// spend comes back to the wallet.
+    pub fee_reserve_sats: u64,
+    /// The mint's input fees on the ecash spent (a swap's included).
+    pub input_fee_sats: u64,
+    /// The most the payment can take from the balance: amount, fee reserve
+    /// and input fees. "Up to", not exact: unspent reserve is returned.
+    pub max_total_sats: u64,
+    /// When the mint stops honouring the quote, unix seconds.
+    pub expiry_unix: i64,
+}
+
+/// How a confirmed payment to a Lightning invoice ended — phase C3b-1.
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub enum CashuMeltResult {
+    /// The invoice is paid. `fee_paid_sats` is what it actually cost beyond
+    /// the invoice: routing plus the mint's input fees.
+    Paid {
+        amount_sats: u64,
+        fee_paid_sats: u64,
+    },
+    /// The mint is still routing the payment. Its ecash stays reserved, and
+    /// the balance settles when the wallet next syncs.
+    Pending,
 }
 
 /// What a seller is about to lock into a Cashu escrow — phase C5.

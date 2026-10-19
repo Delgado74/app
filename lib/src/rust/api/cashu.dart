@@ -81,6 +81,35 @@ Future<String> cashuCreateToken({required BigInt amountSats}) =>
 Future<void> cashuSweepSpentProofs() =>
     RustLib.instance.api.crateApiCashuCashuSweepSpentProofs();
 
+/// Quote paying the BOLT11 `invoice` from the wallet — phase C3b-1.
+///
+/// Reserves nothing: the quote is priced against the wallet's proofs and
+/// released at once, so the balance is untouched while the user decides.
+///
+/// **Errors**: `CashuNotConnected`, `CashuInvalidInvoice`,
+/// `CashuInvoiceNoAmount` (open-amount invoices are not supported),
+/// `CashuInvoiceExpired`, `CashuMeltUnsupported`, `CashuMeltAmountOutOfRange`,
+/// `CashuMeltQuoteFailed`, `CashuMeltInsufficientFunds`, `CashuMeltFailed`.
+Future<CashuMeltQuote> cashuMeltQuote({required String invoice}) =>
+    RustLib.instance.api.crateApiCashuCashuMeltQuote(invoice: invoice);
+
+/// Pay the quote `quote_id` from [`cashu_melt_quote`], provided it costs no
+/// more than `max_total_sats` — the total the user confirmed.
+///
+/// The wallet's change is broadcast after every attempt, failed ones
+/// included: a failure may have gone through cdk's recovery and moved proofs.
+///
+/// **Errors**: `CashuNotConnected`, `CashuMeltQuoteExpired` and
+/// `CashuMeltFeeChanged` (refused before paying — ask for a new quote),
+/// `CashuMeltInsufficientFunds`, `CashuMeltFailed`.
+Future<CashuMeltResult> cashuMelt({
+  required String quoteId,
+  required BigInt maxTotalSats,
+}) => RustLib.instance.api.crateApiCashuCashuMelt(
+  quoteId: quoteId,
+  maxTotalSats: maxTotalSats,
+);
+
 /// Drop the in-memory wallet. Proofs stay on disk and the wallet's mint stays
 /// set — this is a disconnect, not a wipe. A node switch does **not** call it:
 /// the wallet's mint is the user's, not the node's.

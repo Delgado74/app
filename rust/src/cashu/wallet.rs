@@ -1,13 +1,16 @@
 //! Native Cashu wallet over `cdk` — see [`super`] for scope and the wasm split.
 
+use std::collections::HashMap;
 use std::sync::Arc;
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use anyhow::{anyhow, bail, Result};
 use cdk::amount::SplitTarget;
 use cdk::nuts::nut10::SpendingConditions;
+use cdk::nuts::MeltQuoteState;
 use cdk::nuts::{CurrencyUnit, KeySetInfo, MeltMethodSettings, PaymentMethod, Proof, Token};
 use cdk::wallet::types::KeysetLoadPolicy;
-use cdk::wallet::{ReceiveOptions, SendMemo, SendOptions, Wallet};
+use cdk::wallet::{MeltOutcome, PreparedMelt, ReceiveOptions, SendMemo, SendOptions, Wallet};
 use cdk::Amount;
 use cdk_sqlite::WalletSqliteDatabase;
 use std::str::FromStr;
@@ -67,6 +70,43 @@ impl MintCapabilities {
         }
         missing
     }
+}
+
+/// What paying a Lightning invoice from the wallet costs, as quoted by the mint
+/// and priced against the proofs the wallet would spend.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct MeltQuoteInfo {
+    /// The mint's quote, to pay with [`CashuWallet::melt`].
+    pub quote_id: String,
+    /// What the invoice asks for.
+    pub amount_sats: u64,
+    /// The most the mint may spend on Lightning routing. What it does not
+    /// spend comes back as change (NUT-08).
+    pub fee_reserve_sats: u64,
+    /// The mint's input fees: on the melt's inputs and, when the wallet's
+    /// proofs do not add up to the exact amount, on the swap that makes them.
+    pub input_fee_sats: u64,
+    /// The most the payment can take from the balance:
+    /// [`melt_max_total`] of the three above.
+    pub max_total_sats: u64,
+    /// When the mint stops honouring the quote, unix seconds.
+    pub expiry_unix: u64,
+}
+
+/// How a melt the user confirmed ended.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum MeltOutcomeInfo {
+    /// The invoice is paid.
+    Paid {
+        amount_sats: u64,
+        /// What the payment cost beyond the invoice: input and swap fees plus
+        /// the routing fee the mint kept.
+        fee_paid_sats: u64,
+    },
+    /// The mint accepted the payment and is still routing it. The proofs stay
+    /// reserved; [`CashuWallet::finalize_pending_melts`] settles them once
+    /// the mint says how it ended.
+    Pending,
 }
 
 /// A wallet bound to exactly one mint.
@@ -489,6 +529,224 @@ impl CashuWallet {
         }
         Ok(())
     }
+
+    /// Quote paying `invoice` from the wallet, reserving nothing.
+    ///
+    /// The fees are only known once proofs are chosen — cdk computes the
+    /// input fee, and whether a swap is needed, in `prepare_melt` alone — so
+    /// the melt is prepared and then cancelled at once. A prepared melt
+    /// borrows the wallet and cannot outlive this call, and the user reading
+    /// the confirmation must not hold any of the balance hostage.
+    ///
+    /// **Errors** (stable markers): those of [`melt_invoice`],
+    /// `CashuMeltUnsupported` when the mint does not melt to `bolt11`,
+    /// `CashuMeltAmountOutOfRange` outside the mint's limits,
+    /// `CashuMeltQuoteFailed` when the mint does not quote,
+    /// `CashuMeltInsufficientFunds`, `CashuMeltFailed`.
+    pub async fn melt_quote(&self, invoice: &str) -> Result<MeltQuoteInfo> {
+        let (invoice, amount_sats) = melt_invoice(invoice, unix_now())?;
+        melt_gate(&self.capabilities, amount_sats)?;
+
+        let quote = self
+            .inner
+            .melt_quote(PaymentMethod::BOLT11, invoice, None, None)
+            .await
+            .map_err(|e| match e {
+                cdk::Error::AmountOutofLimitRange(..) => {
+                    anyhow!("CashuMeltAmountOutOfRange: {e}")
+                }
+                cdk::Error::UnsupportedPaymentMethod => anyhow!("CashuMeltUnsupported: {e}"),
+                other => anyhow!("CashuMeltQuoteFailed: {other}"),
+            })?;
+
+        let prepared = self
+            .inner
+            .prepare_melt(&quote.id, HashMap::new())
+            .await
+            .map_err(prepare_melt_error)?;
+        let info = quote_info(&prepared);
+        if let Err(e) = prepared.cancel().await {
+            // The proofs stay reserved under a saga in `ProofsReserved`, which
+            // the next connect's recovery rolls back.
+            log::warn!("[cashu] releasing the quoted melt failed: {e}");
+        }
+        let info = info?;
+        log::info!(
+            "[cashu] melt quoted: {} sat, up to {} sat in total",
+            info.amount_sats,
+            info.max_total_sats
+        );
+        Ok(info)
+    }
+
+    /// Pay the quote `quote_id`, provided it costs no more than
+    /// `max_total_sats` — the total the user confirmed.
+    ///
+    /// Prepared again rather than kept from [`Self::melt_quote`]: the fees
+    /// are re-read from the proofs the wallet holds now, and a quote that
+    /// expired or now costs more is cancelled before anything leaves.
+    ///
+    /// **Errors** (stable markers): `CashuMeltQuoteExpired`,
+    /// `CashuMeltFeeChanged` (both refused before paying, nothing spent),
+    /// `CashuMeltInsufficientFunds`, `CashuMeltFailed` (the payment did not
+    /// go through; cdk has already run its recovery, so the proofs are back
+    /// or, when the mint could not say, settled at the next sync).
+    pub async fn melt(&self, quote_id: &str, max_total_sats: u64) -> Result<MeltOutcomeInfo> {
+        let prepared = self
+            .inner
+            .prepare_melt(quote_id, HashMap::new())
+            .await
+            .map_err(prepare_melt_error)?;
+
+        let refusal = if prepared.quote().expiry <= unix_now().as_secs() {
+            Some(anyhow!("CashuMeltQuoteExpired"))
+        } else {
+            match quote_info(&prepared) {
+                Ok(info) if info.max_total_sats > max_total_sats => Some(anyhow!(
+                    "CashuMeltFeeChanged: {} sat over {max_total_sats} sat confirmed",
+                    info.max_total_sats
+                )),
+                Ok(_) => None,
+                Err(e) => Some(e),
+            }
+        };
+        if let Some(refusal) = refusal {
+            if let Err(e) = prepared.cancel().await {
+                log::warn!("[cashu] releasing the refused melt failed: {e}");
+            }
+            return Err(refusal);
+        }
+
+        // Read before `confirm` consumes the handle: cdk's `fee_paid` counts
+        // the melt's inputs only, and the swap that made them was paid too.
+        let swap_fee = u64::from(prepared.swap_fee());
+
+        match prepared.confirm_prefer_async().await {
+            Ok(MeltOutcome::Paid(finalized)) => match finalized.state() {
+                MeltQuoteState::Paid => {
+                    let amount_sats = u64::from(finalized.amount());
+                    let fee_paid_sats = u64::from(finalized.fee_paid()).saturating_add(swap_fee);
+                    log::info!("[cashu] melted {amount_sats} sat ({fee_paid_sats} sat in fees)");
+                    Ok(MeltOutcomeInfo::Paid {
+                        amount_sats,
+                        fee_paid_sats,
+                    })
+                }
+                MeltQuoteState::Pending | MeltQuoteState::Unknown => {
+                    log::info!("[cashu] melt pending");
+                    Ok(MeltOutcomeInfo::Pending)
+                }
+                other => bail!("CashuMeltFailed: payment {other}"),
+            },
+            Ok(MeltOutcome::Pending(_pending)) => {
+                // Dropping the handle leaves the saga recorded as in flight,
+                // which `finalize_pending_melts` settles.
+                log::info!("[cashu] melt pending");
+                Ok(MeltOutcomeInfo::Pending)
+            }
+            Err(cdk::Error::ExpiredQuote(..)) => bail!("CashuMeltQuoteExpired"),
+            Err(e) => bail!("CashuMeltFailed: {e}"),
+        }
+    }
+}
+
+/// [`MeltQuoteInfo`] of a prepared melt.
+///
+/// cdk 0.18.1 (`wallet/melt/saga/mod.rs`): the proofs are chosen to cover
+/// `amount + fee_reserve`, and the input fee, plus the swap fee when they must
+/// be swapped to fit, comes on top — [`PreparedMelt::total_fee`]. Only
+/// [`PreparedMelt::amount`] is not what its name may suggest: it is the
+/// quote's amount, not what the proofs add up to.
+fn quote_info(prepared: &PreparedMelt<'_>) -> Result<MeltQuoteInfo> {
+    let quote = prepared.quote();
+    let amount_sats = u64::from(quote.amount);
+    let fee_reserve_sats = u64::from(quote.fee_reserve);
+    let input_fee_sats = u64::from(prepared.total_fee());
+    let max_total_sats = melt_max_total(amount_sats, fee_reserve_sats, input_fee_sats)
+        .ok_or_else(|| anyhow!("CashuMeltFailed: amount overflow"))?;
+    Ok(MeltQuoteInfo {
+        quote_id: quote.id.clone(),
+        amount_sats,
+        fee_reserve_sats,
+        input_fee_sats,
+        max_total_sats,
+        expiry_unix: quote.expiry,
+    })
+}
+
+/// The most a melt can take from the balance: the invoice, the routing fee
+/// reserve and the mint's input fees. Change from an unspent reserve only
+/// ever lowers it.
+pub(crate) fn melt_max_total(amount: u64, fee_reserve: u64, input_fee: u64) -> Option<u64> {
+    amount.checked_add(fee_reserve)?.checked_add(input_fee)
+}
+
+fn prepare_melt_error(e: cdk::Error) -> anyhow::Error {
+    match e {
+        cdk::Error::InsufficientFunds => anyhow!("CashuMeltInsufficientFunds"),
+        cdk::Error::ExpiredQuote(..) => anyhow!("CashuMeltQuoteExpired"),
+        other => anyhow!("CashuMeltFailed: {other}"),
+    }
+}
+
+/// Refuse, from what the mint advertised at connect, a melt it will not do —
+/// before it is asked for a quote.
+///
+/// **Errors** (stable markers): `CashuMeltUnsupported` when the mint does not
+/// melt `sat` to `bolt11`, `CashuMeltAmountOutOfRange` outside its NUT-05
+/// limits, where it states any.
+fn melt_gate(capabilities: &MintCapabilities, amount_sats: u64) -> Result<()> {
+    if !capabilities.nut05_bolt11 {
+        bail!("CashuMeltUnsupported");
+    }
+    let above_min = capabilities
+        .melt_min_sats
+        .is_none_or(|min| amount_sats >= min);
+    let below_max = capabilities
+        .melt_max_sats
+        .is_none_or(|max| amount_sats <= max);
+    if !(above_min && below_max) {
+        bail!("CashuMeltAmountOutOfRange: {amount_sats} sat");
+    }
+    Ok(())
+}
+
+fn unix_now() -> Duration {
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap_or_default()
+}
+
+/// The invoice the wallet will pay, and its amount in sats, checked before
+/// any mint is asked.
+///
+/// The invoice is handed on lower-cased, with any `lightning:` prefix and
+/// whitespace removed (BOLT11 is case-insensitive). `now` is unix time.
+///
+/// An amount with a fraction of a sat is refused, not rounded: the wallet
+/// holds whole sats, and cdk checks the mint's quote against the invoice's
+/// msat amount *floored* to sats (`wallet/melt/bolt11.rs`, cdk 0.18.1), so
+/// a mint that rounds up — as it must to pay the invoice in full — has its
+/// quote refused anyway, after a round trip. Same rule as
+/// [`crate::api::invoice::whole_sats`].
+///
+/// **Errors** (stable markers): `CashuInvalidInvoice` for anything that is
+/// not a BOLT11 invoice, or one with a fraction of a sat;
+/// `CashuInvoiceNoAmount` for an open-amount invoice; `CashuInvoiceExpired`.
+pub(crate) fn melt_invoice(input: &str, now: Duration) -> Result<(String, u64)> {
+    use lightning_invoice::Bolt11Invoice;
+
+    let invoice = crate::api::invoice::normalize(input).to_ascii_lowercase();
+    let parsed = Bolt11Invoice::from_str(&invoice).map_err(|_| anyhow!("CashuInvalidInvoice"))?;
+    let msat = parsed
+        .amount_milli_satoshis()
+        .ok_or_else(|| anyhow!("CashuInvoiceNoAmount"))?;
+    let sats = crate::api::invoice::whole_sats(Some(msat))
+        .ok_or_else(|| anyhow!("CashuInvalidInvoice: {msat} msat is not whole sats"))?;
+    if parsed.would_expire(now) {
+        bail!("CashuInvoiceExpired");
+    }
+    Ok((invoice, sats))
 }
 
 /// The mint's NUT-05 settings for melting `sat` to a `bolt11` invoice, or

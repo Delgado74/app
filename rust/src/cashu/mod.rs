@@ -25,7 +25,8 @@ mod wallet;
 
 #[cfg(not(target_arch = "wasm32"))]
 pub use wallet::{
-    ensure_receivable, stored_balance, token_mint_url, CashuWallet, MintCapabilities,
+    ensure_receivable, stored_balance, token_mint_url, CashuWallet, MeltOutcomeInfo, MeltQuoteInfo,
+    MintCapabilities,
 };
 
 // ── WASM stub ────────────────────────────────────────────────────────────────
@@ -53,6 +54,29 @@ impl MintCapabilities {
     pub fn missing(&self) -> Vec<&'static str> {
         vec!["storage"]
     }
+}
+
+/// See the native [`wallet::MeltQuoteInfo`].
+#[cfg(target_arch = "wasm32")]
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct MeltQuoteInfo {
+    pub quote_id: String,
+    pub amount_sats: u64,
+    pub fee_reserve_sats: u64,
+    pub input_fee_sats: u64,
+    pub max_total_sats: u64,
+    pub expiry_unix: u64,
+}
+
+/// See the native [`wallet::MeltOutcomeInfo`].
+#[cfg(target_arch = "wasm32")]
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum MeltOutcomeInfo {
+    Paid {
+        amount_sats: u64,
+        fee_paid_sats: u64,
+    },
+    Pending,
 }
 
 /// No proof store on web, so nothing is held there.
@@ -126,6 +150,18 @@ impl CashuWallet {
     }
 
     pub async fn finalize_pending_melts(&self) -> anyhow::Result<()> {
+        anyhow::bail!("CashuUnsupportedOnWeb")
+    }
+
+    pub async fn melt_quote(&self, _invoice: &str) -> anyhow::Result<MeltQuoteInfo> {
+        anyhow::bail!("CashuUnsupportedOnWeb")
+    }
+
+    pub async fn melt(
+        &self,
+        _quote_id: &str,
+        _max_total_sats: u64,
+    ) -> anyhow::Result<MeltOutcomeInfo> {
         anyhow::bail!("CashuUnsupportedOnWeb")
     }
 
