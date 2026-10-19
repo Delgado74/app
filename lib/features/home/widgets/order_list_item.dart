@@ -9,6 +9,7 @@ import 'package:mostro/features/home/providers/home_order_providers.dart';
 import 'package:mostro/features/home/providers/order_reason_provider.dart';
 import 'package:mostro/l10n/app_localizations.dart';
 import 'package:mostro/shared/utils/abbreviated_figure.dart';
+import 'package:mostro/shared/utils/rating_format.dart';
 
 const _cardRadius = BorderRadius.all(Radius.circular(18));
 
@@ -33,7 +34,7 @@ class OrderCardFormats {
   OrderCardFormats._(this._locale)
     : premium = NumberFormat('+0.0;-0.0', _locale),
       _unsignedPremium = NumberFormat('0.0', _locale),
-      rating = NumberFormat('0.##', _locale),
+      rating = ratingFormat(_locale),
       decimal = NumberFormat.decimalPattern(_locale),
       fiat = NumberFormat('#,##0.##', _locale);
 
@@ -44,7 +45,7 @@ class OrderCardFormats {
 
   final NumberFormat _unsignedPremium;
 
-  /// Raw ratings (4.9, 4.78): up to 2 decimals, no trailing zeros.
+  /// Ratings as every screen shows them (DS-L10N-5): `4.97`, `4.9`, `5`.
   final NumberFormat rating;
 
   /// Grouped integers: sats, trade count, days active.

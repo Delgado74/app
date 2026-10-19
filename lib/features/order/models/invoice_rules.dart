@@ -278,7 +278,7 @@ String? invoiceCheckWord(InvoiceCheck check) => switch (check) {
 /// The reputation beside the counterpart's name: `★ 4.9`, or null when the
 /// counterpart has no rated trade (the caller writes `no trades` instead of
 /// a misleading `0.0 ★`) or no snapshot has arrived yet.
-String? counterpartStars(double? rating, int? reviews) {
+String? counterpartStars(double? rating, int? reviews, String locale) {
   if (rating == null || reviews == null || reviews <= 0) return null;
   return '★ ${rating.toStringAsFixed(1)}';
 }
