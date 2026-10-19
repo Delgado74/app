@@ -26,25 +26,33 @@ class ReputationStat extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = Theme.of(context).extension<AppColors>();
-    final textSec = colors?.textSecondary ?? const Color(0xFFB0B3C6);
+    final book = OrderBookPalette.of(context);
     return Column(
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            if (icon != null) ...[
-              Icon(icon, size: 16, color: iconColor),
-              const SizedBox(width: AppSpacing.xs),
+        // A third of a 320 dp card cannot hold the star and a two-decimal
+        // rating (`4.97`) or a grouped count (`1.323`) at 2× text: the value
+        // shrinks to fit rather than overflow, and never wraps (DS-TYP-7).
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (icon != null) ...[
+                Icon(icon, size: 16, color: iconColor),
+                const SizedBox(width: AppSpacing.xs),
+              ],
+              Text(
+                value,
+                style: const TextStyle(
+                  fontSize: 19,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
             ],
-            Text(
-              value,
-              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
-            ),
-          ],
+          ),
         ),
         const SizedBox(height: 2),
-        Text(label, style: TextStyle(color: textSec, fontSize: 11)),
+        Text(label, style: TextStyle(color: book.textSecondary, fontSize: 11)),
       ],
     );
   }
