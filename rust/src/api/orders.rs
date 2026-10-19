@@ -5671,7 +5671,7 @@ async fn persist_restored_bond_rows(info: &mostro_core::message::RestoreSessionI
         let book = if status == OrderStatus::WaitingTakerBond {
             match order_book().get_order(&order_id).await {
                 Some(order) => Some(order),
-                None => fetch_public_order(&order_id).await,
+                None => fetch_public_order(&order_id, &active_mostro_pubkey()).await,
             }
         } else {
             None
@@ -8782,7 +8782,6 @@ async fn reconcile_restored_history() -> std::collections::HashSet<String> {
     let Some(db) = crate::db::app_db::db() else {
         return Default::default();
     };
-    drop_unnamed_restore_snapshot(db).await;
     let trades = match db.list_trades().await {
         Ok(trades) => trades,
         Err(e) => {
@@ -8790,6 +8789,7 @@ async fn reconcile_restored_history() -> std::collections::HashSet<String> {
             return Default::default();
         }
     };
+    migrate_unnamed_restore_snapshot(db, &trades).await;
     let mut by_node: std::collections::BTreeMap<String, Vec<crate::api::types::TradeInfo>> =
         Default::default();
     for trade in trades {
@@ -8814,8 +8814,11 @@ async fn reconcile_restored_history() -> std::collections::HashSet<String> {
 
 /// The snapshot stored before snapshots were kept per node (#812) does not
 /// say whose trades it describes. It is dropped: the next restore of each
-/// node writes that node's own.
-async fn drop_unnamed_restore_snapshot(db: &impl Storage) {
+/// node writes that node's own. `trades` are the stored trade rows.
+async fn migrate_unnamed_restore_snapshot(
+    db: &impl Storage,
+    _trades: &[crate::api::types::TradeInfo],
+) {
     let key = crate::db::settings_keys::RESTORE_SNAPSHOT;
     if !matches!(db.get_setting(key).await, Ok(Some(_))) {
         return;
@@ -9158,10 +9161,11 @@ async fn fetch_public_order_revision_from(node: &str, order_id: &str) -> Option<
 /// The daemon's newest public event for `order_id`, as an order — what the
 /// restore needs to know which side a taker took (§6.5). `None` without a
 /// pool, on a relay failure, or when the daemon never published the order.
-async fn fetch_public_order(order_id: &str) -> Option<OrderInfo> {
+/// `node` (hex pubkey) is the daemon asked for it.
+async fn fetch_public_order(order_id: &str, node: &str) -> Option<OrderInfo> {
     let _slot = public_lookup_slots().acquire().await.ok()?;
     let pool = crate::api::nostr::get_pool().ok()?;
-    let mostro_pubkey = nostr_sdk::prelude::PublicKey::from_hex(&active_mostro_pubkey()).ok()?;
+    let mostro_pubkey = nostr_sdk::prelude::PublicKey::from_hex(node).ok()?;
     let filter = crate::nostr::order_events::trade_order_filter(&mostro_pubkey, order_id);
     let events = match pool
         .client()
@@ -11686,6 +11690,12 @@ pub async fn recover_trades() -> Result<u32> {
 /// so we subscribe on the trade key and correlate the reply by that pubkey.
 #[flutter_rust_bridge::frb(ignore)]
 pub async fn restore_session() -> Result<mostro_core::message::RestoreSessionInfo> {
+    restore_session_on(&active_mostro_pubkey()).await
+}
+
+/// [`restore_session`] sent to `node` (hex pubkey): every step of the
+/// restore asks that node and files what it answers under it (#812).
+async fn restore_session_on(node: &str) -> Result<mostro_core::message::RestoreSessionInfo> {
     // Fresh trade key -> event.sender (daemon replies here).
     let trade_key_info = crate::api::identity::derive_trade_key().await?;
     let trade_index = trade_key_info.index;
@@ -11696,7 +11706,7 @@ pub async fn restore_session() -> Result<mostro_core::message::RestoreSessionInf
     ensure_global_dm_coverage(&sender_keys, trade_index).await;
     let trade_pk_hex = sender_keys.public_key().to_hex();
 
-    let mostro_pubkey = nostr_sdk::prelude::PublicKey::from_hex(&active_mostro_pubkey())?;
+    let mostro_pubkey = nostr_sdk::prelude::PublicKey::from_hex(node)?;
     // Identity/transport keys sign the Seal -> event.identity (master key).
     let identity_keys = crate::api::identity::get_transport_identity_keys(&sender_keys).await?;
 
@@ -13438,7 +13448,7 @@ mod tests {
     /// the request leaves.
     #[test]
     fn a_restore_reply_is_checked_against_the_asking_identity_first() {
-        let session = fn_body("pub async fn restore_session()");
+        let session = fn_body("async fn restore_session_on(node: &str)");
         let origin = session.find("let origin_identity").expect("captures who asked");
         let published = session.find("publish_event_json(&event_json)").expect("publishes");
         let check = session
@@ -13463,7 +13473,7 @@ mod tests {
     /// trades. Once the active node is not the one asked, nothing is written.
     #[test]
     fn a_restore_reply_is_checked_against_the_asked_node_first() {
-        let session = fn_body("pub async fn restore_session()");
+        let session = fn_body("async fn restore_session_on(node: &str)");
         let check = session
             .find("\"NodeChanged\"")
             .expect("refuses a reply once the active node changed");
@@ -13482,7 +13492,7 @@ mod tests {
     /// steps; a step that stops being reported leaves the sheet stuck on it.
     #[test]
     fn a_restore_reports_each_of_its_steps() {
-        let session = fn_body("pub async fn restore_session()");
+        let session = fn_body("async fn restore_session_on(node: &str)");
         let published = session.find("publish_event_json(&event_json)").expect("publishes");
         let connected = session
             .find("RestoreProgress::Connected")
