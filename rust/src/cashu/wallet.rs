@@ -1,6 +1,7 @@
 //! Native Cashu wallet over `cdk` — see [`super`] for scope and the wasm split.
 
 use std::collections::HashMap;
+use std::future::IntoFuture;
 use std::sync::Arc;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
@@ -629,32 +630,72 @@ impl CashuWallet {
         // the melt's inputs only, and the swap that made them was paid too.
         let swap_fee = u64::from(prepared.swap_fee());
 
-        match prepared.confirm_prefer_async().await {
-            Ok(MeltOutcome::Paid(finalized)) => match finalized.state() {
-                MeltQuoteState::Paid => {
-                    let amount_sats = u64::from(finalized.amount());
-                    let fee_paid_sats = u64::from(finalized.fee_paid()).saturating_add(swap_fee);
-                    log::info!("[cashu] melted {amount_sats} sat ({fee_paid_sats} sat in fees)");
-                    Ok(MeltOutcomeInfo::Paid {
-                        amount_sats,
-                        fee_paid_sats,
-                    })
+        let finalized = match prepared.confirm_prefer_async().await {
+            Ok(MeltOutcome::Paid(finalized)) => finalized,
+            // The mint took the payment and answered before routing it — what
+            // a mint does with `Prefer: respond-async` (cdk-mintd always does)
+            // however fast the payment then settles. Waiting a while turns the
+            // common case into its real result: proofs settled, change stored,
+            // the fee known. Past [`MELT_WAIT`] the handle is dropped, which cdk
+            // allows ("can be awaited or dropped"): the saga is recorded as
+            // in flight and `finalize_pending_melts` settles it at the next
+            // sync or connect.
+            Ok(MeltOutcome::Pending(pending)) => {
+                match tokio::time::timeout(MELT_WAIT, pending.into_future()).await {
+                    Ok(Ok(finalized)) => finalized,
+                    Ok(Err(cdk::Error::ExpiredQuote(..))) => bail!("CashuMeltQuoteExpired"),
+                    Ok(Err(e)) => bail!("CashuMeltFailed: {e}"),
+                    Err(_) => {
+                        log::info!("[cashu] melt still pending after {}s", MELT_WAIT.as_secs());
+                        return Ok(MeltOutcomeInfo::Pending);
+                    }
                 }
-                MeltQuoteState::Pending | MeltQuoteState::Unknown => {
-                    log::info!("[cashu] melt pending");
-                    Ok(MeltOutcomeInfo::Pending)
-                }
-                other => bail!("CashuMeltFailed: payment {other}"),
-            },
-            Ok(MeltOutcome::Pending(_pending)) => {
-                // Dropping the handle leaves the saga recorded as in flight,
-                // which `finalize_pending_melts` settles.
-                log::info!("[cashu] melt pending");
-                Ok(MeltOutcomeInfo::Pending)
             }
             Err(cdk::Error::ExpiredQuote(..)) => bail!("CashuMeltQuoteExpired"),
             Err(e) => bail!("CashuMeltFailed: {e}"),
+        };
+
+        let outcome = melt_outcome(
+            finalized.state(),
+            u64::from(finalized.amount()),
+            u64::from(finalized.fee_paid()),
+            swap_fee,
+        )?;
+        match &outcome {
+            MeltOutcomeInfo::Paid {
+                amount_sats,
+                fee_paid_sats,
+            } => log::info!("[cashu] melted {amount_sats} sat ({fee_paid_sats} sat in fees)"),
+            MeltOutcomeInfo::Pending => log::info!("[cashu] melt pending"),
         }
+        Ok(outcome)
+    }
+}
+
+/// How long [`CashuWallet::melt`] waits for a payment the mint answered as
+/// pending before reporting it so. Long enough for an ordinary Lightning
+/// payment, which settles in seconds; short enough that a held one (a hold
+/// invoice, a stuck route) does not keep the confirmation spinning.
+const MELT_WAIT: Duration = Duration::from_secs(30);
+
+/// What a finalized melt means for the user. `fee_paid` is cdk's, which counts
+/// the melt's inputs only; `swap_fee` is the swap that made them, paid too.
+///
+/// **Errors**: `CashuMeltFailed` for a payment the mint reports failed or
+/// unpaid — cdk has already returned its proofs.
+fn melt_outcome(
+    state: MeltQuoteState,
+    amount_sats: u64,
+    fee_paid: u64,
+    swap_fee: u64,
+) -> Result<MeltOutcomeInfo> {
+    match state {
+        MeltQuoteState::Paid => Ok(MeltOutcomeInfo::Paid {
+            amount_sats,
+            fee_paid_sats: fee_paid.saturating_add(swap_fee),
+        }),
+        MeltQuoteState::Pending | MeltQuoteState::Unknown => Ok(MeltOutcomeInfo::Pending),
+        other => bail!("CashuMeltFailed: payment {other}"),
     }
 }
 
@@ -1284,6 +1325,34 @@ mod tests {
         // would confirm.
         assert_eq!(melt_max_total(u64::MAX, 1, 0), None);
         assert_eq!(melt_max_total(u64::MAX - 1, 1, 1), None);
+    }
+
+    #[test]
+    fn a_finalized_melt_reads_as_paid_pending_or_failed() {
+        // Paid: the fee the user sees includes the swap that made the inputs.
+        assert_eq!(
+            melt_outcome(MeltQuoteState::Paid, 1_000, 1, 1).unwrap(),
+            MeltOutcomeInfo::Paid {
+                amount_sats: 1_000,
+                fee_paid_sats: 2,
+            }
+        );
+        // Still routing, or the mint cannot say: pending, settled at sync.
+        for state in [MeltQuoteState::Pending, MeltQuoteState::Unknown] {
+            assert_eq!(
+                melt_outcome(state, 1_000, 0, 0).unwrap(),
+                MeltOutcomeInfo::Pending,
+                "{state}"
+            );
+        }
+        // Not paid: a failure, never a success with nothing spent.
+        for state in [MeltQuoteState::Unpaid, MeltQuoteState::Failed] {
+            assert_eq!(
+                marker_of(melt_outcome(state, 1_000, 0, 0).unwrap_err()),
+                "CashuMeltFailed",
+                "{state}"
+            );
+        }
     }
 
     #[test]

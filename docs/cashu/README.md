@@ -580,9 +580,12 @@ mints is inconsistent), no general wallet features.
     refuses a quote taken at another mint (`CashuMeltFailed`; cdk does not check),
     an expired quote (`CashuMeltQuoteExpired`) or a total above what the user
     confirmed (`CashuMeltFeeChanged`), all after cancelling, then
-    `confirm_prefer_async()`. The result is `Paid` (amount and the fee actually
-    charged) or `Pending` (the Lightning payment is in flight: the proofs stay
-    reserved and recovery finalizes them), or a marker. Change from the fee reserve
+    `confirm_prefer_async()`. A mint that honours `Prefer: respond-async`
+    (cdk-mintd always does) answers *pending* before it routes, however fast the
+    payment then settles, so a pending answer is awaited for up to 30 s. The
+    result is `Paid` (amount and the fee actually charged) or, past that wait,
+    `Pending` (the Lightning payment is in flight: the proofs stay reserved and
+    recovery finalizes them), or a marker. Change from the fee reserve
     returns through NUT-08, handled by cdk.
   - Markers: `CashuInvalidInvoice`, `CashuInvoiceNoAmount` (amountless invoices are
     out of scope), `CashuInvoiceExpired`, `CashuMeltUnsupported`,
