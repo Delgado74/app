@@ -15,6 +15,7 @@ import 'package:mostro/shared/widgets/mostro_qr.dart';
 import 'package:mostro/src/rust/api/types.dart';
 
 import '../../../support/provider_harness.dart';
+import '../../../support/qr_finders.dart';
 
 /// Stands in for the Rust bridge. Every method the screen can reach is
 /// overridden — an un-overridden one would call into Rust and hang the test
@@ -627,6 +628,26 @@ void main() {
       final qr = tester.widget<MostroQr>(find.byType(MostroQr));
       expect(qr.data, 'cashuBtesttoken');
       expect(qr.logo, isNull);
+    });
+
+    testWidgets('the token QR takes the width of the dialog', (tester) async {
+      // Arrange — a phone's width.
+      tester.view.physicalSize = const Size(360, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+      await _pump(tester, status: _status(connected: true, balance: 100));
+
+      // Act — send 10 sats, which opens the token.
+      await tester.ensureVisible(find.text('Send'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Send'));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField), '10');
+      await tester.tap(find.text('Confirm'));
+      await tester.pumpAndSettle();
+
+      // Assert
+      expectQrTakesItsWidth(tester);
     });
 
     testWidgets('a token too large for a QR is shown as text, never as an error',
