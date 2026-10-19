@@ -1,3 +1,4 @@
+import 'package:clock/clock.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -5,6 +6,9 @@ import 'package:mostro/core/app_theme.dart';
 import 'package:mostro/l10n/app_localizations.dart';
 import 'package:mostro/l10n/app_localizations_en.dart';
 import 'package:mostro/shared/widgets/counterpart_reputation_row.dart';
+
+/// Noon, 2026-01-01 UTC: the row's age is read against this.
+final _now = DateTime.utc(2026, 1, 1, 12);
 
 /// The one-row counterpart reputation of the trade screen (8b, 8c): the
 /// grade on the avatar, the role, and the trades and age in one line. A
@@ -16,22 +20,25 @@ void main() {
     WidgetTester tester, {
     required double rating,
     required int reviews,
-    required int days,
+    required DateTime since,
     required bool counterpartIsBuyer,
     Locale locale = const Locale('en'),
   }) async {
-    await tester.pumpWidget(
-      MaterialApp(
-        theme: buildDarkTheme(),
-        locale: locale,
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
-        supportedLocales: AppLocalizations.supportedLocales,
-        home: Scaffold(
-          body: CounterpartReputationRow(
-            rating: rating,
-            reviews: reviews,
-            days: days,
-            counterpartIsBuyer: counterpartIsBuyer,
+    await withClock(
+      Clock.fixed(_now),
+      () => tester.pumpWidget(
+        MaterialApp(
+          theme: buildDarkTheme(),
+          locale: locale,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Scaffold(
+            body: CounterpartReputationRow(
+              rating: rating,
+              reviews: reviews,
+              since: since,
+              counterpartIsBuyer: counterpartIsBuyer,
+            ),
           ),
         ),
       ),
@@ -45,7 +52,7 @@ void main() {
       tester,
       rating: 4.8,
       reviews: 2,
-      days: 1,
+      since: _now.subtract(const Duration(days: 1)),
       counterpartIsBuyer: true,
     );
 
@@ -64,7 +71,7 @@ void main() {
       tester,
       rating: 4.97,
       reviews: 687,
-      days: 1323,
+      since: DateTime.utc(2022, 5, 19),
       counterpartIsBuyer: true,
       locale: const Locale('es'),
     );
@@ -80,7 +87,7 @@ void main() {
       tester,
       rating: 0,
       reviews: 0,
-      days: 12,
+      since: _now.subtract(const Duration(days: 12)),
       counterpartIsBuyer: false,
     );
 

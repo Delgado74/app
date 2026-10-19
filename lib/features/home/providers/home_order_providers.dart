@@ -134,6 +134,10 @@ class OrderItem {
   int get makerDaysOnMostro =>
       daysOnMostro(makerSince, fallbackDays: daysActive);
 
+  /// The maker's first trade: [makerSince], else [daysActive] back from now.
+  DateTime get makerFirstTrade =>
+      firstTradeDay(makerSince, fallbackDays: daysActive);
+
   /// Current order status from the Mostro protocol.
   final OrderStatus status;
 

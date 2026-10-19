@@ -29,9 +29,19 @@ int daysOnMostro(DateTime? since, {required int fallbackDays}) {
   return days < 0 ? 0 : days;
 }
 
+/// The day of the user's first trade, which every screen shows as their age
+/// on Mostro (DS-L10N-5): [since] when the daemon sent it, otherwise
+/// [fallbackDays] before now.
+DateTime firstTradeDay(DateTime? since, {required int fallbackDays}) =>
+    since ?? clock.now().toUtc().subtract(Duration(days: fallbackDays));
+
 /// The counterparty's days on Mostro from the Peer DM snapshot.
 extension TradeInfoPeerAge on TradeInfo {
   /// From `peerSince` when present, else `peerDays`, else `0`.
   int get peerDaysOnMostro =>
       daysOnMostro(reputationSince(peerSince), fallbackDays: peerDays ?? 0);
+
+  /// The counterparty's first trade: `peerSince`, else `peerDays` back.
+  DateTime get peerFirstTrade =>
+      firstTradeDay(reputationSince(peerSince), fallbackDays: peerDays ?? 0);
 }

@@ -4,6 +4,7 @@ import 'package:mostro/core/app_theme.dart';
 import 'package:mostro/core/trade_palette.dart';
 import 'package:mostro/l10n/app_localizations.dart';
 import 'package:mostro/shared/utils/rating_format.dart';
+import 'package:mostro/shared/utils/reputation_age.dart';
 
 /// One-row counterpart reputation: the grade on the avatar, the role, and
 /// `2 trades · 1 day on Mostro`. Shared by the trade screen (8b, 8c) and the
@@ -17,13 +18,14 @@ class CounterpartReputationRow extends StatelessWidget {
     super.key,
     required this.rating,
     required this.reviews,
-    required this.days,
+    required this.since,
     required this.counterpartIsBuyer,
   });
 
   final double rating;
   final int reviews;
-  final int days;
+  /// The counterpart's first trade (`peerFirstTrade`, `makerFirstTrade`).
+  final DateTime since;
   final bool counterpartIsBuyer;
 
   @override
@@ -114,7 +116,9 @@ class CounterpartReputationRow extends StatelessWidget {
                       ),
                       const TextSpan(text: ' · '),
                       ...highlightFigures(
-                        l10n.reputationDaysOnMostro(days),
+                        l10n.reputationDaysOnMostro(
+                          daysOnMostro(since, fallbackDays: 0),
+                        ),
                         figure,
                       ),
                     ],

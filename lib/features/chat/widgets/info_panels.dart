@@ -181,7 +181,7 @@ class UserInformationTab extends ConsumerWidget {
           CounterpartReputationRow(
             rating: reputation.rating,
             reviews: reputation.reviews,
-            days: reputation.days,
+            since: reputation.since,
             counterpartIsBuyer: counterpartIsBuyer,
           )
         else
