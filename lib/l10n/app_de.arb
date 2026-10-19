@@ -1320,6 +1320,8 @@
   "invoicePayoutFailedManual": "Füge eine neue Rechnung hinzu, um deine Sats zu erhalten.",
   "tradeCardPayoutFailedTitle": "Mostro konnte dir deine Sats nicht senden",
   "tradeCardPayoutFailedMessage": "Mostro konnte deine Sats nicht an die angegebene Adresse oder Rechnung senden. Öffne den Trade, um zu sehen, welche fehlgeschlagen ist, und füge eine neue Rechnung hinzu, falls noch nötig.",
+  "tradeCardOrderPublishedTitle": "Order veröffentlicht",
+  "tradeCardOrderPublishedMessage": "Deine Order ist jetzt im Orderbuch, und andere Nutzer können sie annehmen.",
   "payoutInvoiceLabel": "Rechnung",
   "payoutInvoiceCopied": "Rechnung kopiert",
   "payoutWillGoToLabel": "Die Sats gehen an",

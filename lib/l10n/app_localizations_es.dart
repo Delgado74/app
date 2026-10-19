@@ -4881,6 +4881,13 @@ class AppLocalizationsEs extends AppLocalizations {
       'Mostro no pudo enviar tus sats a la dirección o factura que diste. Abre la operación para ver cuál falló y agrega una nueva factura si todavía hace falta.';
 
   @override
+  String get tradeCardOrderPublishedTitle => 'Orden publicada';
+
+  @override
+  String get tradeCardOrderPublishedMessage =>
+      'Tu orden ya está en el libro y otros usuarios pueden tomarla.';
+
+  @override
   String get payoutInvoiceLabel => 'Factura';
 
   @override

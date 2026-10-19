@@ -104,6 +104,22 @@ void main() {
       expect(first.resolvedTitle(en), en.tradeCardWaitingBuyerInvoiceTitle);
     });
 
+    test('a publication says the order is in the book', () {
+      final n = NotificationModel.tradeStatus(
+        orderId: 'order-1',
+        status: 'pending',
+        reason: 'orderPublished',
+        at: at,
+      );
+
+      expect(n.resolvedTitle(en), 'Order published');
+      expect(
+        n.resolvedMessage(en),
+        'Your order is in the order book now, and other users can take it.',
+      );
+      expect(n.resolvedTitle(es), 'Orden publicada');
+    });
+
     test('a status this build does not know still renders', () {
       final n = NotificationModel.tradeStatus(
         orderId: 'order-1',

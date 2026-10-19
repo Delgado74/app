@@ -472,7 +472,9 @@ maker pays the bond HTLC
   ▼
 daemon → new-order (id = order, request_id R, Order{status = Pending})
   │  correlates with the still-pending Create record → status WaitingMakerBond → Pending,
-  │  bond → Locked, emit TradeUpdate → the pay-bond screen navigates to /my_order/:orderId
+  │  bond → Locked, emit TradeUpdate{Pending, OrderPublished}, dated by the new-order
+  │  → the pay-bond screen navigates to /my_order/:orderId, and Notifications shows
+  │    "Order published" (this message is the push that woke a closed app)
 ```
 
 Rules:

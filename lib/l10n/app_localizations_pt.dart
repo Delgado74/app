@@ -4916,6 +4916,13 @@ class AppLocalizationsPt extends AppLocalizations {
       'O Mostro não conseguiu enviar seus sats para o endereço ou a fatura que você informou. Abra a operação para ver qual falhou e adicione uma nova fatura, se ainda for necessário.';
 
   @override
+  String get tradeCardOrderPublishedTitle => 'Ordem publicada';
+
+  @override
+  String get tradeCardOrderPublishedMessage =>
+      'Sua ordem já está no livro de ordens e outros usuários podem aceitá-la.';
+
+  @override
   String get payoutInvoiceLabel => 'Fatura';
 
   @override

@@ -2906,7 +2906,11 @@ async fn persist_late_create_confirmation(
             crate::api::logging::short_id(daemon_id),
         ),
     );
-    emit_trade_update_at(daemon_id, status, None, occurred_at);
+    // The create returned an error: that the order went out after all is
+    // news, and its card says so.
+    let reason = (status == OrderStatus::Pending)
+        .then_some(crate::api::types::TradeUpdateReason::OrderPublished);
+    emit_trade_update_at(daemon_id, status, reason, occurred_at);
 }
 
 /// Cancel an active trade cooperatively.
@@ -4173,6 +4177,7 @@ async fn dispatch_mostro_message(
                             &row_state,
                             trade_index,
                             Some((kind, sender_hex.as_str())),
+                            event_ts,
                         )
                         .await
                         {
@@ -4221,6 +4226,7 @@ async fn dispatch_mostro_message(
                     &row_state,
                     trade_index,
                     Some((kind, sender_hex.as_str())),
+                    event_ts,
                 )
                 .await
                 {
@@ -6019,7 +6025,7 @@ pub(crate) async fn close_expired_bond_trade(
     if current.order.status == crate::api::types::OrderStatus::WaitingMakerBond
         && maker_order_is_published(&oid).await
     {
-        return !lock_maker_bond(&oid, &current, current.trade_key_index).await;
+        return !lock_maker_bond(&oid, &current, current.trade_key_index, now).await;
     }
     let trade = &current;
     emit_trade_update_with(
@@ -6204,11 +6210,13 @@ async fn maker_order_is_published(order_id: &str) -> bool {
 /// moves it to `Pending` with the bond `Locked`. Returns whether it acted.
 /// `published` is the `new-order` and the node that sent it, when there is
 /// one: a restored placeholder is filled from that order, on that node.
+/// `occurred_at` is that message's own time, which dates the update.
 async fn confirm_maker_bond(
     order_id: &str,
     row_state: &RowState,
     trade_index: u32,
     published: Option<(&mostro_core::message::MessageKind, &str)>,
+    occurred_at: i64,
 ) -> bool {
     let Some(trade) = row_state.trade() else {
         return false;
@@ -6227,19 +6235,24 @@ async fn confirm_maker_bond(
                             format!("restored maker row not completed for order={order_id}: {e}"),
                         );
                     }
-                    return lock_maker_bond(order_id, &filled, trade_index).await;
+                    return lock_maker_bond(order_id, &filled, trade_index, occurred_at).await;
                 }
             }
         }
     }
-    lock_maker_bond(order_id, trade, trade_index).await
+    lock_maker_bond(order_id, trade, trade_index, occurred_at).await
 }
 
-/// [`confirm_maker_bond`] on a row already in hand.
+/// [`confirm_maker_bond`] on a row already in hand. The update it emits
+/// says the order went out (`OrderPublished`): the node's `new-order` is
+/// the push that woke the maker, and the card is what that push was about.
+/// `occurred_at` is that message's time, or now when the public book is
+/// what showed the order published.
 async fn lock_maker_bond(
     order_id: &str,
     trade: &crate::api::types::TradeInfo,
     trade_index: u32,
+    occurred_at: i64,
 ) -> bool {
     use crate::api::types::{BondState, OrderStatus};
     if trade.order.status != OrderStatus::WaitingMakerBond
@@ -6277,7 +6290,12 @@ async fn lock_maker_bond(
             crate::api::logging::short_id(order_id),
         ),
     );
-    emit_trade_update(order_id, OrderStatus::Pending);
+    emit_trade_update_at(
+        order_id,
+        OrderStatus::Pending,
+        Some(crate::api::types::TradeUpdateReason::OrderPublished),
+        occurred_at,
+    );
     true
 }
 
@@ -6544,7 +6562,13 @@ async fn reconcile_published_maker_order(
     if !maker_order_is_published(order_id).await {
         return false;
     }
-    lock_maker_bond(order_id, trade, trade.trade_key_index).await;
+    lock_maker_bond(
+        order_id,
+        trade,
+        trade.trade_key_index,
+        crate::rt::unix_now(),
+    )
+    .await;
     true
 }
 
@@ -20741,6 +20765,28 @@ mod tests {
         seen
     }
 
+    /// [`drain_updates`] with each update's reason and date.
+    fn drain_dated_updates(
+        rx: &mut broadcast::Receiver<crate::api::types::TradeUpdate>,
+        order_id: &str,
+    ) -> Vec<(
+        crate::api::types::OrderStatus,
+        Option<crate::api::types::TradeUpdateReason>,
+        i64,
+    )> {
+        let mut seen = Vec::new();
+        loop {
+            match rx.try_recv() {
+                Ok(update) if update.order_id == order_id => {
+                    seen.push((update.status, update.reason, update.occurred_at))
+                }
+                Ok(_) | Err(broadcast::error::TryRecvError::Lagged(_)) => {}
+                Err(_) => break,
+            }
+        }
+        seen
+    }
+
     /// #394: a Canceled over a pre-active trade wipes the row and leaves the
     /// tombstone; the SAME message replayed on the next start (the global
     /// feed carries no `since`) is then dropped whole — no write to nothing,
@@ -22742,9 +22788,15 @@ mod tests {
         assert_eq!(bond.state, crate::api::types::BondState::Locked);
         assert!(bond.locked_at.is_some());
         assert_eq!(bond.invoice.as_deref(), Some(BOND_BOLT11));
+        // The push that woke the maker was this message: the update says
+        // what it was about, dated when the node published the order.
         assert_eq!(
-            drain_updates(&mut rx, &order_id),
-            vec![crate::api::types::OrderStatus::Pending]
+            drain_dated_updates(&mut rx, &order_id),
+            vec![(
+                crate::api::types::OrderStatus::Pending,
+                Some(crate::api::types::TradeUpdateReason::OrderPublished),
+                2_000,
+            )]
         );
         assert!(
             take_matching_request(key, Some(803)).is_none(),
@@ -22810,8 +22862,12 @@ mod tests {
             Some(crate::api::types::BondState::Locked)
         );
         assert_eq!(
-            drain_updates(&mut rx, &order_id),
-            vec![crate::api::types::OrderStatus::Pending]
+            drain_dated_updates(&mut rx, &order_id),
+            vec![(
+                crate::api::types::OrderStatus::Pending,
+                Some(crate::api::types::TradeUpdateReason::OrderPublished),
+                2_001,
+            )]
         );
     }
 
@@ -22953,9 +23009,15 @@ mod tests {
             kept.bond.map(|b| b.state),
             Some(crate::api::types::BondState::Locked)
         );
+        // Learned from the book rather than the node's message, but news
+        // all the same: the order went out.
         assert_eq!(
-            drain_reasoned(&mut rx, &order_id),
-            vec![(crate::api::types::OrderStatus::Pending, None)]
+            drain_dated_updates(&mut rx, &order_id),
+            vec![(
+                crate::api::types::OrderStatus::Pending,
+                Some(crate::api::types::TradeUpdateReason::OrderPublished),
+                1_001,
+            )]
         );
     }
 
@@ -23425,11 +23487,14 @@ mod tests {
         .await
         .unwrap();
         order_book().upsert_order(dummy_order_info(&order_id)).await;
+        let mut rx = trade_updates_tx().subscribe();
+        let before = crate::rt::unix_now();
 
         let err = settle_refused_maker_cancel(&order_id, std::time::Duration::from_millis(50))
             .await
             .expect_err("the order is live");
 
+        let after = crate::rt::unix_now();
         assert_eq!(err.to_string(), "BondAlreadyLocked");
         let row = db.get_trade_by_order_id(&order_id).await.unwrap().unwrap();
         assert_eq!(row.order.status, crate::api::types::OrderStatus::Pending);
@@ -23437,6 +23502,17 @@ mod tests {
             row.bond.unwrap().state,
             crate::api::types::BondState::Locked
         );
+        // The reconcile says the order went out, as a `new-order` would: the
+        // update behind the "order published" notice, dated when it ran.
+        let updates = drain_dated_updates(&mut rx, &order_id);
+        assert_eq!(updates.len(), 1, "{updates:?}");
+        let (status, reason, at) = &updates[0];
+        assert_eq!(*status, crate::api::types::OrderStatus::Pending);
+        assert_eq!(
+            *reason,
+            Some(crate::api::types::TradeUpdateReason::OrderPublished)
+        );
+        assert!((before..=after).contains(at), "{at} not in {before}..={after}");
     }
 
     /// The user's explicit "remove from this device" never drops an order
@@ -24424,9 +24500,15 @@ mod tests {
             Some(14),
             "the arm binds the daemon id to this attempt's index",
         );
+        // The create already returned an error: that the order went out
+        // after all is news.
         assert_eq!(
-            drain_updates(&mut rx, &order_id),
-            vec![crate::api::types::OrderStatus::Pending],
+            drain_dated_updates(&mut rx, &order_id),
+            vec![(
+                crate::api::types::OrderStatus::Pending,
+                Some(crate::api::types::TradeUpdateReason::OrderPublished),
+                3_000,
+            )],
         );
     }
 
