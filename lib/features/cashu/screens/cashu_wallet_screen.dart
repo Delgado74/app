@@ -312,7 +312,10 @@ class _CashuWalletScreenState extends ConsumerState<CashuWalletScreen> {
                     style: TextStyle(fontSize: 13, color: book.textBody),
                   ),
                   const SizedBox(height: 6),
-                  Row(
+                  // A wrap, not a row: in Spanish or German, or at large
+                  // text, the second link goes under the first instead of
+                  // overflowing a narrow phone.
+                  Wrap(
                     children: [
                       TextButton(
                         onPressed: () => _showToken(_lastToken!),

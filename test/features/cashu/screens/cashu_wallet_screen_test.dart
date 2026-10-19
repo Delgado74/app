@@ -1030,4 +1030,43 @@ void main() {
     expect(find.text('Mint-URL'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
+
+  // DS-A11Y-4: the token dialog draws the Mostro QR (#851).
+  testWidgets('the token dialog fits a narrow screen at German and 2x text',
+      (tester) async {
+    // Arrange — the longest strings, the smallest width, the largest text.
+    tester.view.physicalSize = const Size(320, 800);
+    tester.view.devicePixelRatio = 1.0;
+    tester.platformDispatcher.textScaleFactorTestValue = 2.0;
+    addTearDown(tester.view.reset);
+    addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+    final de = await AppLocalizations.delegate.load(const Locale('de'));
+    await _pump(
+      tester,
+      status: _status(connected: true, balance: 100),
+      locale: const Locale('de'),
+    );
+
+    // Act — send 10 sats, which opens the token.
+    await tester.ensureVisible(find.text(de.cashuSendButton));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(de.cashuSendButton));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), '10');
+    await tester.tap(find.text(de.confirm));
+    await tester.pumpAndSettle();
+
+    // Assert — the QR, the token and both actions, with nothing overflowing.
+    expect(tester.takeException(), isNull);
+    expect(find.byType(MostroQr), findsOneWidget);
+    expect(find.text('cashuBtesttoken'), findsOneWidget);
+    for (final action in [de.cashuCopyToken, de.done]) {
+      final button = find.descendant(
+        of: find.byType(MostroDialog),
+        matching: find.text(action),
+      );
+      await tester.ensureVisible(button);
+      expect(tester.getRect(button).bottom, lessThanOrEqualTo(800));
+    }
+  });
 }
