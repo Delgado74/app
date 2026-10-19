@@ -61,5 +61,20 @@ void main() {
       expect((shipped['MWK'] as List).cast<String>(), contains('Airtel Money'));
       expect((shipped['KES'] as List).cast<String>(), contains('M-PESA'));
     });
+
+    test('every currency with its own methods can be picked', () {
+      // A code missing from fiat.json is never offered, so its methods are
+      // never seen (MLC had both, and only the methods shipped).
+      final catalogue = (jsonDecode(
+                File('assets/data/fiat.json').readAsStringSync(),
+              )
+              as List<dynamic>)
+          .map((c) => (c as Map<String, dynamic>)['code'] as String)
+          .toSet();
+      expect(
+        shipped.keys.where((k) => k != 'default' && !catalogue.contains(k)),
+        isEmpty,
+      );
+    });
   });
 }
