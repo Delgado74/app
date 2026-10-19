@@ -7110,6 +7110,162 @@ abstract class AppLocalizations {
   /// **'The send failed and the wallet could not confirm the funds are back. Sync with the mint before trying again.'**
   String get cashuErrorSendUnresolved;
 
+  /// Cashu wallet — Send dialog body: choose between exporting a token and paying a Lightning invoice
+  ///
+  /// In en, this message translates to:
+  /// **'Export ecash as a token for another Cashu wallet, or use it to pay a Lightning invoice.'**
+  String get cashuSendChoiceBody;
+
+  /// Cashu wallet — Send dialog: export ecash as a token
+  ///
+  /// In en, this message translates to:
+  /// **'Ecash token'**
+  String get cashuSendEcashOption;
+
+  /// Cashu wallet — Send dialog: pay a Lightning invoice from the wallet
+  ///
+  /// In en, this message translates to:
+  /// **'Lightning'**
+  String get cashuSendLightningOption;
+
+  /// Cashu wallet — title of the dialog that takes a bolt11 invoice to pay
+  ///
+  /// In en, this message translates to:
+  /// **'Pay a Lightning invoice'**
+  String get cashuInvoiceDialogTitle;
+
+  /// Cashu wallet — label above the invoice field; shown in capitals
+  ///
+  /// In en, this message translates to:
+  /// **'Lightning invoice'**
+  String get cashuInvoiceFieldLabel;
+
+  /// Cashu wallet — dimmed placeholder of the invoice field
+  ///
+  /// In en, this message translates to:
+  /// **'Paste a Lightning invoice'**
+  String get cashuPasteInvoiceHint;
+
+  /// Cashu wallet — placeholder in the invoice scanner when the camera cannot start
+  ///
+  /// In en, this message translates to:
+  /// **'Paste or scan a Lightning invoice'**
+  String get cashuInvoiceScanHint;
+
+  /// Cashu wallet — title of the confirmation before paying a Lightning invoice
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm payment'**
+  String get cashuMeltConfirmTitle;
+
+  /// Cashu wallet — payment confirmation: what the invoice asks for
+  ///
+  /// In en, this message translates to:
+  /// **'Amount'**
+  String get cashuMeltAmount;
+
+  /// Cashu wallet — payment confirmation: the most the payment can cost in routing and mint fees
+  ///
+  /// In en, this message translates to:
+  /// **'Fees, up to'**
+  String get cashuMeltFees;
+
+  /// Cashu wallet — payment confirmation: the most the payment can take from the balance
+  ///
+  /// In en, this message translates to:
+  /// **'Total, up to'**
+  String get cashuMeltTotal;
+
+  /// Cashu wallet — payment confirmation: the routing fee reserve is returned when unspent
+  ///
+  /// In en, this message translates to:
+  /// **'Fees the mint does not use come back to your wallet.'**
+  String get cashuMeltFeesNote;
+
+  /// Cashu wallet — payment confirmation shown again because the quote expired or its fees went up
+  ///
+  /// In en, this message translates to:
+  /// **'The price changed. Check the new total before paying.'**
+  String get cashuMeltQuoteRefreshed;
+
+  /// Cashu wallet — confirms paying the Lightning invoice
+  ///
+  /// In en, this message translates to:
+  /// **'Pay'**
+  String get cashuPayButton;
+
+  /// Cashu wallet — the Lightning invoice was paid; fee is what the payment actually cost
+  ///
+  /// In en, this message translates to:
+  /// **'Paid {sats} sats ({fee} sats in fees)'**
+  String cashuMeltPaid(String sats, String fee);
+
+  /// Cashu wallet — the mint is still routing the Lightning payment
+  ///
+  /// In en, this message translates to:
+  /// **'Payment in progress. Your balance will update when the wallet syncs with the mint.'**
+  String get cashuMeltPending;
+
+  /// Cashu error — the text is not a bolt11 invoice, or asks for a fraction of a sat
+  ///
+  /// In en, this message translates to:
+  /// **'That is not a Lightning invoice this wallet can pay.'**
+  String get cashuErrorInvalidInvoice;
+
+  /// Cashu error — amountless invoices are not supported
+  ///
+  /// In en, this message translates to:
+  /// **'This invoice has no amount. Ask for one that states how much to pay.'**
+  String get cashuErrorInvoiceNoAmount;
+
+  /// Cashu error — the invoice to pay has expired
+  ///
+  /// In en, this message translates to:
+  /// **'This invoice has expired. Ask for a new one.'**
+  String get cashuErrorInvoiceExpired;
+
+  /// Cashu error — the mint does not support melting to bolt11 (NUT-05)
+  ///
+  /// In en, this message translates to:
+  /// **'This mint cannot pay Lightning invoices.'**
+  String get cashuErrorMeltUnsupported;
+
+  /// Cashu error — the invoice amount is outside the mint's melt limits
+  ///
+  /// In en, this message translates to:
+  /// **'This mint does not pay invoices of that amount.'**
+  String get cashuErrorMeltAmountOutOfRange;
+
+  /// Cashu error — the mint refused or failed to quote the melt
+  ///
+  /// In en, this message translates to:
+  /// **'The mint could not quote this payment. Try again later.'**
+  String get cashuErrorMeltQuoteFailed;
+
+  /// Cashu error — the melt quote expired before paying; nothing was spent
+  ///
+  /// In en, this message translates to:
+  /// **'The payment quote expired. Nothing was paid; start again.'**
+  String get cashuErrorMeltQuoteExpired;
+
+  /// Cashu error — the melt now costs more than the confirmed total; nothing was spent
+  ///
+  /// In en, this message translates to:
+  /// **'The fees went up since you confirmed. Nothing was paid; start again.'**
+  String get cashuErrorMeltFeeChanged;
+
+  /// Cashu error — the balance does not cover the invoice plus fees
+  ///
+  /// In en, this message translates to:
+  /// **'You do not have enough in the wallet to pay this invoice and its fees.'**
+  String get cashuErrorMeltInsufficientFunds;
+
+  /// Cashu error — the melt failed; held proofs are returned now or settled at the next sync
+  ///
+  /// In en, this message translates to:
+  /// **'The payment did not go through. Any sats it held come back when the wallet syncs with the mint.'**
+  String get cashuErrorMeltFailed;
+
   /// Title of the seller's Cashu escrow funding screen
   ///
   /// In en, this message translates to:

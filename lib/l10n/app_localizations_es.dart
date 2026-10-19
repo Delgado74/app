@@ -4284,6 +4284,99 @@ class AppLocalizationsEs extends AppLocalizations {
       'El envío falló y la billetera no pudo confirmar que los fondos volvieron. Sincroniza con el mint antes de intentar de nuevo.';
 
   @override
+  String get cashuSendChoiceBody =>
+      'Exporta ecash como un token para otra billetera Cashu, o úsalo para pagar una factura Lightning.';
+
+  @override
+  String get cashuSendEcashOption => 'Token de ecash';
+
+  @override
+  String get cashuSendLightningOption => 'Lightning';
+
+  @override
+  String get cashuInvoiceDialogTitle => 'Pagar una factura Lightning';
+
+  @override
+  String get cashuInvoiceFieldLabel => 'Factura Lightning';
+
+  @override
+  String get cashuPasteInvoiceHint => 'Pega una factura Lightning';
+
+  @override
+  String get cashuInvoiceScanHint => 'Pega o escanea una factura Lightning';
+
+  @override
+  String get cashuMeltConfirmTitle => 'Confirmar pago';
+
+  @override
+  String get cashuMeltAmount => 'Monto';
+
+  @override
+  String get cashuMeltFees => 'Comisiones, hasta';
+
+  @override
+  String get cashuMeltTotal => 'Total, hasta';
+
+  @override
+  String get cashuMeltFeesNote =>
+      'Las comisiones que el mint no use vuelven a tu billetera.';
+
+  @override
+  String get cashuMeltQuoteRefreshed =>
+      'El precio cambió. Revisa el nuevo total antes de pagar.';
+
+  @override
+  String get cashuPayButton => 'Pagar';
+
+  @override
+  String cashuMeltPaid(String sats, String fee) {
+    return 'Pagaste $sats sats ($fee sats de comisión)';
+  }
+
+  @override
+  String get cashuMeltPending =>
+      'Pago en curso. Tu saldo se actualizará cuando la billetera se sincronice con el mint.';
+
+  @override
+  String get cashuErrorInvalidInvoice =>
+      'Eso no es una factura Lightning que esta billetera pueda pagar.';
+
+  @override
+  String get cashuErrorInvoiceNoAmount =>
+      'Esta factura no tiene monto. Pide una que indique cuánto pagar.';
+
+  @override
+  String get cashuErrorInvoiceExpired => 'Esta factura venció. Pide una nueva.';
+
+  @override
+  String get cashuErrorMeltUnsupported =>
+      'Este mint no puede pagar facturas Lightning.';
+
+  @override
+  String get cashuErrorMeltAmountOutOfRange =>
+      'Este mint no paga facturas de ese monto.';
+
+  @override
+  String get cashuErrorMeltQuoteFailed =>
+      'El mint no pudo cotizar este pago. Inténtalo más tarde.';
+
+  @override
+  String get cashuErrorMeltQuoteExpired =>
+      'La cotización del pago venció. No se pagó nada; empieza de nuevo.';
+
+  @override
+  String get cashuErrorMeltFeeChanged =>
+      'Las comisiones subieron desde que confirmaste. No se pagó nada; empieza de nuevo.';
+
+  @override
+  String get cashuErrorMeltInsufficientFunds =>
+      'No tienes suficiente en la billetera para pagar esta factura y sus comisiones.';
+
+  @override
+  String get cashuErrorMeltFailed =>
+      'El pago no se completó. Los sats que retuvo vuelven cuando la billetera se sincronice con el mint.';
+
+  @override
   String get lockEscrowTitle => 'Bloquear la custodia';
 
   @override
