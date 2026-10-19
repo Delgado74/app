@@ -520,15 +520,13 @@ class _PayLightningInvoiceScreenState
     child: body,
   );
 
-  /// 168 dp of code inside the Mostro QR's white quiet zone, the order's node
-  /// in its centre (#851). Its fixed size also answers the page's
-  /// intrinsic-height pass.
+  /// The Mostro QR across the card's width, the order's node in its centre
+  /// (#851).
   Widget _qr(AppLocalizations l10n, String invoice, {required String node}) =>
       Center(
         child: OrderNodeQr(
           data: invoice,
           nodePubkey: node,
-          size: 168,
           semanticsLabel: l10n.invoiceQrSemantics(invoice),
         ),
       );

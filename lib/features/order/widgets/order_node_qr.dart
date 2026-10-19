@@ -18,7 +18,6 @@ class OrderNodeQr extends ConsumerWidget {
     super.key,
     required this.data,
     required this.nodePubkey,
-    required this.size,
     this.semanticsLabel,
   });
 
@@ -26,9 +25,6 @@ class OrderNodeQr extends ConsumerWidget {
 
   /// The order's `nodePubkey`, empty when unknown.
   final String nodePubkey;
-
-  /// Side of the code, quiet zone excluded ([MostroQr.size]).
-  final double size;
 
   final String? semanticsLabel;
 
@@ -44,13 +40,13 @@ class OrderNodeQr extends ConsumerWidget {
     );
     return MostroQr(
       data: data,
-      size: size,
       semanticsLabel: semanticsLabel,
       logo:
           (side) => NodeAvatar(
             entry: entry,
             size: side,
-            initialSize: 15,
+            // The node selector's proportion: 13 sp on 32 dp.
+            initialSize: side * 0.4,
             // The QR is white in both themes.
             palette: NodeSelectorPalette.light,
           ),

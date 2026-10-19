@@ -684,7 +684,6 @@ class _PayBondInvoiceScreenState extends ConsumerState<PayBondInvoiceScreen>
         child: OrderNodeQr(
           data: invoice,
           nodePubkey: node,
-          size: 150,
           semanticsLabel: l10n.invoiceQrSemantics(invoice),
         ),
       );

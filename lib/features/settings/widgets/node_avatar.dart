@@ -40,8 +40,9 @@ class NodeAvatar extends StatelessWidget {
 
   /// One decode width for every size: the node selector and a QR's centre
   /// share the image cache's entry, so the picture is fetched once, not once
-  /// per screen. Sharp up to 42 dp at 3x.
-  static const int _cacheWidth = 128;
+  /// per screen. Sharp up to 64 dp at 3x: the centre of a QR as wide as
+  /// `MostroQr.maxSide`.
+  static const int _cacheWidth = 192;
 
   @override
   Widget build(BuildContext context) {

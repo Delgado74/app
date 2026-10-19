@@ -161,8 +161,10 @@ void main() {
   });
 
   group('scans', () {
-    // The sizes the app draws: the hold invoice (168), the bond (150) and the
-    // Cashu token (200); phone screens are 2x to 3x.
+    // The narrowest the app draws a QR: the token dialog on a 320 dp phone,
+    // where the invoice cards are 250 dp. Phone screens are 2x to 3x.
+    Widget narrowest(MostroQr qr) => SizedBox(width: 232, child: qr);
+
     for (final pixelRatio in [2.0, 3.0]) {
       for (final length in [300, 450, 650]) {
         testWidgets('a $length-character hold invoice with a logo, '
@@ -170,7 +172,7 @@ void main() {
           final invoice = _invoice(length, seed: length);
           final text = await _scan(
             tester,
-            MostroQr(data: invoice, size: 168, logo: _blackDisc),
+            narrowest(MostroQr(data: invoice, logo: _blackDisc)),
             pixelRatio,
           );
           expect(text, invoice.toUpperCase());
@@ -181,7 +183,7 @@ void main() {
         final invoice = _invoice(320, seed: 3);
         final text = await _scan(
           tester,
-          MostroQr(data: invoice, size: 150, logo: _blackDisc),
+          narrowest(MostroQr(data: invoice, logo: _blackDisc)),
           pixelRatio,
         );
         expect(text, invoice.toUpperCase());
@@ -193,7 +195,7 @@ void main() {
         final token = _token(600);
         final text = await _scan(
           tester,
-          MostroQr(data: token, size: 200),
+          narrowest(MostroQr(data: token)),
           pixelRatio,
         );
         expect(text, token);
@@ -209,26 +211,73 @@ void main() {
         Directionality(
           textDirection: TextDirection.ltr,
           child: Center(
-            child: MostroQr(
-              data: invoice,
-              size: 168,
-              logo: (s) {
-                side = s;
-                return const SizedBox.shrink();
-              },
+            child: SizedBox(
+              width: 260,
+              child: MostroQr(
+                data: invoice,
+                logo: (s) {
+                  side = s;
+                  return const SizedBox.shrink();
+                },
+              ),
             ),
           ),
         ),
       );
       final layout = MostroQrLayout.of(invoice, withLogo: true);
-      expect(side, closeTo(layout.logoSide * 168 / layout.moduleCount, 1e-9));
+      const code = 260 - 2 * MostroQr.quietZone;
+      expect(side, closeTo(layout.logoSide * code / layout.moduleCount, 1e-9));
       // Big enough to tell a node's picture apart.
-      expect(side, greaterThan(32));
+      expect(side, greaterThan(48));
+      expect(tester.getSize(find.byType(MostroQr)), const Size.square(260));
+    });
+
+    // A long invoice or token reads best as wide as the screen allows, but
+    // a tablet or a desktop window would draw a poster.
+    testWidgets('takes the width it is given, up to its cap', (tester) async {
+      await tester.pumpWidget(
+        Directionality(
+          textDirection: TextDirection.ltr,
+          child: Center(child: MostroQr(data: _token(600))),
+        ),
+      );
       expect(
         tester.getSize(find.byType(MostroQr)),
-        const Size.square(168 + 2 * MostroQr.quietZone),
+        const Size.square(MostroQr.maxSide),
       );
     });
+
+    // Both invoice screens lay their page out with IntrinsicHeight.
+    for (final (width, side) in [(260.0, 260.0), (500.0, MostroQr.maxSide)]) {
+      testWidgets('an intrinsic-height page holds it, ${width.round()} dp '
+          'wide', (tester) async {
+        await tester.pumpWidget(
+          Directionality(
+            textDirection: TextDirection.ltr,
+            child: Align(
+              alignment: Alignment.topLeft,
+              child: SizedBox(
+                width: width,
+                child: IntrinsicHeight(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Center(
+                        child: MostroQr(data: _invoice(400), logo: _blackDisc),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+        expect(tester.takeException(), isNull);
+        expect(tester.getSize(find.byType(MostroQr)), Size.square(side));
+        // The pass measured the square it then laid out: no gap below.
+        expect(tester.getSize(find.byType(Column)).height, side);
+      });
+    }
 
     testWidgets('reads as an image with its label', (tester) async {
       final handle = tester.ensureSemantics();
@@ -238,7 +287,6 @@ void main() {
           child: Center(
             child: MostroQr(
               data: _invoice(300),
-              size: 150,
               logo: (_) => const Text('M'),
               semanticsLabel: 'Invoice QR',
             ),

@@ -904,7 +904,7 @@ class _TokenDialog extends StatelessWidget {
           // No logo: the token belongs to no node (#851), and a cleared
           // centre would cost the capacity the biggest tokens need.
           if (MostroQr.fits(token))
-            MostroQr(data: token, size: 200)
+            MostroQr(data: token)
           else
             Text(
               l10n.cashuTokenTooLargeForQr,

@@ -57,7 +57,7 @@ Future<void> _pump(
       child: MaterialApp(
         theme: theme,
         home: Center(
-          child: OrderNodeQr(data: _invoice, nodePubkey: nodePubkey, size: 168),
+          child: OrderNodeQr(data: _invoice, nodePubkey: nodePubkey),
         ),
       ),
     ),
