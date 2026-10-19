@@ -9,6 +9,7 @@ import 'package:mostro/core/app_theme.dart';
 import 'package:mostro/core/automation/automation_id.dart';
 import 'package:mostro/core/automation/automation_ids.dart';
 import 'package:mostro/core/node_selector_palette.dart';
+import 'package:mostro/features/account/restore/restore_after_switch.dart';
 import 'package:mostro/features/order/providers/exchange_rate_provider.dart';
 import 'package:mostro/features/settings/models/node_display.dart';
 import 'package:mostro/features/settings/models/node_selector_rules.dart';
@@ -122,7 +123,8 @@ class _MostroNodeSelectorState extends ConsumerState<MostroNodeSelector> {
       ]);
       // The user may have dismissed the sheet during the switch; popping via
       // the captured navigator would then close the route underneath it.
-      if (mounted) navigator.pop();
+      // The node it returns says the switch went through (#813).
+      if (mounted) navigator.pop(entry.pubkey);
       messenger.showSnackBar(
         SnackBar(
           content: Text(l10n.nodeSwitchedSuccess(nodeDisplayName(entry))),
@@ -445,13 +447,21 @@ class _AddOwnNodeButton extends StatelessWidget {
   }
 }
 
-/// Open the node selector as a modal sheet over Settings.
-Future<void> showMostroNodeSelector(BuildContext context) {
+/// Open the node selector as a modal sheet over Settings. Once it closes on
+/// a switch, [afterSwitch] restores the account on the new node (#813); a
+/// sheet closed without one, or dismissed while a switch ran, restores
+/// nothing.
+Future<void> showMostroNodeSelector(
+  BuildContext context, {
+  Future<void> Function(BuildContext) afterSwitch = restoreAfterNodeSwitch,
+}) async {
   // A screen, not a question: it paints its own page backdrop and its own
   // footer, so it opens `bare` rather than inside a [MostroSheet].
-  return showMostroSheet<void>(
+  final switched = await showMostroSheet<String>(
     context: context,
     bare: true,
     builder: (_) => const MostroNodeSelector(),
   );
+  if (switched == null || !context.mounted) return;
+  await afterSwitch(context);
 }
