@@ -13488,6 +13488,53 @@ mod tests {
         }
     }
 
+    /// PR #841 review: a reply that lands once another node is active is
+    /// rejected before it reaches the restore, which then times out and is
+    /// tried once more. Read then, the active node sent the retry to the node
+    /// the user switched to. The node is taken once, and a restore whose node
+    /// is no longer the active one is refused before anything is sent.
+    #[test]
+    fn a_retried_restore_stays_on_the_node_asked() {
+        let recover = fn_body("pub async fn recover_trades()");
+        let node = recover
+            .find("active_mostro_pubkey()")
+            .expect("takes the node asked");
+        let retry = recover
+            .find("retry_once_on_no_response(")
+            .expect("retries once");
+        assert!(node < retry, "the node is taken before the first attempt");
+        assert!(
+            recover[retry..].contains("restore_session_on("),
+            "each attempt asks that node"
+        );
+        assert!(!recover[retry..].contains("active_mostro_pubkey()"));
+
+        let session = fn_body("async fn restore_session_on(node: &str)");
+        let refused = session
+            .find("\"NodeChanged\"")
+            .expect("refuses another node");
+        let first_step = session.find("derive_trade_key(").expect("derives a key");
+        assert!(refused < first_step, "refused before anything is sent");
+    }
+
+    /// PR #841 review: a taker's side comes from the order the restored node
+    /// published. The book holds the active node's orders and the node may
+    /// have changed during the restore, so neither the book nor the relay
+    /// lookup may stand in for the node the restore asked.
+    #[test]
+    fn a_restored_taker_bond_reads_the_order_of_the_node_asked() {
+        let rows = fn_body("async fn persist_restored_bond_rows(");
+        assert!(
+            rows.contains("fetch_public_order(&order_id, node)"),
+            "the relays are asked for the restored node's order"
+        );
+        assert!(
+            rows.contains("node_pubkey.eq_ignore_ascii_case(node)"),
+            "a book entry counts only when the restored node published it"
+        );
+        assert!(!rows.contains("active_mostro_pubkey()"));
+    }
+
     /// The restore sheet (design 20a–20d) follows the restore through these
     /// steps; a step that stops being reported leaves the sheet stuck on it.
     #[test]
@@ -15254,6 +15301,148 @@ mod tests {
             .map(|t| t.order.id)
             .collect();
         assert_eq!(shown, vec!["other-active", "no-node"]);
+    }
+
+    /// A store of its own: the legacy snapshot key is one per database, and
+    /// other tests settle it on the shared one.
+    #[cfg(not(target_arch = "wasm32"))]
+    async fn throwaway_store() -> crate::db::sqlite::SqliteStorage {
+        let path =
+            std::env::temp_dir().join(format!("legacy_snapshot_{}.db", uuid::Uuid::new_v4()));
+        crate::db::sqlite::SqliteStorage::open(path.to_str().unwrap())
+            .await
+            .unwrap()
+    }
+
+    /// The snapshot as `node`'s key holds it, if any.
+    async fn stored_snapshot_of(
+        db: &impl Storage,
+        node: &str,
+    ) -> Option<crate::mostro::restore_history::RestoreSnapshot> {
+        let json = db
+            .get_setting(&crate::db::settings_keys::restore_snapshot(node))
+            .await
+            .unwrap()?;
+        Some(serde_json::from_str(&json).unwrap())
+    }
+
+    /// PR #841 review: the snapshot stored before #812 names no node, but the
+    /// restore that wrote it filed the rows of its live orders under the node
+    /// that answered. When those rows agree on one node, the snapshot is that
+    /// node's: dropping it brought back, on the next replay, the history
+    /// #614 hid, for every user who had restored before upgrading.
+    #[cfg(not(target_arch = "wasm32"))]
+    #[tokio::test]
+    async fn a_legacy_snapshot_is_filed_under_the_node_of_its_live_rows() {
+        use crate::db::settings_keys::RESTORE_SNAPSHOT;
+        let db = throwaway_store().await;
+        db.set_setting(
+            RESTORE_SNAPSHOT,
+            r#"{"floor":9,"live":["live-a","live-b"],"identity":"owner"}"#,
+        )
+        .await
+        .unwrap();
+        let mut shouted = row_on(RESTORED_NODE, "live-b", 8, OrderStatus::Active);
+        shouted.order.node_pubkey = RESTORED_NODE.to_ascii_uppercase();
+        let trades = vec![
+            row_on(RESTORED_NODE, "live-a", 7, OrderStatus::Active),
+            shouted,
+            row_on(OTHER_NODE, "not-listed", 3, OrderStatus::Active),
+        ];
+
+        migrate_unnamed_restore_snapshot(&db, &trades).await;
+
+        let filed = stored_snapshot_of(&db, RESTORED_NODE)
+            .await
+            .expect("filed under the node of its live rows");
+        assert_eq!(filed.node.as_deref(), Some(RESTORED_NODE));
+        assert_eq!(filed.floor, 9);
+        assert_eq!(filed.identity.as_deref(), Some("owner"));
+        assert_eq!(
+            filed.live,
+            ["live-a", "live-b"].map(String::from).into_iter().collect()
+        );
+        assert_eq!(stored_snapshot_of(&db, OTHER_NODE).await, None);
+        assert_eq!(db.get_setting(RESTORE_SNAPSHOT).await.unwrap(), None);
+    }
+
+    /// A node's own snapshot is newer than the one stored before #812: the
+    /// legacy one never replaces it.
+    #[cfg(not(target_arch = "wasm32"))]
+    #[tokio::test]
+    async fn a_legacy_snapshot_never_replaces_a_nodes_own() {
+        use crate::db::settings_keys::{restore_snapshot, RESTORE_SNAPSHOT};
+        let db = throwaway_store().await;
+        let own = format!(r#"{{"floor":20,"live":[],"node":"{RESTORED_NODE}"}}"#);
+        db.set_setting(&restore_snapshot(RESTORED_NODE), &own)
+            .await
+            .unwrap();
+        db.set_setting(RESTORE_SNAPSHOT, r#"{"floor":9,"live":["live-a"]}"#)
+            .await
+            .unwrap();
+        let trades = vec![row_on(RESTORED_NODE, "live-a", 7, OrderStatus::Active)];
+
+        migrate_unnamed_restore_snapshot(&db, &trades).await;
+
+        assert_eq!(
+            db.get_setting(&restore_snapshot(RESTORED_NODE))
+                .await
+                .unwrap(),
+            Some(own)
+        );
+        assert_eq!(db.get_setting(RESTORE_SNAPSHOT).await.unwrap(), None);
+    }
+
+    /// When its live rows do not name one node, nothing says whose trades
+    /// the legacy snapshot describes: filed under a guess, it could wipe
+    /// another node's (#812). It is dropped, and the next restore of each
+    /// node writes that node's own.
+    #[cfg(not(target_arch = "wasm32"))]
+    #[tokio::test]
+    async fn a_legacy_snapshot_of_an_unknown_node_is_dropped() {
+        use crate::db::settings_keys::RESTORE_SNAPSHOT;
+        let two_nodes = vec![
+            row_on(RESTORED_NODE, "live-a", 7, OrderStatus::Active),
+            row_on(OTHER_NODE, "live-b", 8, OrderStatus::Active),
+        ];
+        let no_node = vec![row_on("", "live-a", 7, OrderStatus::Active)];
+        let unlisted = vec![row_on(RESTORED_NODE, "not-listed", 7, OrderStatus::Active)];
+        for (stored, trades) in [
+            (r#"{"floor":9,"live":["live-a","live-b"]}"#, two_nodes),
+            (r#"{"floor":9,"live":["live-a"]}"#, no_node),
+            (r#"{"floor":9,"live":[]}"#, unlisted.clone()),
+            (r#"{"floor":9,"live":["live-a"]}"#, unlisted.clone()),
+            ("not a snapshot", unlisted),
+        ] {
+            let db = throwaway_store().await;
+            db.set_setting(RESTORE_SNAPSHOT, stored).await.unwrap();
+
+            migrate_unnamed_restore_snapshot(&db, &trades).await;
+
+            for node in [RESTORED_NODE, OTHER_NODE] {
+                assert_eq!(stored_snapshot_of(&db, node).await, None, "{stored}");
+            }
+            assert_eq!(
+                db.get_setting(RESTORE_SNAPSHOT).await.unwrap(),
+                None,
+                "{stored}"
+            );
+        }
+    }
+
+    /// The kind-14 feed replays the whole history when it opens: a legacy
+    /// snapshot still unsettled then reads as no restore at all, and the
+    /// replay rebuilds every trade it hid. So it is settled first.
+    #[test]
+    fn the_legacy_snapshot_is_settled_before_the_daemon_feed_opens() {
+        let run = fn_body("async fn _run_order_subscription()");
+        let migrated = run
+            .find("migrate_unnamed_restore_snapshot(")
+            .expect("settles the legacy snapshot at start");
+        let feed = run
+            .find("seed_global_dm_coverage()")
+            .expect("opens the daemon feed");
+        assert!(migrated < feed, "the snapshot is settled before the replay");
     }
 
     /// #812: a message with no row is history only by the restore of the
