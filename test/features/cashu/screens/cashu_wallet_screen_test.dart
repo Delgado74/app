@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -36,8 +38,9 @@ class _FakeController extends CashuWalletController {
   /// The quotes [meltQuote] answers with, in order.
   final List<CashuMeltQuote> quotes;
 
-  /// What each [melt] does, in order: a [CashuMeltResult] is returned,
-  /// anything else is thrown.
+  /// What each [melt] does, in order: a [CashuMeltResult] is returned, a
+  /// `Future<CashuMeltResult>` is awaited (a payment still running), anything
+  /// else is thrown.
   final List<Object> meltOutcomes;
 
   /// Every invoice handed to [meltQuote].
@@ -86,6 +89,7 @@ class _FakeController extends CashuWalletController {
     melts.add((quoteId, maxTotalSats));
     final outcome = meltOutcomes.removeAt(0);
     if (outcome is CashuMeltResult) return outcome;
+    if (outcome is Future<CashuMeltResult>) return outcome;
     throw outcome;
   }
 }
@@ -1264,6 +1268,46 @@ void main() {
 
       // Paid with the total the user saw as the ceiling.
       expect(controller.melts, [('q1', BigInt.from(103))]);
+      expect(find.text('Paid 100 sats (1 sats in fees)'), findsOneWidget);
+    });
+
+    testWidgets('the confirmation stays open, busy, while the payment runs', (
+      tester,
+    ) async {
+      final routing = Completer<CashuMeltResult>();
+      final controller = _FakeController(
+        quotes: [_quote('q1')],
+        meltOutcomes: [routing.future],
+      );
+      await openConfirmation(tester, controller);
+
+      await tester.tap(find.text('Pay'));
+      await tester.pump();
+
+      // Still on screen, Pay replaced by its spinner, and no way out: closing
+      // would not stop the payment.
+      expect(find.text('Confirm payment'), findsOneWidget);
+      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+      final cancel = tester.widget<OutlinedButton>(
+        find.ancestor(
+          of: find.text('Cancel'),
+          matching: find.byType(OutlinedButton),
+        ),
+      );
+      expect(cancel.onPressed, isNull);
+      await tester.tapAt(const Offset(4, 4));
+      await tester.pump();
+      expect(find.text('Confirm payment'), findsOneWidget);
+
+      routing.complete(
+        CashuMeltResult.paid(
+          amountSats: BigInt.from(100),
+          feePaidSats: BigInt.one,
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Confirm payment'), findsNothing);
       expect(find.text('Paid 100 sats (1 sats in fees)'), findsOneWidget);
     });
 
