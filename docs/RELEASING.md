@@ -89,7 +89,8 @@ To sign a build locally, create `android/key.properties` (`storeFile`, `storePas
   - **required reviewers on the `release` environment** (Settings → Environments). The
     `android` job — the only one that sees the signing key — runs in it, so the run then
     waits for an admin's approval before anything is signed. Moving the four secrets from
-    repository to environment scope keeps them out of reach of every other workflow;
+    repository to environment scope keeps them from every job that does not name `release`;
+    one that does, in any workflow, gets them once it passes the environment's rules;
   - **only release tags may deploy to it** (same page → Deployment branches and tags →
     Selected branches and tags → a *Tag* rule `v*.*.*`). A job from any other ref then fails
     instead of waiting for approval: an approval always means a release, and a workflow
