@@ -54,6 +54,7 @@ class CounterpartReputationRow extends StatelessWidget {
           Container(
             width: 34,
             height: 34,
+            padding: const EdgeInsets.all(2),
             alignment: Alignment.center,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
@@ -62,25 +63,30 @@ class CounterpartReputationRow extends StatelessWidget {
                 color: isNew ? book.border : trade.avatarBorder,
               ),
             ),
-            child:
-                isNew
-                    ? Text(
-                      l10n.reputationNew,
-                      style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w600,
-                        color: book.textNew,
+            // The grade shrinks to the circle at large text rather than
+            // spill out of it (DS-TYP-7).
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child:
+                  isNew
+                      ? Text(
+                        l10n.reputationNew,
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
+                          color: book.textNew,
+                        ),
+                      )
+                      : Text(
+                        formatRating(rating, l10n.localeName),
+                        style: TextStyle(
+                          fontFamily: AppFonts.figures,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: book.limeInk,
+                        ),
                       ),
-                    )
-                    : Text(
-                      formatRating(rating, l10n.localeName),
-                      style: TextStyle(
-                        fontFamily: AppFonts.figures,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w700,
-                        color: book.limeInk,
-                      ),
-                    ),
+            ),
           ),
           const SizedBox(width: 12),
           Expanded(
