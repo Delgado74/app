@@ -6107,11 +6107,22 @@ async fn settle_lapsed_take(order_id: &str, deadline: i64) -> Option<bool> {
     if bond_watch_deadline(&row, i64::MIN) != Some(deadline) {
         return Some(false);
     }
-    match taker_lapse(deadline, order_book().wire_revision(order_id).await) {
+    match taker_lapse(deadline, wire_revision_whole(order_id).await) {
         TakerLapse::Lapsed => Some(close_expired_bond_trade(&row, crate::rt::unix_now()).await),
         TakerLapse::Moved => Some(false),
         TakerLapse::Unproven => None,
     }
+}
+
+/// [`OrderBook::wire_revision`] read under `order_id`'s revision guard. An
+/// event is claimed (its time) before its status is noted, both under that
+/// guard, and a read between the two would pair the new time with the
+/// status before it: a `pending` from the take, dated at the deadline,
+/// would read as the bond's lapse.
+async fn wire_revision_whole(order_id: &str) -> Option<(i64, OrderStatus)> {
+    let registry = REVISION_LOCKS.get_or_init(|| std::sync::Mutex::new(HashMap::new()));
+    let _guard = lock_in(registry, order_id).await;
+    order_book().wire_revision(order_id).await
 }
 
 /// Close a taker's bond window once its deadline passed and the book shows
@@ -6121,7 +6132,14 @@ async fn settle_lapsed_take(order_id: &str, deadline: i64) -> Option<bool> {
 /// like the chat grace timer ([`grace_check_delay`]) and decides on the row
 /// as it is then ([`settle_lapsed_take`]).
 fn watch_bond_window(trade: &crate::api::types::TradeInfo) {
-    let Some(deadline) = bond_watch_deadline(trade, crate::rt::unix_now()) else {
+    watch_bond_window_from(trade, crate::rt::unix_now());
+}
+
+/// [`watch_bond_window`] with the window judged at `now`: the sweep passes
+/// the time it judged every row by, so a deadline that falls while it walks
+/// the rows is still watched rather than left to the next sweep.
+fn watch_bond_window_from(trade: &crate::api::types::TradeInfo, now: i64) {
+    let Some(deadline) = bond_watch_deadline(trade, now) else {
         return;
     };
     #[cfg(not(target_arch = "wasm32"))]
@@ -9093,9 +9111,10 @@ async fn run_stale_sweep_once() {
             if close_expired_bond_trade(&trade, now).await {
                 wiped += 1;
             } else {
-                // Still open, as after a restart: closed at its deadline,
-                // not a sweep later.
-                watch_bond_window(&trade);
+                // Still open at `now`, as after a restart: closed at its
+                // deadline, not a sweep later — judged at the same `now`,
+                // so a deadline passed while the rows were walked counts.
+                watch_bond_window_from(&trade, now);
             }
             continue;
         }
@@ -22283,6 +22302,60 @@ mod tests {
         assert!(db.get_trade_by_order_id(&unproven).await.unwrap().is_some());
         assert!(db.get_trade_by_order_id(&taken).await.unwrap().is_some());
         assert!(db.get_trade_by_order_id(&lapsed).await.unwrap().is_none());
+    }
+
+    /// A revision is claimed (its time) before its status is noted, both
+    /// under the order's revision guard. The lapse is read under it too: a
+    /// read between the two would pair the new time with the status before
+    /// it, and a `pending` from the take dated at the deadline would read
+    /// as the bond's lapse (Codex on #850).
+    #[tokio::test]
+    async fn the_lapse_reads_a_revision_whole() {
+        let order_id = uuid::Uuid::new_v4().to_string();
+        let deadline = 10_000;
+        book_saw(&order_id, OrderStatus::Pending, 1_000).await;
+        let registry = REVISION_LOCKS.get_or_init(|| std::sync::Mutex::new(HashMap::new()));
+        let applying = lock_in(registry, &order_id).await;
+        order_book()
+            .orders
+            .write()
+            .await
+            .claim_revision(&order_id, (deadline as u64, std::cmp::Reverse([0; 32])));
+
+        let read = tokio::spawn({
+            let order_id = order_id.clone();
+            async move { wire_revision_whole(&order_id).await }
+        });
+        tokio::time::sleep(std::time::Duration::from_millis(50)).await;
+        assert!(!read.is_finished(), "read half a revision");
+        order_book().note_wire_order(&wire_order(&order_id, OrderStatus::InProgress));
+        drop(applying);
+
+        assert_eq!(
+            read.await.unwrap(),
+            Some((deadline, OrderStatus::InProgress))
+        );
+    }
+
+    /// The sweep judges every row by the time it started. A taker's window
+    /// due while it walks the rows was not closed by that time, so it is
+    /// armed by that time too, or nothing would close it before the next
+    /// sweep (Codex on #850).
+    #[tokio::test]
+    async fn a_window_due_while_the_sweep_walks_is_still_watched() {
+        let db = bond_test_db().await;
+        let order_id = uuid::Uuid::new_v4().to_string();
+        let deadline = crate::rt::unix_now() - 1;
+        let row = bonded_taker_row(&order_id, BOND_BOLT11, Some(deadline));
+        db.save_trade(&row).await.unwrap();
+        book_saw(&order_id, OrderStatus::Pending, deadline).await;
+
+        watch_bond_window_from(&row, deadline - 5);
+
+        assert!(
+            row_gone_within(db, &order_id, std::time::Duration::from_secs(5)).await,
+            "the window due during the sweep was never watched"
+        );
     }
 
     /// Only a taker's unpaid window whose deadline is still ahead is
