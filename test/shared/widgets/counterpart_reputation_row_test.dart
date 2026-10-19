@@ -59,8 +59,7 @@ void main() {
     expect(find.text('4.8'), findsOneWidget);
     expect(find.text(en.tradeRoleBuyer), findsOneWidget);
     expect(find.text(en.reputationNew), findsNothing);
-    expect(find.textContaining(en.reputationTradesCount(2)), findsOneWidget);
-    expect(find.textContaining(en.reputationDaysOnMostro(1)), findsOneWidget);
+    expect(find.text('2 ratings · since Dec 2025'), findsOneWidget);
   });
 
   // The order book shows the same user at 4,97 (DS-L10N-5).
@@ -78,6 +77,19 @@ void main() {
 
     expect(find.text('4,97'), findsOneWidget);
     expect(find.text('5.0'), findsNothing);
+    expect(find.text('687 calificaciones · desde may 2022'), findsOneWidget);
+  });
+
+  testWidgets('groups a large ratings count for the locale', (tester) async {
+    await pump(
+      tester,
+      rating: 4.97,
+      reviews: 1323,
+      since: DateTime.utc(2022, 5, 19),
+      counterpartIsBuyer: true,
+    );
+
+    expect(find.text('1,323 ratings · since May 2022'), findsOneWidget);
   });
 
   testWidgets('a seller nobody rated reads New instead of a grade', (
@@ -94,7 +106,7 @@ void main() {
     expect(find.text(en.reputationNew), findsOneWidget);
     expect(find.text('0.0'), findsNothing);
     expect(find.text(en.tradeRoleSeller), findsOneWidget);
-    expect(find.textContaining(en.reputationDaysOnMostro(12)), findsOneWidget);
+    expect(find.text('no ratings · since Dec 2025'), findsOneWidget);
   });
 
   test('highlightFigures styles every run of digits and nothing else', () {
