@@ -1193,6 +1193,119 @@ mod tests {
         }
     }
 
+    /// BOLT11 spec test vector for 9 678 785.340 µBTC: 967 878 534 msat, a
+    /// fraction of a sat on top of 967 878 sat.
+    const FRACTIONAL_SATS: &str = "lnbc9678785340p1pwmna7lpp5gc3xfm08u9qy06djf8dfflhugl6p7lgza6dsjxq454gxhj9t7a0sd8dgfkx7cmtwd68yetpd5s9xar0wfjn5gpc8qhrsdfq24f5ggrxdaezqsnvda3kkum5wfjkzmfqf3jkgem9wgsyuctwdus9xgrcyqcjcgpzgfskx6eqf9hzqnteypzxz7fzypfhg6trddjhygrcyqezcgpzfysywmm5ypxxjemgw3hxjmn8yptk7untd9hxwg3q2d6xjcmtv4ezq7pqxgsxzmnyyqcjqmt0wfjjq6t5v4khxsp5zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zygsxqyjw5qcqp2rzjq0gxwkzc8w6323m55m4jyxcjwmy7stt9hwkwe2qxmy8zpsgg7jcuwz87fcqqeuqqqyqqqqlgqqqqn3qq9q9qrsgqrvgkpnmps664wgkp43l22qsgdw4ve24aca4nymnxddlnp8vh9v2sdxlu5ywdxefsfvm0fq3sesf08uf6q9a2ke0hc9j6z6wlxg5z5kqpu2v9wz";
+
+    /// When `invoice` was issued, as the `now` of [`melt_invoice`]: the spec
+    /// vectors expired years ago, and at their own timestamp they have not.
+    fn issued_at(invoice: &str) -> Duration {
+        lightning_invoice::Bolt11Invoice::from_str(invoice)
+            .unwrap()
+            .duration_since_epoch()
+    }
+
+    /// The stable marker of an error, without the detail after it.
+    fn marker_of(e: anyhow::Error) -> String {
+        e.to_string()
+            .split(':')
+            .next()
+            .unwrap_or_default()
+            .to_string()
+    }
+
+    #[test]
+    fn an_invoice_to_melt_is_checked_before_any_mint_is_asked() {
+        use crate::api::invoice::test_vectors::{COFFEE, DONATION};
+
+        let marker = |input: &str, now: Duration| marker_of(melt_invoice(input, now).unwrap_err());
+
+        // Not an invoice at all — nor a corrupted one, nor an address.
+        for garbage in ["", "hello", "lnbc1short", "satoshi@example.com"] {
+            assert_eq!(
+                marker(garbage, unix_now()),
+                "CashuInvalidInvoice",
+                "{garbage:?}"
+            );
+        }
+        let corrupted = COFFEE.replacen("lnbc2500u1", "lnbc2500u2", 1);
+        assert_eq!(marker(&corrupted, unix_now()), "CashuInvalidInvoice");
+
+        // Open-amount invoices are out of scope, expired ones cannot be paid,
+        // and a fraction of a sat is refused rather than rounded.
+        assert_eq!(
+            marker(DONATION, issued_at(DONATION)),
+            "CashuInvoiceNoAmount"
+        );
+        assert_eq!(marker(COFFEE, unix_now()), "CashuInvoiceExpired");
+        assert_eq!(
+            marker(FRACTIONAL_SATS, issued_at(FRACTIONAL_SATS)),
+            "CashuInvalidInvoice"
+        );
+
+        // A live invoice: its amount in sats, and the invoice as cdk will get
+        // it — scheme and whitespace stripped, lower-cased.
+        let expected = (COFFEE.to_string(), 250_000);
+        let now = issued_at(COFFEE);
+        assert_eq!(melt_invoice(COFFEE, now).unwrap(), expected);
+        let scanned = format!("  lightning:{}\n", COFFEE.to_ascii_uppercase());
+        assert_eq!(melt_invoice(&scanned, now).unwrap(), expected);
+        // Its expiry is 60 s: past it, it is expired.
+        assert_eq!(
+            marker(COFFEE, now + Duration::from_secs(61)),
+            "CashuInvoiceExpired"
+        );
+    }
+
+    #[test]
+    fn the_confirmed_total_is_amount_plus_reserve_plus_input_fees() {
+        // Pins the reading of cdk 0.18.1 behind it: `prepare_melt` selects
+        // proofs for `amount + fee_reserve`, and `total_fee()` (input fee,
+        // plus the swap's when one is needed) comes on top. This is the most
+        // the balance can drop; nothing is left out of it.
+        assert_eq!(melt_max_total(100, 2, 1), Some(103));
+        assert_eq!(melt_max_total(100, 0, 0), Some(100));
+        // Overflow is refused, never wrapped into a small total the user
+        // would confirm.
+        assert_eq!(melt_max_total(u64::MAX, 1, 0), None);
+        assert_eq!(melt_max_total(u64::MAX - 1, 1, 1), None);
+    }
+
+    #[test]
+    fn a_melt_is_gated_on_what_the_mint_advertised() {
+        let melts = MintCapabilities {
+            nut05_bolt11: true,
+            ..MintCapabilities::default()
+        };
+        let gate = |caps: &MintCapabilities, sats: u64| melt_gate(caps, sats).map_err(marker_of);
+
+        // No NUT-05: unsupported, whatever the amount.
+        assert_eq!(
+            gate(&MintCapabilities::default(), 100),
+            Err("CashuMeltUnsupported".to_string())
+        );
+
+        // No stated limits: any amount goes to the mint.
+        assert_eq!(gate(&melts, 1), Ok(()));
+        assert_eq!(gate(&melts, u64::MAX), Ok(()));
+
+        // Limits are inclusive at both ends.
+        let limited = MintCapabilities {
+            melt_min_sats: Some(10),
+            melt_max_sats: Some(1_000),
+            ..melts
+        };
+        assert_eq!(gate(&limited, 10), Ok(()));
+        assert_eq!(gate(&limited, 1_000), Ok(()));
+        for outside in [9, 1_001] {
+            assert_eq!(
+                gate(&limited, outside),
+                Err("CashuMeltAmountOutOfRange".to_string()),
+                "{outside} sat"
+            );
+        }
+    }
+
     #[test]
     fn a_fresh_capability_set_is_unusable() {
         // Assert — the default must fail closed, so a probe that never ran
