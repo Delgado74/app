@@ -377,7 +377,7 @@ flowchart LR
 | Wave | Phases | Relationship | Tests against daemon |
 |------|--------|--------------|----------------------|
 | 0 | C0, C1, C2 | **parallel** with each other | daemon not needed |
-| 1 | C3, C4, C3b | **parallel** with each other; each **stacked on C2** (C4 also on C0; C3b stacked on C2 + C3; required before general availability (§1.1)) | daemon not needed (mint only) |
+| 1 | C3, C4, then C3b | C3 and C4 **parallel** with each other, each **stacked on C2** (C4 also on C0); C3b **stacked on C2 + C3**, required before general availability (§1.1) | daemon not needed (mint only) |
 | 2 | C5 | **stacked** on C0+C1+C2+C4 | daemon Foundation + Track A |
 | 3 | C6, C7, C8 | **parallel** with each other; each **stacked on C5** | daemon Tracks B / C / D |
 | 4 | C9, C10 | **parallel** with each other, after C6. Not optional — required before general availability (§1.1) | — |
@@ -518,7 +518,7 @@ hard prerequisite, not a nice-to-have.
 
 ---
 
-### Wave 1 — on top of the wallet (2 parallel PRs)
+### Wave 1 — on top of the wallet (C3 and C4 in parallel, then C3b)
 
 #### C3 — minimal wallet UI (Dart)
 
@@ -577,8 +577,9 @@ mints is inconsistent), no general wallet features.
     the input fee, their total and the quote's expiry. No proof stays reserved while
     the user reads the confirmation.
   - `cashu_melt(quote_id, max_total_sats) -> CashuMeltResult` — prepares again,
-    refuses an expired quote (`CashuMeltQuoteExpired`) or a total above what the
-    user confirmed (`CashuMeltFeeChanged`), both after cancelling, then
+    refuses a quote taken at another mint (`CashuMeltFailed`; cdk does not check),
+    an expired quote (`CashuMeltQuoteExpired`) or a total above what the user
+    confirmed (`CashuMeltFeeChanged`), all after cancelling, then
     `confirm_prefer_async()`. The result is `Paid` (amount and the fee actually
     charged) or `Pending` (the Lightning payment is in flight: the proofs stay
     reserved and recovery finalizes them), or a marker. Change from the fee reserve
@@ -592,16 +593,22 @@ mints is inconsistent), no general wallet features.
 - **Dart** (`lib/features/cashu/`): Send → *Ecash* / *Lightning* (the second hidden
   without `nut05_bolt11`); paste or scan a bolt11 (`mobile_scanner`); a confirmation
   showing amount, "up to X sats" in fees and the total; then *paid* (with the fee
-  actually charged), *in progress* or the localized error. An expired quote or a
-  changed fee goes back to a fresh quote, never pays stale. l10n in all locales;
+  actually charged), *in progress* or the localized error. The confirmation stays
+  open while the payment runs, Pay busy and no way out, since closing would not
+  stop it. An expired quote or a changed fee goes back to a fresh quote, never pays
+  stale. l10n in all locales;
   `DESIGN_SYSTEM.md`.
 - **Out of scope:** Lightning addresses / LNURL (who resolves the LNURL, and from
   which network address, is not yet checked), amountless invoices, warnings about
   trades that need the balance.
-- **Tests:** unit — marker mapping, the capability gate (hidden, not refused);
-  integration (`#[ignore]`, local nutshell, FakeWallet backend) — quote → melt →
-  balance drops; a quote leaves no proof reserved; a melt left prepared (the wallet
-  dropped before confirm) releases its proofs at the next connect.
+- **Tests:** unit — invoice validation, marker mapping, the capability gate (hidden,
+  not refused), the confirmed total, the quote's mint; widget — the send choice, the
+  confirmation staying busy while it pays, the refresh of a stale quote. **Tests
+  against a mint are deferred:** the paths that need one — the balance dropping by
+  at most the confirmed total, a quote leaving no proof reserved, a melt left
+  prepared or in flight settled at the next connect or sync — are checked by hand
+  against a `cdk-mintd` on a regtest Lightning node, until automated mint-backed
+  tests land.
 - **Done when:** Send → "to Lightning" → paste a bolt11 → confirm → the invoice
   settles and the balance drops by at most the confirmed total.
 - Est. size: M (~800–1200 lines).
