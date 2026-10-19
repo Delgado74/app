@@ -5,6 +5,7 @@ import 'package:mostro/core/app_theme.dart';
 import 'package:mostro/features/account/providers/my_reputation_provider.dart';
 import 'package:mostro/features/account/widgets/account_card.dart';
 import 'package:mostro/l10n/app_localizations.dart';
+import 'package:mostro/shared/utils/rating_format.dart';
 import 'package:mostro/shared/utils/reputation_age.dart';
 import 'package:mostro/shared/widgets/counterpart_reputation_row.dart'
     show highlightFigures;
@@ -90,10 +91,7 @@ class _Figures extends StatelessWidget {
         Icon(Icons.star_rounded, size: 20, color: book.yellow),
         const SizedBox(width: 6),
         Text(
-          NumberFormat.decimalPatternDigits(
-            locale: locale,
-            decimalDigits: 1,
-          ).format(reputation.rating),
+          formatRating(reputation.rating, locale),
           style: TextStyle(
             fontFamily: AppFonts.figures,
             fontSize: 22,

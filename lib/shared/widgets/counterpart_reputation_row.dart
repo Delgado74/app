@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:mostro/core/app_theme.dart';
 import 'package:mostro/core/trade_palette.dart';
 import 'package:mostro/l10n/app_localizations.dart';
+import 'package:mostro/shared/utils/rating_format.dart';
 
 /// One-row counterpart reputation: the grade on the avatar, the role, and
 /// `2 trades · 1 day on Mostro`. Shared by the trade screen (8b, 8c) and the
@@ -69,7 +70,7 @@ class CounterpartReputationRow extends StatelessWidget {
                       ),
                     )
                     : Text(
-                      rating.toStringAsFixed(1),
+                      formatRating(rating, l10n.localeName),
                       style: TextStyle(
                         fontFamily: AppFonts.figures,
                         fontSize: 13,
@@ -78,7 +79,7 @@ class CounterpartReputationRow extends StatelessWidget {
                       ),
                     ),
           ),
-          const SizedBox(width: 11),
+          const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,

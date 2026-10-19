@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 import 'package:mostro/core/app_theme.dart';
 import 'package:mostro/l10n/app_localizations.dart';
+import 'package:mostro/shared/utils/rating_format.dart';
 
 /// A single reputation metric (value + label), optionally with a leading icon.
 ///
@@ -76,47 +78,47 @@ class PeerReputationCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = Theme.of(context).extension<AppColors>();
-    final cardBg = colors?.backgroundCard ?? const Color(0xFF1E2230);
-    final textSec = colors?.textSecondary ?? const Color(0xFFB0B3C6);
+    final book = OrderBookPalette.of(context);
     final l10n = AppLocalizations.of(context);
+    final locale = l10n.localeName;
+    // Grouped as the order book groups them (DS-L10N-5): `1,323`.
+    final count = NumberFormat.decimalPattern(locale);
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(AppSpacing.lg),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: cardBg,
-        borderRadius: BorderRadius.circular(AppRadius.card),
+        color: book.surface,
+        border: Border.all(color: book.border),
+        borderRadius: BorderRadius.circular(18),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            counterpartIsBuyer
-                ? l10n.buyerReputation
-                : l10n.sellerReputation,
-            style: TextStyle(color: textSec, fontSize: 12),
+            counterpartIsBuyer ? l10n.buyerReputation : l10n.sellerReputation,
+            style: TextStyle(color: book.textSecondary, fontSize: 12),
           ),
           const SizedBox(height: AppSpacing.md),
           Row(
             children: [
               Expanded(
                 child: ReputationStat(
-                  value: rating.toStringAsFixed(1),
+                  value: formatRating(rating, locale),
                   label: l10n.ratingStatLabel,
                   icon: Icons.star,
-                  iconColor: Colors.amber,
+                  iconColor: book.yellow,
                 ),
               ),
               Expanded(
                 child: ReputationStat(
-                  value: '$reviews',
+                  value: count.format(reviews),
                   label: l10n.tradesStatLabel,
                 ),
               ),
               Expanded(
                 child: ReputationStat(
-                  value: '$days',
+                  value: count.format(days),
                   label: l10n.daysActiveStatLabel,
                 ),
               ),
