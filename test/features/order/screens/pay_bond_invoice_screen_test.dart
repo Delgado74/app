@@ -20,8 +20,8 @@ import 'package:mostro/features/trades/providers/trades_providers.dart';
 import 'package:mostro/l10n/app_localizations.dart';
 import 'package:mostro/shared/utils/platform_int64.dart';
 import 'package:mostro/shared/widgets/mostro_modal.dart';
+import 'package:mostro/shared/widgets/mostro_qr.dart';
 import 'package:mostro/src/rust/api/types.dart';
-import 'package:qr_flutter/qr_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../support/automation_finders.dart';
@@ -111,7 +111,7 @@ void main() {
     await _pump(tester, trade: fakeTrade(bond: _bond()), slashOnTimeout: false);
 
     expect(find.text('1,648'), findsOneWidget);
-    expect(find.byType(QrImageView), findsOneWidget);
+    expect(find.byType(MostroQr), findsOneWidget);
     // Whole sentences: the bold part is spliced into the l10n message and
     // the prose on both sides of it must survive.
     expect(
@@ -186,7 +186,7 @@ void main() {
     await _pump(tester, trade: fakeTrade(bond: _bond()), walletConnected: true);
     expect(find.byType(NwcPaymentWidget), findsOneWidget);
     expect(find.text('Pay with Wallet'), findsOneWidget);
-    expect(find.byType(QrImageView), findsOneWidget);
+    expect(find.byType(MostroQr), findsOneWidget);
     expect(
       find.text(
         'The sats stay held in your wallet; they are not spent',
@@ -209,7 +209,7 @@ void main() {
     await tester.pump();
     await tester.pump();
 
-    expect(find.byType(QrImageView), findsOneWidget);
+    expect(find.byType(MostroQr), findsOneWidget);
     expect(find.text('Copy'), findsOneWidget);
     expect(find.text('Share'), findsOneWidget);
     expect(find.text('Read the documentation'), findsOneWidget);
@@ -230,7 +230,7 @@ void main() {
     tester,
   ) async {
     await _pump(tester, trade: fakeTrade(bond: _bond()), explainerOpen: true);
-    expect(find.byType(QrImageView), findsOneWidget);
+    expect(find.byType(MostroQr), findsOneWidget);
     expect(find.text('Read the documentation'), findsOneWidget);
   });
 
@@ -374,7 +374,7 @@ void main() {
         return fakeTrade(bond: _bond());
       },
     );
-    expect(find.byType(QrImageView), findsNothing);
+    expect(find.byType(MostroQr), findsNothing);
     await tester.tap(find.text('Request the invoice again'));
     await tester.pump();
     expect(requested, ['order-1']);
@@ -436,7 +436,7 @@ void main() {
       tester,
     ) async {
       await _pump(tester, trade: makerTrade(), slashOnTimeout: false);
-      expect(find.byType(QrImageView), findsOneWidget);
+      expect(find.byType(MostroQr), findsOneWidget);
       expect(find.text("Don't publish the order"), findsOneWidget);
       expect(find.text("Don't take the order"), findsNothing);
       // The maker of a sell order sells.
