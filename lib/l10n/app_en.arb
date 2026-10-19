@@ -1924,6 +1924,10 @@
   "@tradeStepOrderTaken": {
     "description": "Timeline step: order taken"
   },
+  "tradeStepWaitingTaker": "Waiting for a taker",
+  "@tradeStepWaitingTaker": {
+    "description": "Timeline step 1 while the user's own order is still in the book and nobody has taken it; once taken the same step reads tradeStepOrderTaken"
+  },
   "tradeStepInvoiceBuyer": "The seller locks the sats",
   "@tradeStepInvoiceBuyer": {
     "description": "Trade screen timeline, step 2 for the buyer: the seller locks the sats (the seller's version is tradeStepInvoiceSeller)"

@@ -447,6 +447,7 @@
   "tradeTimerEscrowCancellingSeller": "O Mostro está prestes a cancelar a operação. Seus sats ficam na sua carteira.",
   "tradeTimerEscrowDisputing": "Uma disputa está prestes a ser aberta.",
   "tradeStepOrderTaken": "Ordem aceita",
+  "tradeStepWaitingTaker": "Aguardando alguém aceitar",
   "tradeStepInvoiceBuyer": "O vendedor bloqueia os sats",
   "tradeStepInvoiceSeller": "Você bloqueia os sats",
   "tradeStepFiatBuyer": "Você envia o pagamento em fiat",

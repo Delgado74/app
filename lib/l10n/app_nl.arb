@@ -447,6 +447,7 @@
   "tradeTimerEscrowCancellingSeller": "Mostro annuleert zo de trade. Je sats blijven in je wallet.",
   "tradeTimerEscrowDisputing": "Er wordt zo een dispuut geopend.",
   "tradeStepOrderTaken": "Order geaccepteerd",
+  "tradeStepWaitingTaker": "Wacht op een tegenpartij",
   "tradeStepInvoiceBuyer": "De verkoper zet de sats vast",
   "tradeStepInvoiceSeller": "Jij zet de sats vast",
   "tradeStepFiatBuyer": "Jij maakt de fiat over",

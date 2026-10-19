@@ -1556,6 +1556,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get tradeStepOrderTaken => 'Order angenommen';
 
   @override
+  String get tradeStepWaitingTaker => 'Warte auf Annahme';
+
+  @override
   String get tradeStepInvoiceBuyer => 'Der Verkäufer sperrt die Sats';
 
   @override

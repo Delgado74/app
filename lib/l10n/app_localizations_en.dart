@@ -1535,6 +1535,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tradeStepOrderTaken => 'Order taken';
 
   @override
+  String get tradeStepWaitingTaker => 'Waiting for a taker';
+
+  @override
   String get tradeStepInvoiceBuyer => 'The seller locks the sats';
 
   @override

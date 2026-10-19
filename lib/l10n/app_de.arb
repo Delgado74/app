@@ -447,6 +447,7 @@
   "tradeTimerEscrowCancellingSeller": "Mostro storniert gleich den Trade. Deine Sats bleiben in deiner Wallet.",
   "tradeTimerEscrowDisputing": "Gleich wird ein Streitfall eröffnet.",
   "tradeStepOrderTaken": "Order angenommen",
+  "tradeStepWaitingTaker": "Warte auf Annahme",
   "tradeStepInvoiceBuyer": "Der Verkäufer sperrt die Sats",
   "tradeStepInvoiceSeller": "Du sperrst die Sats",
   "tradeStepFiatBuyer": "Du sendest die Fiat-Zahlung",

@@ -1553,6 +1553,9 @@ class AppLocalizationsPt extends AppLocalizations {
   String get tradeStepOrderTaken => 'Ordem aceita';
 
   @override
+  String get tradeStepWaitingTaker => 'Aguardando alguém aceitar';
+
+  @override
   String get tradeStepInvoiceBuyer => 'O vendedor bloqueia os sats';
 
   @override

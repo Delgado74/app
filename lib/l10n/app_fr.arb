@@ -447,6 +447,7 @@
   "tradeTimerEscrowCancellingSeller": "Mostro est sur le point d'annuler la transaction. Vos sats restent dans votre portefeuille.",
   "tradeTimerEscrowDisputing": "Un litige est sur le point d'être ouvert.",
   "tradeStepOrderTaken": "Ordre pris",
+  "tradeStepWaitingTaker": "En attente d'un preneur",
   "tradeStepInvoiceBuyer": "Le vendeur bloque les sats",
   "tradeStepInvoiceSeller": "Vous bloquez les sats",
   "tradeStepFiatBuyer": "Vous envoyez le paiement fiat",
