@@ -313,7 +313,7 @@ DS-CMP-7), and text scaling in §3 (DS-TYP-7). In addition:
 | DS-L10N-2 | **MUST.** A layout is sized for the longest translation, usually German, never for English. A button label fits or scales down, and never truncates a verb. | review |
 | DS-L10N-3 | **MUST.** Numbers, amounts and dates are formatted for the locale, never by hand. | review |
 | DS-L10N-4 | **MUST.** One word per concept, in every locale: a string names a trade concept with the word the glossary below gives it, and a new concept joins the glossary in the same change that first uses it. Protocol jargon ("hold", "bolt11", "NIP") is not shown to the user as a term to know; the string says what it does in plain words. | review |
-| DS-L10N-5 | **MUST.** One datum, one format. A value shown in more than one place (a user's rating, how many ratings they have, their time on Mostro, an amount) reads the same on every screen: same precision, same unit, same word. Each screen gets it from one shared formatter, never one written per widget. A **rating** keeps the node's average to two decimals, without trailing zeros, in the locale's format (`4.97`, `4.9`, `5`; `4,97` in Spanish), through `formatRating` (`lib/shared/utils/rating_format.dart`). It is never rounded to one decimal: that once showed `5,0` on the Account card for a user the book showed at `4,97`. | review, test |
+| DS-L10N-5 | **MUST.** One datum, one format. A value shown in more than one place reads the same on every screen: same precision, same unit, same word. Each screen gets it from one shared formatter or string, never one written per widget. A user's **reputation** reads the same wherever it appears (order card and detail, trade, chat, invoice, Account, import): the **rating** is the node's average to two decimals, without trailing zeros, in the locale's format (`4.97`, `4.9`, `5`; `4,97` in Spanish), through `formatRating` (`lib/shared/utils/rating_format.dart`), never rounded to one decimal, which once showed `5,0` on the Account card for a user the book showed at `4,97`; the **ratings count** is `687 ratings` (`no ratings` at zero), through `reputationRatingsCount`, never a count of trades; the **age** is the month of the first trade, `since Mar 2023`, through `reputationSinceText` (`lib/shared/utils/reputation_age.dart`), never a day count: a date does not go stale and reads without arithmetic. A **count** in a plural string is grouped for the locale (`1,323`; `1.323` in Spanish): its placeholder sets `"format": "decimalPattern"` in `app_en.arb`. | review, test |
 
 **Glossary.** The words the app uses, in English and Spanish; the other locales keep the same
 one-to-one choice in their ARB files.
@@ -332,6 +332,7 @@ one-to-one choice in their ARB files.
 | A Lightning payment request | invoice | factura | — |
 | A trade a solver decides | dispute | disputa | — |
 | Payment methods the user ticked | selected | seleccionado(s) | elegido(s), chosen |
+| The ratings a user has received | ratings | calificaciones | trades, operaciones (for this count) |
 
 ---
 
