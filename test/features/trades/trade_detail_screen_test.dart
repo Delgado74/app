@@ -1048,6 +1048,45 @@ void main() {
     });
   });
 
+  /// The first step is the take. While the maker's order still waits in the
+  /// book it is the current step, and reading "Order taken" there told a
+  /// new user someone had taken it.
+  group('timeline · the first step', () {
+    Future<TradeTimeline> pumpTimeline(
+      WidgetTester tester,
+      OrderStatus status,
+    ) async {
+      // Tall enough for the timeline, the last item of the scroll, to build.
+      tester.view.physicalSize = const Size(800, 2000);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      await _pumpTradeDetail(
+        tester,
+        orderId: 'order-first-step',
+        isBuyer: false,
+        status: status,
+        book: [fakeOrder(id: 'order-first-step', isMine: true)],
+      );
+      return tester.widget<TradeTimeline>(find.byType(TradeTimeline));
+    }
+
+    testWidgets('a pending order waits for a taker', (tester) async {
+      final timeline = await pumpTimeline(tester, OrderStatus.pending);
+
+      expect(timeline.current, 0);
+      expect(timeline.steps.first, _en.tradeStepWaitingTaker);
+      expect(find.text(_en.tradeStepOrderTaken), findsNothing);
+    });
+
+    testWidgets('once taken, the step reads as the take', (tester) async {
+      final timeline = await pumpTimeline(tester, OrderStatus.active);
+
+      expect(timeline.current, greaterThan(0));
+      expect(timeline.steps.first, _en.tradeStepOrderTaken);
+      expect(find.text(_en.tradeStepWaitingTaker), findsNothing);
+    });
+  });
+
   /// The screen speaks to the user and names only the counterpart by role:
   /// the buyer is never "the buyer" on their own screen, nor the seller
   /// "the seller" on theirs (#844).
