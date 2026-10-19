@@ -901,7 +901,7 @@ class _TradeDetailScreenState extends ConsumerState<TradeDetailScreen>
                       duration: const Duration(milliseconds: 200),
                       child: TradeTimeline(
                         key: ValueKey(view.step),
-                        steps: _steps(l10n, isBuyer),
+                        steps: _steps(l10n, isBuyer, view.step),
                         current: view.step,
                       ),
                     ),
@@ -1331,9 +1331,11 @@ class _TradeDetailScreenState extends ConsumerState<TradeDetailScreen>
 
   // ── Timeline ─────────────────────────────────────────────────────────────
 
-  /// Steps written from the user's side, [tradeStepCount] of them.
-  List<String> _steps(AppLocalizations l10n, bool isBuyer) => [
-    l10n.tradeStepOrderTaken,
+  /// Steps written from the user's side, [tradeStepCount] of them. The first
+  /// is the take: while it is still [current] the order waits in the book,
+  /// and naming it "Order taken" there reads as a take that has not happened.
+  List<String> _steps(AppLocalizations l10n, bool isBuyer, int current) => [
+    current == 0 ? l10n.tradeStepWaitingTaker : l10n.tradeStepOrderTaken,
     isBuyer ? l10n.tradeStepInvoiceBuyer : l10n.tradeStepInvoiceSeller,
     isBuyer ? l10n.tradeStepFiatBuyer : l10n.tradeStepFiatSeller,
     isBuyer ? l10n.tradeStepReleaseBuyer : l10n.tradeStepReleaseSeller,
