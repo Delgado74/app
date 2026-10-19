@@ -281,8 +281,7 @@ void main() {
         ),
       );
       final layout = MostroQrLayout.of(invoice, withLogo: true);
-      const code = 260 - 2 * MostroQr.quietZone;
-      expect(side, closeTo(layout.logoSide * code / layout.moduleCount, 1e-9));
+      expect(side, closeTo(layout.logoSide * 260 / layout.cardModules, 1e-9));
       // Big enough to tell a node's picture apart.
       expect(side, greaterThan(48));
       expect(tester.getSize(find.byType(MostroQr)), const Size.square(260));

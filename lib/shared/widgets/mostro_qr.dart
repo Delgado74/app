@@ -8,8 +8,8 @@ import 'package:mostro/core/qr_palette.dart';
 /// The Mostro QR (#851), the website's design
 /// (MostroP2P/MostroP2P.github.io#34): round dots, rounded finder eyes with a
 /// green centre and, when there is a [logo], a cleared centre that shows it.
-/// It sits on a white card in both themes; the card's padding is the quiet
-/// zone.
+/// It sits on a white card in both themes; the card's margin is the quiet
+/// zone ([MostroQrLayout.quietZone]).
 ///
 /// The card is a square as wide as the room it is given, up to [maxSide], the
 /// way a wallet shows a long invoice or token: a small code is a hard scan.
@@ -32,9 +32,6 @@ class MostroQr extends StatefulWidget {
   final Widget Function(double side)? logo;
 
   final String? semanticsLabel;
-
-  /// White around the code on each side: the quiet zone scanners need.
-  static const double quietZone = 12;
 
   /// The widest the card gets, quiet zone included: about what cashu.me's
   /// takes on a 390 dp phone. A tablet or a desktop window stops there.
@@ -93,37 +90,34 @@ class _MostroQrState extends State<MostroQr> {
               color: QrPalette.paper,
               borderRadius: BorderRadius.circular(14),
             ),
-            child: Padding(
-              padding: const EdgeInsets.all(MostroQr.quietZone),
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  // Its own layer: a ticking countdown around it repaints
-                  // nothing in here.
-                  RepaintBoundary(
-                    child: CustomPaint(painter: _MostroQrPainter(layout)),
-                  ),
-                  if (logo != null && layout.hasLogo)
-                    // Positioned: a stack's intrinsic size skips it, and a
-                    // LayoutBuilder cannot answer one.
-                    Positioned.fill(
-                      child: LayoutBuilder(
-                        builder: (context, constraints) {
-                          final side =
-                              layout.logoSide *
-                              constraints.maxWidth /
-                              layout.moduleCount;
-                          return Center(
-                            child: SizedBox.square(
-                              dimension: side,
-                              child: logo(side),
-                            ),
-                          );
-                        },
-                      ),
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                // Its own layer: a ticking countdown around it repaints
+                // nothing in here.
+                RepaintBoundary(
+                  child: CustomPaint(painter: _MostroQrPainter(layout)),
+                ),
+                if (logo != null && layout.hasLogo)
+                  // Positioned: a stack's intrinsic size skips it, and a
+                  // LayoutBuilder cannot answer one.
+                  Positioned.fill(
+                    child: LayoutBuilder(
+                      builder: (context, constraints) {
+                        final side =
+                            layout.logoSide *
+                            constraints.maxWidth /
+                            layout.cardModules;
+                        return Center(
+                          child: SizedBox.square(
+                            dimension: side,
+                            child: logo(side),
+                          ),
+                        );
+                      },
                     ),
-                ],
-              ),
+                  ),
+              ],
             ),
           ),
         ),
@@ -139,7 +133,10 @@ class _MostroQrPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    canvas.scale(size.width / layout.moduleCount);
+    final margin = MostroQrLayout.quietZone.toDouble();
+    canvas
+      ..scale(size.width / layout.cardModules)
+      ..translate(margin, margin);
     canvas.drawPath(layout.dots, Paint()..color = QrPalette.ink);
     canvas.drawPath(layout.eyeRings, Paint()..color = QrPalette.ink);
     canvas.drawPath(layout.eyeCentres, Paint()..color = QrPalette.eye);
@@ -195,6 +192,13 @@ class MostroQrLayout {
   final int clearedModules;
 
   int get moduleCount => _image.moduleCount;
+
+  /// White around the code on each side, in modules: the quiet zone the QR
+  /// standard asks for. In modules, not dp, so a card drawn wider keeps it.
+  static const quietZone = 4;
+
+  /// Side of the card in modules: the code and its quiet zone.
+  int get cardModules => moduleCount + 2 * quietZone;
 
   /// `QrErrorCorrectLevel.Q` with a logo, `.L` without.
   int get errorCorrectLevel => _image.errorCorrectLevel;
