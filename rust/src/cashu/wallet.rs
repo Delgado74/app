@@ -7,6 +7,7 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use anyhow::{anyhow, bail, Result};
 use cdk::amount::SplitTarget;
 use cdk::nuts::nut10::SpendingConditions;
+use cdk::mint_url::MintUrl;
 use cdk::nuts::MeltQuoteState;
 use cdk::nuts::{CurrencyUnit, KeySetInfo, MeltMethodSettings, PaymentMethod, Proof, Token};
 use cdk::wallet::types::KeysetLoadPolicy;
@@ -598,7 +599,14 @@ impl CashuWallet {
             .await
             .map_err(prepare_melt_error)?;
 
-        let refusal = if prepared.quote().expiry <= unix_now().as_secs() {
+        // cdk loads the quote by id from a store shared by every mint and
+        // does not check whose it is (`initialize_melt` in
+        // `wallet/melt/saga/mod.rs`, cdk 0.18.1): a quote taken at another
+        // mint would have this mint's proofs sent to pay it.
+        let quote_mint = prepared.quote().mint_url.as_ref();
+        let refusal = if !quote_is_for(quote_mint, &self.inner.mint_url) {
+            Some(anyhow!("CashuMeltFailed: the quote belongs to another mint"))
+        } else if prepared.quote().expiry <= unix_now().as_secs() {
             Some(anyhow!("CashuMeltQuoteExpired"))
         } else {
             match quote_info(&prepared) {
@@ -648,6 +656,13 @@ impl CashuWallet {
             Err(e) => bail!("CashuMeltFailed: {e}"),
         }
     }
+}
+
+/// Whether a melt quote was taken at `wallet_mint`. A quote that records no
+/// mint is not refused for that alone: cdk fills the field for every quote
+/// it takes (`wallet/melt/bolt11.rs`), so only an older store lacks it.
+fn quote_is_for(quote_mint: Option<&MintUrl>, wallet_mint: &MintUrl) -> bool {
+    quote_mint.is_none_or(|mint| mint == wallet_mint)
 }
 
 /// [`MeltQuoteInfo`] of a prepared melt.
@@ -1269,6 +1284,17 @@ mod tests {
         // would confirm.
         assert_eq!(melt_max_total(u64::MAX, 1, 0), None);
         assert_eq!(melt_max_total(u64::MAX - 1, 1, 1), None);
+    }
+
+    #[test]
+    fn a_melt_quote_is_paid_only_at_the_mint_that_issued_it() {
+        let ours = MintUrl::from_str("https://mint.example.com").unwrap();
+        let theirs = MintUrl::from_str("https://other.example.com").unwrap();
+
+        assert!(quote_is_for(Some(&ours), &ours));
+        assert!(!quote_is_for(Some(&theirs), &ours));
+        // A quote that names no mint is not refused for that alone.
+        assert!(quote_is_for(None, &ours));
     }
 
     #[test]
