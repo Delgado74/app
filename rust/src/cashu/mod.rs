@@ -6,8 +6,10 @@
 //! nice-to-have.
 //!
 //! Scope, deliberately small: connect to one mint, hold `sat` proofs, receive a
-//! token, export a token, and re-check proof state. Melting to Lightning,
-//! multi-mint support and NUT-11 locking are later phases.
+//! token, export a token, re-check proof state, and settle at connect what an
+//! interrupted session left half done. Melting to Lightning is phase C3b-1 and
+//! NUT-11 locking lives in [`escrow`]; minting from Lightning (C3b-2) and
+//! multi-mint support are not here.
 //!
 //! **Native only.** Proof storage is `cdk-sqlite`, which is `rusqlite` and does
 //! not build for `wasm32`. The web target gets the typed stub at the bottom of
@@ -120,6 +122,10 @@ impl CashuWallet {
     }
 
     pub async fn sweep_spent_proofs(&self) -> anyhow::Result<()> {
+        anyhow::bail!("CashuUnsupportedOnWeb")
+    }
+
+    pub async fn finalize_pending_melts(&self) -> anyhow::Result<()> {
         anyhow::bail!("CashuUnsupportedOnWeb")
     }
 

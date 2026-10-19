@@ -130,11 +130,44 @@ impl CashuWallet {
         }
 
         log::info!("[cashu] connected to {mint_url}");
-        Ok(Self {
+        let wallet = Self {
             inner,
             mint_url: mint_url.to_string(),
             capabilities,
-        })
+        };
+        wallet.recover().await;
+        Ok(wallet)
+    }
+
+    /// Finish or roll back what a previous session left half done at this
+    /// mint: a send or melt whose proofs were reserved but never handed over,
+    /// a swap or receive whose outputs were never stored, a melt whose
+    /// Lightning payment was still in flight.
+    ///
+    /// Safe for escrow and exported tokens: cdk compensates only a send still
+    /// in `ProofsReserved` — no token exists yet — and never revokes one in
+    /// `TokenCreated` (`wallet/send/saga/resume.rs`, cdk 0.18.1). That
+    /// reclaim stays C10's.
+    ///
+    /// **Best effort.** The mint has just proven usable, so a failure here is a
+    /// round trip that did not come back: it is logged and the connect goes
+    /// on. Whatever was not settled is still recorded as a saga and is tried
+    /// again at the next connect.
+    async fn recover(&self) {
+        match self.inner.recover_incomplete_sagas().await {
+            Ok(report) if report.is_empty() => {}
+            Ok(report) => log::info!(
+                "[cashu] recovered interrupted operations: {} completed, {} rolled back, {} still pending, {} failed",
+                report.recovered,
+                report.compensated,
+                report.skipped,
+                report.failed
+            ),
+            Err(e) => log::warn!("[cashu] recovering interrupted operations failed: {e}"),
+        }
+        if let Err(e) = self.finalize_pending_melts().await {
+            log::warn!("[cashu] {e}");
+        }
     }
 
     /// Ask the mint what it supports. Reachability is proven by the same call,
@@ -434,6 +467,26 @@ impl CashuWallet {
             .await
             .map_err(|e| anyhow!("CashuStateCheckFailed: {e}"))?;
         log::info!("[cashu] swept spent proofs ({unresolved} sat still unresolved)");
+        Ok(())
+    }
+
+    /// Ask the mint how the melts still in flight ended, and settle them: a
+    /// paid one keeps its proofs spent and stores its change, a failed one
+    /// returns its proofs to the balance. One the mint still calls pending is
+    /// left as it is, for the next call.
+    ///
+    /// **Errors** (stable markers): `CashuStateCheckFailed` when the store
+    /// cannot be read. A single melt the mint does not answer for is logged by
+    /// cdk and skipped, not an error.
+    pub async fn finalize_pending_melts(&self) -> Result<()> {
+        let finalized = self
+            .inner
+            .finalize_pending_melts()
+            .await
+            .map_err(|e| anyhow!("CashuStateCheckFailed: {e}"))?;
+        if !finalized.is_empty() {
+            log::info!("[cashu] settled {} pending melt(s)", finalized.len());
+        }
         Ok(())
     }
 }

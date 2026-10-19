@@ -591,7 +591,12 @@ pub async fn cashu_create_token(amount_sats: u64) -> Result<String> {
 }
 
 /// Reconcile the proof store with the mint: proofs the mint reports spent are
-/// forgotten, and the new balance is broadcast.
+/// forgotten, melts still in flight are settled as the mint reports them, and
+/// the new balance is broadcast.
+///
+/// The melts are settled here as well as at connect because a bound wallet is
+/// reused, not reconnected: without this, a melt that answered `Pending`
+/// would keep its proofs reserved until the next app start.
 ///
 /// **Returns nothing on purpose.** It reclaims neither an unredeemed token of
 /// ours nor the proofs of a half-finished send — cdk's state check cannot see
@@ -599,9 +604,11 @@ pub async fn cashu_create_token(amount_sats: u64) -> Result<String> {
 /// otherwise; see [`CashuWallet::sweep_spent_proofs`]. Getting an abandoned
 /// token back is phase C10.
 ///
-/// **Errors**: `CashuNotConnected`.
+/// **Errors**: `CashuNotConnected`, `CashuStateCheckFailed`.
 pub async fn cashu_sweep_spent_proofs() -> Result<()> {
-    active_wallet().await?.sweep_spent_proofs().await?;
+    let wallet = active_wallet().await?;
+    wallet.sweep_spent_proofs().await?;
+    wallet.finalize_pending_melts().await?;
     notify().await;
     Ok(())
 }

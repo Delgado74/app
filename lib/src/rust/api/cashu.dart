@@ -64,7 +64,12 @@ Future<String> cashuCreateToken({required BigInt amountSats}) =>
     RustLib.instance.api.crateApiCashuCashuCreateToken(amountSats: amountSats);
 
 /// Reconcile the proof store with the mint: proofs the mint reports spent are
-/// forgotten, and the new balance is broadcast.
+/// forgotten, melts still in flight are settled as the mint reports them, and
+/// the new balance is broadcast.
+///
+/// The melts are settled here as well as at connect because a bound wallet is
+/// reused, not reconnected: without this, a melt that answered `Pending`
+/// would keep its proofs reserved until the next app start.
 ///
 /// **Returns nothing on purpose.** It reclaims neither an unredeemed token of
 /// ours nor the proofs of a half-finished send — cdk's state check cannot see
@@ -72,7 +77,7 @@ Future<String> cashuCreateToken({required BigInt amountSats}) =>
 /// otherwise; see [`CashuWallet::sweep_spent_proofs`]. Getting an abandoned
 /// token back is phase C10.
 ///
-/// **Errors**: `CashuNotConnected`.
+/// **Errors**: `CashuNotConnected`, `CashuStateCheckFailed`.
 Future<void> cashuSweepSpentProofs() =>
     RustLib.instance.api.crateApiCashuCashuSweepSpentProofs();
 
