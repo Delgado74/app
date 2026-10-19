@@ -1,5 +1,6 @@
 import 'package:clock/clock.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:mostro/core/app_theme.dart';
@@ -23,6 +24,7 @@ void main() {
     required DateTime since,
     required bool counterpartIsBuyer,
     Locale locale = const Locale('en'),
+    double textScale = 1,
   }) async {
     await withClock(
       Clock.fixed(_now),
@@ -32,6 +34,13 @@ void main() {
           locale: locale,
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
+          builder:
+              (context, child) => MediaQuery(
+                data: MediaQuery.of(
+                  context,
+                ).copyWith(textScaler: TextScaler.linear(textScale)),
+                child: child!,
+              ),
           home: Scaffold(
             body: CounterpartReputationRow(
               rating: rating,
@@ -90,6 +99,48 @@ void main() {
     );
 
     expect(find.text('1,323 ratings · since May 2022'), findsOneWidget);
+  });
+
+  // DS-A11Y-4: the invoice screens pad the row by AppSpacing.lg, so on a
+  // 320 dp phone it is 288 wide. At 2× text a two-decimal grade (`4,97`) is
+  // wider than the 34 dp circle that holds it.
+  testWidgets('a two-decimal grade fits its circle at 2x text on 320 dp', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(320 - 2 * AppSpacing.lg, 640);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+
+    await pump(
+      tester,
+      rating: 4.97,
+      reviews: 1323,
+      since: DateTime.utc(2022, 5, 19),
+      counterpartIsBuyer: true,
+      locale: const Locale('de'),
+      textScale: 2,
+    );
+
+    expect(tester.takeException(), isNull);
+    // Laid out at its full width (not wrapped or clipped to the circle)...
+    final paragraph = tester.renderObject<RenderParagraph>(find.text('4,97'));
+    expect(
+      paragraph.size.width,
+      greaterThanOrEqualTo(paragraph.getMaxIntrinsicWidth(double.infinity)),
+    );
+    // ...and drawn inside it.
+    final grade = tester.getRect(find.text('4,97'));
+    final circle = tester.getRect(
+      find
+          .ancestor(of: find.text('4,97'), matching: find.byType(Container))
+          .first,
+    );
+    expect(circle.contains(grade.topLeft), isTrue, reason: '$grade in $circle');
+    expect(
+      circle.contains(grade.bottomRight - const Offset(0.01, 0.01)),
+      isTrue,
+      reason: '$grade in $circle',
+    );
   });
 
   testWidgets('a seller nobody rated reads New instead of a grade', (
