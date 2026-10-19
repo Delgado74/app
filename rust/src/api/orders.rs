@@ -5667,11 +5667,16 @@ async fn persist_restored_bond_rows(info: &mostro_core::message::RestoreSessionI
         // A taker's side comes from the daemon's public order — the book,
         // or the relays — never a guess: the wrong side sends the wrong
         // retake. Resolved before the guard: a relay round trip must not
-        // hold the order's dispatch.
+        // hold the order's dispatch. The order is `node`'s: the book holds
+        // the active node's, which may have changed during the restore.
         let book = if status == OrderStatus::WaitingTakerBond {
-            match order_book().get_order(&order_id).await {
+            match order_book()
+                .get_order(&order_id)
+                .await
+                .filter(|o| o.node_pubkey.eq_ignore_ascii_case(node))
+            {
                 Some(order) => Some(order),
-                None => fetch_public_order(&order_id, &active_mostro_pubkey()).await,
+                None => fetch_public_order(&order_id, node).await,
             }
         } else {
             None
@@ -8812,23 +8817,89 @@ async fn reconcile_restored_history() -> std::collections::HashSet<String> {
     dropped
 }
 
-/// The snapshot stored before snapshots were kept per node (#812) does not
-/// say whose trades it describes. It is dropped: the next restore of each
-/// node writes that node's own. `trades` are the stored trade rows.
+/// The snapshot stored before snapshots were kept per node (#812) names no
+/// node. The restore that wrote it filed the rows of its live orders under
+/// the node that answered: when every one of those rows names the same
+/// node, the snapshot is that node's and is filed under it, unless the node
+/// already has its own. Otherwise nothing says whose trades it describes,
+/// and it is dropped: the next restore of each node writes that node's own.
+/// `trades` are the stored trade rows.
 async fn migrate_unnamed_restore_snapshot(
     db: &impl Storage,
-    _trades: &[crate::api::types::TradeInfo],
+    trades: &[crate::api::types::TradeInfo],
 ) {
+    use crate::mostro::restore_history::RestoreSnapshot;
     let key = crate::db::settings_keys::RESTORE_SNAPSHOT;
-    if !matches!(db.get_setting(key).await, Ok(Some(_))) {
+    let Ok(Some(json)) = db.get_setting(key).await else {
         return;
-    }
+    };
+    let named = serde_json::from_str::<RestoreSnapshot>(&json)
+        .ok()
+        .and_then(|snapshot| {
+            let mut nodes = trades
+                .iter()
+                .filter(|t| snapshot.live.contains(&t.order.id))
+                .map(|t| crate::mostro::trade_node::trade_node(t).map(str::to_ascii_lowercase))
+                .collect::<std::collections::BTreeSet<_>>()
+                .into_iter();
+            match (nodes.next(), nodes.next()) {
+                (Some(Some(node)), None) => Some(RestoreSnapshot {
+                    node: Some(node),
+                    ..snapshot
+                }),
+                _ => None,
+            }
+        });
+    let filed = match named {
+        Some(snapshot) => file_unnamed_restore_snapshot(db, &snapshot).await,
+        None => false,
+    };
     match db.delete_setting(key).await {
-        Ok(()) => crate::api::logging::blog_info(
+        Ok(()) if !filed => crate::api::logging::blog_info(
             "restore",
             "restore snapshot without its node dropped".into(),
         ),
+        Ok(()) => {}
         Err(e) => log::warn!("[restore] restore snapshot without its node not dropped: {e}"),
+    }
+}
+
+/// Store the legacy `snapshot`, now naming its node, under that node's key,
+/// unless the node already has a snapshot of its own (or its key cannot be
+/// read). Whether it was stored.
+async fn file_unnamed_restore_snapshot(
+    db: &impl Storage,
+    snapshot: &crate::mostro::restore_history::RestoreSnapshot,
+) -> bool {
+    let Some(node) = snapshot.node.as_deref() else {
+        return false;
+    };
+    let key = crate::db::settings_keys::restore_snapshot(node);
+    if !matches!(db.get_setting(&key).await, Ok(None)) {
+        return false;
+    }
+    let json = match serde_json::to_string(snapshot) {
+        Ok(json) => json,
+        Err(e) => {
+            log::warn!("[restore] restore snapshot without its node not serialized: {e}");
+            return false;
+        }
+    };
+    match db.set_setting(&key, &json).await {
+        Ok(()) => {
+            crate::api::logging::blog_info(
+                "restore",
+                format!(
+                    "restore snapshot without its node filed under node={}",
+                    crate::api::logging::short_id(node)
+                ),
+            );
+            true
+        }
+        Err(e) => {
+            log::warn!("[restore] restore snapshot without its node not filed: {e}");
+            false
+        }
     }
 }
 
@@ -10345,6 +10416,22 @@ async fn _run_order_subscription() {
         ),
     );
 
+    // A restore snapshot stored before #812 names no node and is read by
+    // nothing: settled after the feed below replays the history, it would
+    // come too late, and the replay would rebuild every trade it hid.
+    if let Some(db) = crate::db::app_db::db() {
+        if matches!(
+            db.get_setting(crate::db::settings_keys::RESTORE_SNAPSHOT)
+                .await,
+            Ok(Some(_))
+        ) {
+            match db.list_trades().await {
+                Ok(trades) => migrate_unnamed_restore_snapshot(db, &trades).await,
+                Err(e) => log::warn!("[orders] legacy restore snapshot: list_trades failed: {e}"),
+            }
+        }
+    }
+
     // Derive and seed the decryption coverage for ALL known trade keys —
     // the event loop decrypts against global_dm_keys, not a local map, and
     // resubscribe_global_dm_filter rebuilds the relay filter from it alone.
@@ -11676,7 +11763,12 @@ async fn resync_trade_key_index() -> Result<Option<u32>> {
 pub async fn recover_trades() -> Result<u32> {
     // A reply can be lost to a relay that refused or closed the subscription
     // waiting for it (#523); a second attempt has a fresh key and fresh REQs.
-    let info = crate::mostro::pending::retry_once_on_no_response(restore_session).await?;
+    // Both ask the node active now: a reply landing after a node switch is
+    // rejected before it reaches the restore, and a retry that read the
+    // active node again would restore the node switched to.
+    let node = active_mostro_pubkey();
+    let info =
+        crate::mostro::pending::retry_once_on_no_response(|| restore_session_on(&node)).await?;
     Ok((info.restore_orders.len() + info.restore_disputes.len()) as u32)
 }
 
@@ -11696,6 +11788,15 @@ pub async fn restore_session() -> Result<mostro_core::message::RestoreSessionInf
 /// [`restore_session`] sent to `node` (hex pubkey): every step of the
 /// restore asks that node and files what it answers under it (#812).
 async fn restore_session_on(node: &str) -> Result<mostro_core::message::RestoreSessionInfo> {
+    // Once another node is active, what `node` answers would land while the
+    // user looks at another one: refused before anything is sent.
+    if !active_mostro_pubkey().eq_ignore_ascii_case(node) {
+        crate::api::logging::blog_warn(
+            "restore",
+            "node switched before the restore was sent — not sent".into(),
+        );
+        return Err(anyhow::anyhow!("NodeChanged"));
+    }
     // Fresh trade key -> event.sender (daemon replies here).
     let trade_key_info = crate::api::identity::derive_trade_key().await?;
     let trade_index = trade_key_info.index;
@@ -24679,9 +24780,11 @@ mod tests {
         let kept_uuid = uuid::Uuid::new_v4();
         let taker_id = taker_uuid.to_string();
         // The taker's order is a sell in the public book: the taker buys.
+        // It is the book entry of the node the restore asked.
         let mut book = seam_trade_row(&taker_id, OrderStatus::Pending).order;
         book.kind = OrderKind::Sell;
         book.is_mine = false;
+        book.node_pubkey = RESTORED_NODE.to_string();
         order_book().upsert_order(book).await;
         // A row that already exists must not be overwritten.
         let kept = bonded_taker_row(&kept_uuid.to_string(), "lnbc1kept", None);
