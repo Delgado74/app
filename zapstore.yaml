@@ -27,10 +27,18 @@ tags:
     - freedom-tech
 license: AGPL-3.0-or-later
 website: https://mostro.network
-# TODO: assets/images/wt-*.png are 817-byte placeholder PNGs, not real
-# screenshots. Populate with real store screenshots before publishing.
-# images:
-#     - assets/images/screenshot-1.png
+# Store images, 1242 × 2688, kept out of assets/ so the app does not bundle
+# them. The first three are one panorama and must stay in this order.
+images:
+    - docs/zapstore/01_hero.png
+    - docs/zapstore/02_hero.png
+    - docs/zapstore/03_hero.png
+    - docs/zapstore/04_book.png
+    - docs/zapstore/05_create.png
+    - docs/zapstore/06_escrow.png
+    - docs/zapstore/07_chat.png
+    - docs/zapstore/08_trades.png
+    - docs/zapstore/09_nodes.png
 supported_nips:
     - "01"
     - "06"
