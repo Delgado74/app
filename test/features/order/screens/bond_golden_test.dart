@@ -18,6 +18,7 @@ import 'package:mostro/src/rust/api/types.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../support/fake_trades.dart';
+import '../../../support/qr_finders.dart';
 
 /// Handoff 14a (default) and 14b (explanation expanded), 360 x 760, at a
 /// frozen clock so the countdown reads 09:12.
@@ -132,4 +133,9 @@ void main() {
       );
     });
   }
+
+  testWidgets('14a: the bond QR takes the width of its card', (tester) async {
+    await _pump(tester, brightness: Brightness.dark, explainerOpen: false);
+    expectQrTakesItsWidth(tester);
+  });
 }

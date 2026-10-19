@@ -205,6 +205,8 @@ void main() {
     // payer with only the wallet link, which a browser may hand to a wallet
     // that cannot pay Lightning.
     await _pump(tester, trade: fakeTrade(bond: _bond()));
+    // Below the QR, which takes the card's width.
+    await tester.ensureVisible(find.text('Why Mostro asks for a deposit'));
     await tester.tap(find.text('Why Mostro asks for a deposit'));
     await tester.pump();
     await tester.pump();
@@ -239,6 +241,9 @@ void main() {
   ) async {
     final semantics = tester.ensureSemantics();
     await _pump(tester, trade: fakeTrade(bond: _bond()), explainerOpen: true);
+    // Off screen, a link is hidden from a screen reader: scroll it in.
+    await tester.ensureVisible(find.text('Read the documentation'));
+    await tester.pump();
 
     expect(
       tester.getSemantics(find.text('Read the documentation')),
@@ -440,6 +445,7 @@ void main() {
       expect(find.text("Don't publish the order"), findsOneWidget);
       expect(find.text("Don't take the order"), findsNothing);
       // The maker of a sell order sells.
+      await tester.ensureVisible(find.text('Why Mostro asks for a deposit'));
       await tester.tap(find.text('Why Mostro asks for a deposit'));
       await tester.pump();
       await tester.pump();

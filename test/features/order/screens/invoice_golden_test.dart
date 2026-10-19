@@ -18,6 +18,7 @@ import 'package:mostro/shared/providers/peer_nym_provider.dart';
 import 'package:mostro/src/rust/api/types.dart';
 
 import '../../../support/fake_trades.dart';
+import '../../../support/qr_finders.dart';
 
 /// Goldens of the invoice redesign (`design_handoff_factura_lightning`) on
 /// the handoff's 360 × 760 dp canvas, in Spanish like the mockups:
@@ -203,4 +204,17 @@ void main() {
       );
     });
   }
+
+  testWidgets('13b: the hold invoice QR takes the width of its card', (
+    tester,
+  ) async {
+    await _pump(
+      tester,
+      const PayLightningInvoiceScreen(orderId: _id),
+      trade: _trade(sats: BigInt.from(252), holdInvoice: _holdInvoice),
+      left: const Duration(minutes: 9, seconds: 12),
+      brightness: Brightness.dark,
+    );
+    expectQrTakesItsWidth(tester);
+  });
 }

@@ -42,8 +42,14 @@ Widget _blackDisc(double side) => const DecoratedBox(
   decoration: BoxDecoration(color: Colors.black, shape: BoxShape.circle),
 );
 
-/// Renders [qr] at [pixelRatio] and decodes it as a phone's scanner would.
-Future<String> _scan(WidgetTester tester, Widget qr, double pixelRatio) async {
+typedef _Image = ({int width, int height, Int32List pixels});
+
+/// Renders [qr] at [pixelRatio], as 0xRRGGBB pixels.
+Future<_Image> _render(
+  WidgetTester tester,
+  Widget qr,
+  double pixelRatio,
+) async {
   final key = GlobalKey();
   await tester.pumpWidget(
     Directionality(
@@ -53,7 +59,7 @@ Future<String> _scan(WidgetTester tester, Widget qr, double pixelRatio) async {
   );
   final boundary =
       key.currentContext!.findRenderObject()! as RenderRepaintBoundary;
-  final text = await tester.runAsync(() async {
+  final image = await tester.runAsync(() async {
     final image = await boundary.toImage(pixelRatio: pixelRatio);
     final rgba = (await image.toByteData(format: ui.ImageByteFormat.rawRgba))!;
     final pixels = Int32List(image.width * image.height);
@@ -66,10 +72,22 @@ Future<String> _scan(WidgetTester tester, Widget qr, double pixelRatio) async {
           over(rgba.getUint8(i * 4 + 1)) << 8 |
           over(rgba.getUint8(i * 4 + 2));
     }
-    final source = RGBLuminanceSource(image.width, image.height, pixels);
-    return QRCodeReader().decode(BinaryBitmap(HybridBinarizer(source))).text;
+    return (width: image.width, height: image.height, pixels: pixels);
   });
-  return text!;
+  return image!;
+}
+
+/// Renders [qr] at [pixelRatio] and decodes it as a phone's scanner would.
+Future<String> _scan(WidgetTester tester, Widget qr, double pixelRatio) async {
+  final image = await _render(tester, qr, pixelRatio);
+  final source = RGBLuminanceSource(image.width, image.height, image.pixels);
+  return QRCodeReader().decode(BinaryBitmap(HybridBinarizer(source))).text;
+}
+
+/// Whether a 0xRRGGBB pixel reads dark to a scanner.
+bool _isInk(int rgb) {
+  final r = rgb >> 16 & 0xFF, g = rgb >> 8 & 0xFF, b = rgb & 0xFF;
+  return 0.299 * r + 0.587 * g + 0.114 * b < 128;
 }
 
 void main() {
@@ -161,8 +179,10 @@ void main() {
   });
 
   group('scans', () {
-    // The sizes the app draws: the hold invoice (168), the bond (150) and the
-    // Cashu token (200); phone screens are 2x to 3x.
+    // The narrowest the app draws a QR: the token dialog on a 320 dp phone,
+    // where the invoice cards are 250 dp. Phone screens are 2x to 3x.
+    Widget narrowest(MostroQr qr) => SizedBox(width: 232, child: qr);
+
     for (final pixelRatio in [2.0, 3.0]) {
       for (final length in [300, 450, 650]) {
         testWidgets('a $length-character hold invoice with a logo, '
@@ -170,7 +190,7 @@ void main() {
           final invoice = _invoice(length, seed: length);
           final text = await _scan(
             tester,
-            MostroQr(data: invoice, size: 168, logo: _blackDisc),
+            narrowest(MostroQr(data: invoice, logo: _blackDisc)),
             pixelRatio,
           );
           expect(text, invoice.toUpperCase());
@@ -181,7 +201,7 @@ void main() {
         final invoice = _invoice(320, seed: 3);
         final text = await _scan(
           tester,
-          MostroQr(data: invoice, size: 150, logo: _blackDisc),
+          narrowest(MostroQr(data: invoice, logo: _blackDisc)),
           pixelRatio,
         );
         expect(text, invoice.toUpperCase());
@@ -193,11 +213,49 @@ void main() {
         final token = _token(600);
         final text = await _scan(
           tester,
-          MostroQr(data: token, size: 200),
+          narrowest(MostroQr(data: token)),
           pixelRatio,
         );
         expect(text, token);
       });
+    }
+  });
+
+  group('quiet zone', () {
+    // The QR standard asks for four modules of white around the code, and
+    // the card stands on a dark page: its own white is all a camera gets.
+    // Measured in modules, so it holds at any width the card is drawn.
+    for (final length in [218, 400]) {
+      for (final width in [232.0, MostroQr.maxSide]) {
+        testWidgets('a $length-character invoice keeps four modules, '
+            '${width.round()} dp wide', (tester) async {
+          final invoice = _invoice(length, seed: length);
+          final image = await _render(
+            tester,
+            SizedBox(
+              width: width,
+              child: MostroQr(data: invoice, logo: _blackDisc),
+            ),
+            2,
+          );
+          // The ink spans the code: the finder eyes reach both its edges.
+          var left = image.width, right = -1, top = image.height;
+          for (var y = 0; y < image.height; y++) {
+            for (var x = 0; x < image.width; x++) {
+              if (!_isInk(image.pixels[y * image.width + x])) continue;
+              left = min(left, x);
+              right = max(right, x);
+              top = min(top, y);
+            }
+          }
+          final modules = MostroQrLayout.of(invoice, withLogo: true);
+          final module = (right - left + 1) / modules.moduleCount;
+          // A pixel of antialiasing aside.
+          expect(left / module, greaterThan(3.8));
+          expect((image.width - 1 - right) / module, greaterThan(3.8));
+          expect(top / module, greaterThan(3.8));
+        });
+      }
     }
   });
 
@@ -209,26 +267,72 @@ void main() {
         Directionality(
           textDirection: TextDirection.ltr,
           child: Center(
-            child: MostroQr(
-              data: invoice,
-              size: 168,
-              logo: (s) {
-                side = s;
-                return const SizedBox.shrink();
-              },
+            child: SizedBox(
+              width: 260,
+              child: MostroQr(
+                data: invoice,
+                logo: (s) {
+                  side = s;
+                  return const SizedBox.shrink();
+                },
+              ),
             ),
           ),
         ),
       );
       final layout = MostroQrLayout.of(invoice, withLogo: true);
-      expect(side, closeTo(layout.logoSide * 168 / layout.moduleCount, 1e-9));
+      expect(side, closeTo(layout.logoSide * 260 / layout.cardModules, 1e-9));
       // Big enough to tell a node's picture apart.
-      expect(side, greaterThan(32));
+      expect(side, greaterThan(48));
+      expect(tester.getSize(find.byType(MostroQr)), const Size.square(260));
+    });
+
+    // A long invoice or token reads best as wide as the screen allows, but
+    // a tablet or a desktop window would draw a poster.
+    testWidgets('takes the width it is given, up to its cap', (tester) async {
+      await tester.pumpWidget(
+        Directionality(
+          textDirection: TextDirection.ltr,
+          child: Center(child: MostroQr(data: _token(600))),
+        ),
+      );
       expect(
         tester.getSize(find.byType(MostroQr)),
-        const Size.square(168 + 2 * MostroQr.quietZone),
+        const Size.square(MostroQr.maxSide),
       );
     });
+
+    // Both invoice screens lay their page out with IntrinsicHeight.
+    for (final (width, side) in [(260.0, 260.0), (500.0, MostroQr.maxSide)]) {
+      testWidgets('an intrinsic-height page holds it, ${width.round()} dp '
+          'wide', (tester) async {
+        await tester.pumpWidget(
+          Directionality(
+            textDirection: TextDirection.ltr,
+            child: Align(
+              alignment: Alignment.topLeft,
+              child: SizedBox(
+                width: width,
+                child: IntrinsicHeight(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Center(
+                        child: MostroQr(data: _invoice(400), logo: _blackDisc),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+        expect(tester.takeException(), isNull);
+        expect(tester.getSize(find.byType(MostroQr)), Size.square(side));
+        // The pass measured the square it then laid out: no gap below.
+        expect(tester.getSize(find.byType(Column)).height, side);
+      });
+    }
 
     testWidgets('reads as an image with its label', (tester) async {
       final handle = tester.ensureSemantics();
@@ -238,7 +342,6 @@ void main() {
           child: Center(
             child: MostroQr(
               data: _invoice(300),
-              size: 150,
               logo: (_) => const Text('M'),
               semanticsLabel: 'Invoice QR',
             ),
