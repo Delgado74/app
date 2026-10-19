@@ -7188,17 +7188,35 @@ abstract class AppLocalizations {
   /// **'Pay'**
   String get cashuPayButton;
 
-  /// Cashu wallet — the Lightning invoice was paid; fee is what the payment actually cost
+  /// Cashu wallet — payment dialog result: the Lightning invoice was paid
   ///
   /// In en, this message translates to:
-  /// **'Paid {sats} sats ({fee} sats in fees)'**
-  String cashuMeltPaid(String sats, String fee);
+  /// **'Paid {sats} sats'**
+  String cashuMeltPaidTitle(String sats);
 
-  /// Cashu wallet — the mint is still routing the Lightning payment
+  /// Cashu wallet — payment dialog result: what the payment actually cost beyond the invoice
   ///
   /// In en, this message translates to:
-  /// **'Payment in progress. Your balance will update when the wallet syncs with the mint.'**
-  String get cashuMeltPending;
+  /// **'Fee: {fee} sats'**
+  String cashuMeltPaidFee(String fee);
+
+  /// Cashu wallet — payment dialog result: the mint is still routing the Lightning payment
+  ///
+  /// In en, this message translates to:
+  /// **'Payment in progress'**
+  String get cashuMeltPendingTitle;
+
+  /// Cashu wallet — payment dialog result: when the balance catches up with a payment still in flight
+  ///
+  /// In en, this message translates to:
+  /// **'Your balance will update when the wallet syncs with the mint.'**
+  String get cashuMeltPendingBody;
+
+  /// Cashu wallet — payment dialog result: the payment did not go through; the reason follows
+  ///
+  /// In en, this message translates to:
+  /// **'Payment failed'**
+  String get cashuMeltFailedTitle;
 
   /// Cashu error — the text is not a bolt11 invoice, or asks for a fraction of a sat
   ///

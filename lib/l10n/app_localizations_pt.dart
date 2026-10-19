@@ -4355,13 +4355,24 @@ class AppLocalizationsPt extends AppLocalizations {
   String get cashuPayButton => 'Pagar';
 
   @override
-  String cashuMeltPaid(String sats, String fee) {
-    return '$sats sats pagos ($fee sats de taxas)';
+  String cashuMeltPaidTitle(String sats) {
+    return '$sats sats pagos';
   }
 
   @override
-  String get cashuMeltPending =>
-      'Pagamento em andamento. Seu saldo será atualizado quando a carteira sincronizar com o mint.';
+  String cashuMeltPaidFee(String fee) {
+    return 'Taxa: $fee sats';
+  }
+
+  @override
+  String get cashuMeltPendingTitle => 'Pagamento em andamento';
+
+  @override
+  String get cashuMeltPendingBody =>
+      'Seu saldo será atualizado quando a carteira sincronizar com o mint.';
+
+  @override
+  String get cashuMeltFailedTitle => 'Falha no pagamento';
 
   @override
   String get cashuErrorInvalidInvoice =>

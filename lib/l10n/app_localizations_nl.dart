@@ -4335,13 +4335,24 @@ class AppLocalizationsNl extends AppLocalizations {
   String get cashuPayButton => 'Betalen';
 
   @override
-  String cashuMeltPaid(String sats, String fee) {
-    return '$sats sats betaald ($fee sats kosten)';
+  String cashuMeltPaidTitle(String sats) {
+    return '$sats sats betaald';
   }
 
   @override
-  String get cashuMeltPending =>
-      'Betaling bezig. Je saldo wordt bijgewerkt zodra de wallet synchroniseert met de mint.';
+  String cashuMeltPaidFee(String fee) {
+    return 'Kosten: $fee sats';
+  }
+
+  @override
+  String get cashuMeltPendingTitle => 'Betaling bezig';
+
+  @override
+  String get cashuMeltPendingBody =>
+      'Je saldo wordt bijgewerkt zodra de wallet synchroniseert met de mint.';
+
+  @override
+  String get cashuMeltFailedTitle => 'Betaling mislukt';
 
   @override
   String get cashuErrorInvalidInvoice =>

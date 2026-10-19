@@ -1266,9 +1266,18 @@ void main() {
 
       await pay(tester);
 
-      // Paid with the total the user saw as the ceiling.
+      // Paid with the total the user saw as the ceiling, and said so in the
+      // dialog itself — amount, the fee actually charged, a check mark — until
+      // the user closes it.
       expect(controller.melts, [('q1', BigInt.from(103))]);
-      expect(find.text('Paid 100 sats (1 sats in fees)'), findsOneWidget);
+      expect(find.text('Paid 100 sats'), findsOneWidget);
+      expect(find.text('Fee: 1 sats'), findsOneWidget);
+      expect(find.byIcon(Icons.check_circle_rounded), findsOneWidget);
+      expect(find.text('Confirm payment'), findsNothing);
+
+      await tester.tap(find.text('Close'));
+      await tester.pumpAndSettle();
+      expect(find.byType(MostroDialog), findsNothing);
     });
 
     testWidgets('the confirmation stays open, busy, while the payment runs', (
@@ -1308,7 +1317,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Confirm payment'), findsNothing);
-      expect(find.text('Paid 100 sats (1 sats in fees)'), findsOneWidget);
+      expect(find.text('Paid 100 sats'), findsOneWidget);
     });
 
     testWidgets('a payment still in flight says the balance follows', (
@@ -1322,13 +1331,45 @@ void main() {
 
       await pay(tester);
 
+      expect(find.text('Payment in progress'), findsOneWidget);
       expect(
         find.text(
-          'Payment in progress. Your balance will update when the wallet '
-          'syncs with the mint.',
+          'Your balance will update when the wallet syncs with the mint.',
         ),
         findsOneWidget,
       );
+      expect(find.byIcon(Icons.schedule_rounded), findsOneWidget);
+    });
+
+    testWidgets('a failed payment says so in the dialog, with the reason', (
+      tester,
+    ) async {
+      final controller = _FakeController(
+        quotes: [_quote('q1')],
+        meltOutcomes: [AnyhowException('CashuMeltFailed: payment Failed')],
+      );
+      await openConfirmation(tester, controller);
+
+      await pay(tester);
+
+      // Not a passing snackbar over a closed dialog: the outcome, its reason
+      // in words, and Close.
+      expect(find.text('Payment failed'), findsOneWidget);
+      expect(
+        find.text(
+          'The payment did not go through. Any sats it held come back when '
+          'the wallet syncs with the mint.',
+        ),
+        findsOneWidget,
+      );
+      expect(find.byIcon(Icons.error_outline_rounded), findsOneWidget);
+      expect(find.textContaining('payment Failed'), findsNothing);
+
+      await tester.tap(find.text('Close'));
+      await tester.pumpAndSettle();
+      expect(find.byType(MostroDialog), findsNothing);
+      // Asked once, never retried.
+      expect(controller.melts, hasLength(1));
     });
 
     for (final stale in ['CashuMeltFeeChanged', 'CashuMeltQuoteExpired']) {
@@ -1362,7 +1403,8 @@ void main() {
           ('q1', BigInt.from(103)),
           ('q2', BigInt.from(106)),
         ]);
-        expect(find.text('Paid 100 sats (2 sats in fees)'), findsOneWidget);
+        expect(find.text('Paid 100 sats'), findsOneWidget);
+        expect(find.text('Fee: 2 sats'), findsOneWidget);
       });
     }
 

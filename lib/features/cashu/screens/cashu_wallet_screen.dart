@@ -214,7 +214,6 @@ class _CashuWalletScreenState extends ConsumerState<CashuWalletScreen> {
   /// more than they confirmed. Those two refusals spent nothing, so the wallet
   /// asks for a fresh quote and shows it, once; it never pays a stale one.
   Future<void> _sendLightning() async {
-    final l10n = AppLocalizations.of(context);
     final invoice = await _prompt(
       () => showMostroDialog<String>(
         context: context,
@@ -231,9 +230,10 @@ class _CashuWalletScreenState extends ConsumerState<CashuWalletScreen> {
         if (!mounted) return;
         final current = quote;
         // The dialog stays open while the payment runs, its Pay button busy
-        // (DS-CMP-2): a Lightning payment can take as long as its routing,
-        // and closing first left the screen silent all that time.
-        final attempt = await showMostroDialog<_MeltAttempt>(
+        // (DS-CMP-2), and then shows how it ended — paid with its fee, still
+        // in flight, or failed and why — until the user closes it. A payment
+        // is money leaving the wallet: its outcome is not a passing snackbar.
+        final exit = await showMostroDialog<_MeltStale>(
           context: context,
           barrierDismissible: false,
           builder:
@@ -245,31 +245,11 @@ class _CashuWalletScreenState extends ConsumerState<CashuWalletScreen> {
                         controller.melt(current.quoteId, current.maxTotalSats),
               ),
         );
-        if (attempt == null || !mounted) return;
-        final CashuMeltResult result;
-        switch (attempt) {
-          case _MeltPaid(:final value):
-            result = value;
-          case _MeltRefused(:final error):
-            final stale =
-                error.toString().contains('CashuMeltQuoteExpired') ||
-                error.toString().contains('CashuMeltFeeChanged');
-            if (!stale || refreshed) throw error;
-            refreshed = true;
-            quote = await controller.meltQuote(invoice);
-            continue;
-        }
-        if (!mounted) return;
-        final locale = Localizations.localeOf(context).toString();
-        _showMessage(switch (result) {
-          CashuMeltResult_Paid(:final amountSats, :final feePaidSats) => l10n
-              .cashuMeltPaid(
-                _fmtSats(amountSats, locale),
-                _fmtSats(feePaidSats, locale),
-              ),
-          CashuMeltResult_Pending() => l10n.cashuMeltPending,
-        });
-        return;
+        if (exit == null || !mounted) return;
+        // Refused before paying, nothing spent: show a fresh quote, once.
+        if (refreshed) throw exit.error;
+        refreshed = true;
+        quote = await controller.meltQuote(invoice);
       }
     });
   }
@@ -1046,32 +1026,35 @@ class _InvoiceDialogState extends State<_InvoiceDialog> {
   }
 }
 
-/// How the payment the user confirmed ended, as the confirmation hands it
-/// back: Rust's answer, or what it threw.
-sealed class _MeltAttempt {}
-
-final class _MeltPaid extends _MeltAttempt {
-  _MeltPaid(this.value);
-
-  final CashuMeltResult value;
-}
-
-final class _MeltRefused extends _MeltAttempt {
-  _MeltRefused(this.error);
+/// Why the payment dialog closed, when the caller has more to do: the quote
+/// expired or now costs more than the user confirmed, so nothing was paid and
+/// a fresh quote is due. Every other end — cancelled, or an outcome the user
+/// has read — closes it with `null`.
+final class _MeltStale {
+  _MeltStale(this.error);
 
   final Object error;
 }
 
-/// What paying the invoice costs, before anything is spent: the amount, the
-/// fees as an upper bound — routing reserve plus the mint's input fees — and
-/// the most the balance can drop.
+/// True for the two refusals that spent nothing and only need a new quote.
+bool _isStaleQuote(Object error) {
+  final raw = error.toString();
+  return raw.contains('CashuMeltQuoteExpired') ||
+      raw.contains('CashuMeltFeeChanged');
+}
+
+/// The payment, from confirmation to outcome, in one dialog.
 ///
-/// Pay runs [pay] with the dialog still open and its button busy, then pops
-/// the [_MeltAttempt]; Cancel pops `null`. While the payment runs there is no
-/// way out — not Cancel, not the back gesture: closing would not stop it.
+/// First what paying the invoice costs, before anything is spent: the
+/// amount, the fees as an upper bound — routing reserve plus the mint's input
+/// fees — and the most the balance can drop. "Up to", because the mint returns
+/// the routing reserve it does not use.
 ///
-/// "Up to", because the mint returns the routing reserve it does not use: the
-/// fee actually charged is reported once the payment settles.
+/// Pay runs [pay] with the dialog still open and its button busy; while it
+/// runs there is no way out — not Cancel, not the back gesture: closing would
+/// not stop it. Then the same dialog shows how it ended, with Close as its
+/// only button: paid, with the fee actually charged; still in flight; or
+/// failed, with the reason. A stale quote pops [_MeltStale] instead.
 class _MeltConfirmDialog extends StatefulWidget {
   const _MeltConfirmDialog({
     required this.quote,
@@ -1092,71 +1075,126 @@ class _MeltConfirmDialog extends StatefulWidget {
 
 class _MeltConfirmDialogState extends State<_MeltConfirmDialog> {
   bool _paying = false;
+  CashuMeltResult? _result;
+  Object? _failure;
 
   Future<void> _pay() async {
     setState(() => _paying = true);
-    _MeltAttempt attempt;
     try {
-      attempt = _MeltPaid(await widget.pay());
+      final result = await widget.pay();
+      if (mounted) {
+        setState(() {
+          _paying = false;
+          _result = result;
+        });
+      }
     } catch (e) {
-      attempt = _MeltRefused(e);
+      if (!mounted) return;
+      if (_isStaleQuote(e)) {
+        Navigator.of(context).pop(_MeltStale(e));
+        return;
+      }
+      setState(() {
+        _paying = false;
+        _failure = e;
+      });
     }
-    if (mounted) Navigator.of(context).pop(attempt);
   }
 
   @override
   Widget build(BuildContext context) {
+    return PopScope(
+      canPop: !_paying,
+      child: switch ((_result, _failure)) {
+        (final result?, _) => _outcome(context, result),
+        (_, final failure?) => _failed(context, failure),
+        _ => _confirmation(context),
+      },
+    );
+  }
+
+  ModalAction _close(AppLocalizations l10n) => ModalAction(
+    label: l10n.closeButtonLabel,
+    onPressed: () => Navigator.of(context).pop(),
+  );
+
+  Widget _outcome(BuildContext context, CashuMeltResult result) {
+    final l10n = AppLocalizations.of(context);
+    final locale = Localizations.localeOf(context).toString();
+    return switch (result) {
+      CashuMeltResult_Paid(:final amountSats, :final feePaidSats) =>
+        MostroDialog(
+          icon: Icons.check_circle_rounded,
+          title: l10n.cashuMeltPaidTitle(_fmtSats(amountSats, locale)),
+          body: l10n.cashuMeltPaidFee(_fmtSats(feePaidSats, locale)),
+          primary: _close(l10n),
+        ),
+      CashuMeltResult_Pending() => MostroDialog(
+        icon: Icons.schedule_rounded,
+        title: l10n.cashuMeltPendingTitle,
+        body: l10n.cashuMeltPendingBody,
+        primary: _close(l10n),
+      ),
+    };
+  }
+
+  Widget _failed(BuildContext context, Object failure) {
+    final l10n = AppLocalizations.of(context);
+    return MostroDialog(
+      icon: Icons.error_outline_rounded,
+      iconTone: ModalTone.destructive,
+      title: l10n.cashuMeltFailedTitle,
+      body: cashuErrorMessage(failure, l10n),
+      primary: _close(l10n),
+    );
+  }
+
+  Widget _confirmation(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final book = OrderBookPalette.of(context);
     final locale = Localizations.localeOf(context).toString();
     final quote = widget.quote;
     String sats(BigInt value) =>
         '${_fmtSats(value, locale)} ${l10n.aboutSatoshisSuffix}';
-    return PopScope(
-      canPop: !_paying,
-      child: MostroDialog(
-        title: l10n.cashuMeltConfirmTitle,
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            if (widget.refreshed) ...[
-              Text(
-                l10n.cashuMeltQuoteRefreshed,
-                style: TextStyle(fontSize: 13, color: book.textBody),
-              ),
-              const SizedBox(height: 12),
-            ],
-            _MeltRow(
-              label: l10n.cashuMeltAmount,
-              value: sats(quote.amountSats),
-            ),
-            _MeltRow(
-              label: l10n.cashuMeltFees,
-              value: sats(quote.feeReserveSats + quote.inputFeeSats),
-            ),
-            Divider(color: book.border),
-            _MeltRow(
-              label: l10n.cashuMeltTotal,
-              value: sats(quote.maxTotalSats),
-              emphasise: true,
+    return MostroDialog(
+      title: l10n.cashuMeltConfirmTitle,
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (widget.refreshed) ...[
+            Text(
+              l10n.cashuMeltQuoteRefreshed,
+              style: TextStyle(fontSize: 13, color: book.textBody),
             ),
             const SizedBox(height: 12),
-            Text(
-              l10n.cashuMeltFeesNote,
-              style: TextStyle(fontSize: 12, color: book.textMuted),
-            ),
           ],
-        ),
-        secondary: ModalAction(
-          label: l10n.cancel,
-          onPressed: _paying ? null : () => Navigator.of(context).pop(),
-        ),
-        primary: ModalAction(
-          label: l10n.cashuPayButton,
-          onPressed: _paying ? null : _pay,
-          busy: _paying,
-        ),
+          _MeltRow(label: l10n.cashuMeltAmount, value: sats(quote.amountSats)),
+          _MeltRow(
+            label: l10n.cashuMeltFees,
+            value: sats(quote.feeReserveSats + quote.inputFeeSats),
+          ),
+          Divider(color: book.border),
+          _MeltRow(
+            label: l10n.cashuMeltTotal,
+            value: sats(quote.maxTotalSats),
+            emphasise: true,
+          ),
+          const SizedBox(height: 12),
+          Text(
+            l10n.cashuMeltFeesNote,
+            style: TextStyle(fontSize: 12, color: book.textMuted),
+          ),
+        ],
+      ),
+      secondary: ModalAction(
+        label: l10n.cancel,
+        onPressed: _paying ? null : () => Navigator.of(context).pop(),
+      ),
+      primary: ModalAction(
+        label: l10n.cashuPayButton,
+        onPressed: _paying ? null : _pay,
+        busy: _paying,
       ),
     );
   }

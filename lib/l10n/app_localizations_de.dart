@@ -4348,13 +4348,24 @@ class AppLocalizationsDe extends AppLocalizations {
   String get cashuPayButton => 'Bezahlen';
 
   @override
-  String cashuMeltPaid(String sats, String fee) {
-    return '$sats Sats bezahlt ($fee Sats Gebühren)';
+  String cashuMeltPaidTitle(String sats) {
+    return '$sats Sats bezahlt';
   }
 
   @override
-  String get cashuMeltPending =>
-      'Zahlung läuft. Dein Guthaben wird aktualisiert, sobald die Wallet mit der Mint synchronisiert.';
+  String cashuMeltPaidFee(String fee) {
+    return 'Gebühr: $fee Sats';
+  }
+
+  @override
+  String get cashuMeltPendingTitle => 'Zahlung läuft';
+
+  @override
+  String get cashuMeltPendingBody =>
+      'Dein Guthaben wird aktualisiert, sobald die Wallet mit der Mint synchronisiert.';
+
+  @override
+  String get cashuMeltFailedTitle => 'Zahlung fehlgeschlagen';
 
   @override
   String get cashuErrorInvalidInvoice =>

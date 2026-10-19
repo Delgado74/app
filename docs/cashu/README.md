@@ -595,10 +595,11 @@ mints is inconsistent), no general wallet features.
   - `on_cashu_wallet_changed` fires after every melt attempt, so the balance updates.
 - **Dart** (`lib/features/cashu/`): Send → *Ecash* / *Lightning* (the second hidden
   without `nut05_bolt11`); paste or scan a bolt11 (`mobile_scanner`); a confirmation
-  showing amount, "up to X sats" in fees and the total; then *paid* (with the fee
-  actually charged), *in progress* or the localized error. The confirmation stays
+  showing amount, "up to X sats" in fees and the total. The confirmation stays
   open while the payment runs, Pay busy and no way out, since closing would not
-  stop it. An expired quote or a changed fee goes back to a fresh quote, never pays
+  stop it, and then shows how it ended in the same dialog, with Close: *paid*
+  (with the fee actually charged), *in progress*, or *failed* with the localized
+  reason. An expired quote or a changed fee goes back to a fresh quote, never pays
   stale. l10n in all locales;
   `DESIGN_SYSTEM.md`.
 - **Out of scope:** Lightning addresses / LNURL (who resolves the LNURL, and from
