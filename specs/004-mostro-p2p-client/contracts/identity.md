@@ -94,10 +94,19 @@ identity first, so that is every import it makes (issue #555).
    judged only by its own node's: another node's trades, and a row that does
    not know its node, are never dropped, hidden or read as history. The
    whole restore uses that node: the `LastTradeIndex` request, the order
-   details and the node written on the rows it rebuilds. A reply that lands
-   once another node is active is discarded (`NodeChanged`). The single
-   snapshot stored before snapshots were kept per node names no node, and a
-   history pass drops it.
+   details, the public order of a restored taker bond and the node written
+   on the rows it rebuilds. Account → Refresh takes the node once, and its
+   retry asks the same node. A restore whose node is no longer the active
+   one is refused before it is sent, and a reply that reaches it once
+   another node is active is discarded (`NodeChanged`). A reply that the
+   daemon-message gate rejects after a switch never reaches it: the restore
+   times out, and its retry is refused the same way. The single snapshot
+   stored before snapshots were kept per node names no node. At start,
+   before the daemon feed replays the history, it is filed under the node
+   that every row of its live orders names, unless that node already has
+   its own; otherwise it is dropped, and the next restore of each node
+   writes that node's own. The history pass does the same if it is still
+   there.
 
 **Note**: Recovery only works if identity is NOT in privacy mode.
 

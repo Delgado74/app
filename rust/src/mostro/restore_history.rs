@@ -129,12 +129,12 @@ pub fn restore_answer_is_for(asked_by: Option<&str>, current: Option<&str>) -> b
     )
 }
 
-/// Delete the snapshot stored under [key], but only while it is still
-/// [rejected], the JSON a history pass read and found not to apply. A restore may have
-/// stored a newer, valid one in between, and deleting by key alone would
-/// leave its history unsettled (PR #616 review). The storage has no
-/// compare-and-delete, so a write landing between the read and the delete
-/// here is still possible — this only narrows it to that instant.
+/// Delete the snapshot stored under `key`, but only while it is still
+/// `rejected`, the JSON a history pass read and found not to apply. A
+/// restore may have stored a newer, valid one in between, and deleting by
+/// key alone would leave its history unsettled (PR #616 review). The storage
+/// has no compare-and-delete, so a write landing between the read and the
+/// delete here is still possible — this only narrows it to that instant.
 pub async fn drop_snapshot_if_unchanged(db: &impl crate::db::Storage, key: &str, rejected: &str) {
     match db.get_setting(key).await {
         Ok(Some(stored)) if stored == rejected => {

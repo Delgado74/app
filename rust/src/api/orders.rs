@@ -8969,8 +8969,10 @@ async fn apply_restored_peers(snapshot: &crate::mostro::restore_history::Restore
             Ok(Some(trade)) if trade.counterparty_pubkey.is_empty() => trade,
             _ => continue,
         };
-        let node = crate::mostro::trade_node::trade_node(&trade);
-        let Some(peer_hex) = snapshot.peer_of(node, order_id, trade.trade_key_index) else {
+        let Some(node) = crate::mostro::trade_node::trade_node(&trade) else {
+            continue;
+        };
+        let Some(peer_hex) = snapshot.peer_of(Some(node), order_id, trade.trade_key_index) else {
             continue;
         };
         let trade_keys =
@@ -8981,7 +8983,7 @@ async fn apply_restored_peers(snapshot: &crate::mostro::restore_history::Restore
                     continue;
                 }
             };
-        apply_restored_peer(&trade, peer_hex, &trade_keys, node.unwrap_or_default()).await;
+        apply_restored_peer(&trade, peer_hex, &trade_keys, node).await;
     }
 }
 
@@ -13571,16 +13573,19 @@ mod tests {
     /// sheet's Cancel only closes the sheet, so the user can switch nodes
     /// while the restore still runs: filed then, the answer would land as
     /// the new node's snapshot and its history pass would wipe that node's
-    /// trades. Once the active node is not the one asked, nothing is written.
+    /// trades. A reply that reaches the restore once the active node is not
+    /// the one asked writes nothing. (One the daemon-message gate already
+    /// rejected never reaches it: see `a_retried_restore_stays_on_the_node_asked`.)
     #[test]
     fn a_restore_reply_is_checked_against_the_asked_node_first() {
         let session = fn_body("async fn restore_session_on(node: &str)");
         let check = session
-            .find("\"NodeChanged\"")
+            .find("reply landed after a node switch")
             .expect("refuses a reply once the active node changed");
         for effect in [
             "restore_progress::found(",
             "persist_restored_trade_rows(",
+            "persist_restored_bond_rows(",
             "ensure_trade_key_index_at_least(",
             "record_restore_snapshot(",
         ] {
