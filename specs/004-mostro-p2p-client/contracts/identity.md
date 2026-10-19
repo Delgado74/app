@@ -108,6 +108,14 @@ identity first, so that is every import it makes (issue #555).
    writes that node's own. The history pass does the same if it is still
    there.
 
+   Restores run one at a time (#813): a node switch from Settings or an
+   order link restores on the new node while the previous node's restore
+   may still run, its sheet closed. `restore_session_on` waits for it, then
+   checks its node, and only a restore that goes ahead marks its start on
+   the progress channel (`api::restore_progress`). A progress stream
+   delivers steps from the first start it hears, so a sheet never shows
+   another restore's steps.
+
 **Note**: Recovery only works if identity is NOT in privacy mode.
 
 **Errors**: `InvalidMnemonic`, `StorageError`, `RecoveryFailed`,
