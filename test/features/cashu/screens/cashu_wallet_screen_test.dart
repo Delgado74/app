@@ -1320,6 +1320,46 @@ void main() {
       expect(find.text('Paid 100 sats'), findsOneWidget);
     });
 
+    testWidgets('a payment that never answers ends as pending, with a way out', (
+      tester,
+    ) async {
+      // A mint that ignores `respond-async` holds the request for as long as
+      // the payment takes — a hold invoice, a stuck route — and nothing in the
+      // bridge times it out.
+      final routing = Completer<CashuMeltResult>();
+      final controller = _FakeController(
+        quotes: [_quote('q1')],
+        meltOutcomes: [routing.future],
+      );
+      await openConfirmation(tester, controller);
+
+      await tester.tap(find.text('Pay'));
+      await tester.pump();
+
+      // Rust waits up to 30 s on a payment the mint answered as pending, and
+      // its answer is worth more than a guess: still busy then.
+      await tester.pump(const Duration(seconds: 30));
+      expect(find.text('Confirm payment'), findsOneWidget);
+      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+
+      // Within a minute the dialog stops waiting: the outcome is not known,
+      // which is what "pending" says, and Close lets the user out.
+      await tester.pump(const Duration(seconds: 30));
+      await tester.pump();
+      expect(find.text('Payment in progress'), findsOneWidget);
+      await tester.tap(find.text('Close'));
+      await tester.pumpAndSettle();
+      expect(find.byType(MostroDialog), findsNothing);
+
+      // The payment itself was never cancelled: when it ends, late and with
+      // the dialog gone, nothing is shown and nothing breaks.
+      routing.completeError(Exception('CashuMeltFailed: too late'));
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      expect(find.byType(MostroDialog), findsNothing);
+      expect(controller.melts, hasLength(1));
+    });
+
     testWidgets('a payment still in flight says the balance follows', (
       tester,
     ) async {
