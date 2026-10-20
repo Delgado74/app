@@ -3831,6 +3831,29 @@ async fn dispatch_mostro_message(
         None => RowState::Unknown,
     };
 
+    // A row without a node hears only the active node (#811): that node
+    // naming the order to the row's own trade key is the evidence a restore
+    // gives, and it needs no restore, so privacy mode gets it too (#813, PR
+    // #865 review). The history replayed at start adopts a finished row as
+    // well, which comes back as history instead of being wiped.
+    if let (RowState::Exists(trade), Some(order_id)) = (&row_state, &kind.id) {
+        if speaker == crate::mostro::trade_node::Speaker::ActiveNode
+            && crate::mostro::trade_node::trade_node(trade).is_none()
+            && trade.trade_key_index == trade_index
+        {
+            if let Some(db) = crate::db::app_db::db() {
+                adopt_row_node(
+                    db,
+                    &order_id.to_string(),
+                    trade_index,
+                    &sender_hex,
+                    "daemon-msg",
+                )
+                .await;
+            }
+        }
+    }
+
     // Durable peer capture (#334), BEFORE the take-waiter interception so a
     // take's first reply — consumed below and never seen by the per-action
     // arms — still reveals the counterparty. Any payload naming both trade
@@ -5928,7 +5951,7 @@ async fn persist_restored_trade_row(
     let _guard = lock_order(&order_id).await;
     if let Ok(Some(existing)) = db.get_trade_by_order_id(&order_id).await {
         let adopted = crate::mostro::trade_node::trade_node(&existing).is_none()
-            && adopt_restored_row(db, &order_id, trade_index, node).await;
+            && adopt_row_node(db, &order_id, trade_index, node, "restore").await;
         return apply_restored_status(db, &existing, row.order.status, sent_at).await || adopted;
     }
     // Before the write it dates, like every status write (`status_write_blocked`):
@@ -5959,18 +5982,21 @@ async fn persist_restored_trade_row(
 }
 
 /// Give `node` to the row of `order_id` that does not know its node (written
-/// before #809), now that a restore on `node` named that order with
-/// `trade_index` (#813). Returns whether it did. Runs under the order's guard.
-async fn adopt_restored_row(
+/// before #809), now that `node` named that order with `trade_index` (#813):
+/// in a restore's answer, or in a message to the row's trade key. Returns
+/// whether it did; `category` is the log's, the source of the evidence. Runs
+/// under the order's guard.
+async fn adopt_row_node(
     db: &impl crate::db::Storage,
     order_id: &str,
     trade_index: u32,
     node: &str,
+    category: &str,
 ) -> bool {
     match db.adopt_trade_node(order_id, trade_index, node).await {
         Ok(true) => {
             crate::api::logging::blog_info(
-                "restore",
+                category,
                 format!(
                     "order={} without a node adopted by node={}",
                     crate::api::logging::short_id(order_id),
@@ -5984,7 +6010,7 @@ async fn adopt_restored_row(
         Ok(false) => false,
         Err(e) => {
             crate::api::logging::blog_warn(
-                "restore",
+                category,
                 format!("order={order_id} not adopted by node={node}: {e}"),
             );
             false
@@ -5992,25 +6018,37 @@ async fn adopt_restored_row(
     }
 }
 
-/// The rows a restore on `node` names only as disputes: mostrod leaves a
-/// disputed order out of `restore_orders`, so [`persist_restored_trade_rows`]
-/// never sees it. A row of one that does not know its node is adopted here,
-/// or it would stay without one, and be wiped, with its dispute still open
-/// (#813). Nothing else of the row changes.
-async fn adopt_restored_dispute_rows(
+/// Every row the answer of a restore on `node` names, as an order or as a
+/// dispute, with its trade index (#813). A row of one that does not know its
+/// node is adopted here, from the answer alone: the order details
+/// ([`persist_restored_trade_rows`]) may never come (a refusal, a silent
+/// node, a failed chunk), are never asked for a bond-parked order, and never
+/// cover a dispute, which mostrod lists only in `restore_disputes`. Without
+/// it the row would stay without a node and be wiped with its messages,
+/// its trade still live (PR #865 review). Nothing else of the row changes.
+async fn adopt_restored_rows(
     db: &impl crate::db::Storage,
     info: &mostro_core::message::RestoreSessionInfo,
     node: &str,
 ) {
-    for dispute in &info.restore_disputes {
-        let Some(trade_index) = sanitize_trade_index(dispute.trade_index) else {
+    let named = info
+        .restore_orders
+        .iter()
+        .map(|o| (o.order_id, o.trade_index))
+        .chain(
+            info.restore_disputes
+                .iter()
+                .map(|d| (d.order_id, d.trade_index)),
+        );
+    for (order_uuid, raw_index) in named {
+        let Some(trade_index) = sanitize_trade_index(raw_index) else {
             continue;
         };
-        let order_id = dispute.order_id.to_string();
+        let order_id = order_uuid.to_string();
         let _guard = lock_order(&order_id).await;
         if let Ok(Some(existing)) = db.get_trade_by_order_id(&order_id).await {
             if crate::mostro::trade_node::trade_node(&existing).is_none() {
-                adopt_restored_row(db, &order_id, trade_index, node).await;
+                adopt_row_node(db, &order_id, trade_index, node, "restore").await;
             }
         }
     }
@@ -9346,24 +9384,20 @@ fn newest_book_revision(
         .map(|(created_at, order)| (created_at.as_secs() as i64, order))
 }
 
-/// Reconcile trades stuck in waiting states with the daemon's public book.
-///
-/// Covers cancellations whose daemon message the app never received (closed or
-/// offline when the daemon's waiting window expired). The clock only
-/// *triggers* the check — every decision needs a positive daemon signal
-/// (see [`sweep_action`]); the daemon stays the authority on order state.
 /// How long a trade row without a node waits for a restore to adopt it
 /// before the sweep wipes it (#813): time to restore on each node, where an
 /// order lives about 48 h.
 const UNADOPTED_ROW_WAIT_SECS: i64 = 72 * 3600;
 
-/// Wipe the trade rows without a node that no restore adopted (#813), once
-/// [`UNADOPTED_ROW_WAIT_SECS`] have passed since the sweep first ran on this
-/// version (`UNADOPTED_ROWS_SINCE`, written on that first run, when nothing
-/// is wiped). Each goes with its chat messages, and silently: no update, so
-/// no notice about an order the user has not seen since #813 hid it. A
-/// later restore that names one rebuilds it and lifts its tombstone.
-/// Returns how many it wiped.
+/// Wipe the trade rows without a node that no restore or daemon message
+/// adopted (#813), once [`UNADOPTED_ROW_WAIT_SECS`] have passed since the
+/// sweep first ran on this version (`UNADOPTED_ROWS_SINCE`, written on that
+/// first run, when nothing is wiped). Only rows started before then: those
+/// of the releases this is for. A row that loses its node later is a bug to
+/// see, not a row to wipe (PR #865 review). Each goes with its chat
+/// messages, and silently: no update, so no notice about an order the user
+/// has not seen since #813 hid it. A later restore that names one rebuilds
+/// it and lifts its tombstone. Returns how many it wiped.
 async fn wipe_unadopted_rows(db: &impl Storage, now: i64) -> usize {
     let key = crate::db::settings_keys::UNADOPTED_ROWS_SINCE;
     let since = match db.get_setting(key).await {
@@ -9386,7 +9420,7 @@ async fn wipe_unadopted_rows(db: &impl Storage, now: i64) -> usize {
     let candidates: Vec<String> = match db.list_trades().await {
         Ok(trades) => trades
             .into_iter()
-            .filter(|t| crate::mostro::trade_node::trade_node(t).is_none())
+            .filter(|t| crate::mostro::trade_node::trade_node(t).is_none() && t.started_at < since)
             .map(|t| t.order.id)
             .collect(),
         Err(e) => {
@@ -9402,6 +9436,15 @@ async fn wipe_unadopted_rows(db: &impl Storage, now: i64) -> usize {
             Ok(Some(row)) if crate::mostro::trade_node::trade_node(&row).is_none() => row,
             _ => continue,
         };
+        // The messages first: once the row is gone no sweep comes back for
+        // them, so a failed delete keeps the row for the next sweep to retry.
+        if let Err(e) = db.delete_messages_for_order(&order_id).await {
+            crate::api::logging::blog_warn(
+                "orders",
+                format!("sweep: messages of unadopted order={order_id} not deleted: {e}"),
+            );
+            continue;
+        }
         if let Err(e) = wipe_trade_row(db, &order_id, now, row.trade_key_index).await {
             crate::api::logging::blog_warn(
                 "orders",
@@ -9409,10 +9452,12 @@ async fn wipe_unadopted_rows(db: &impl Storage, now: i64) -> usize {
             );
             continue;
         }
+        // A message that landed between the two, before the wipe released
+        // the chat subscriptions. Best effort: rarely anything to delete.
         if let Err(e) = db.delete_messages_for_order(&order_id).await {
             crate::api::logging::blog_warn(
                 "orders",
-                format!("sweep: messages of unadopted order={order_id} not deleted: {e}"),
+                format!("sweep: late messages of unadopted order={order_id} not deleted: {e}"),
             );
         }
         crate::api::logging::blog_info(
@@ -9430,6 +9475,14 @@ async fn wipe_unadopted_rows(db: &impl Storage, now: i64) -> usize {
     wiped
 }
 
+/// Reconcile trades stuck in waiting states with the daemon's public book.
+///
+/// Covers cancellations whose daemon message the app never received (closed or
+/// offline when the daemon's waiting window expired). The clock only
+/// *triggers* the check — every decision needs a positive daemon signal
+/// (see [`sweep_action`]); the daemon stays the authority on order state.
+/// One exception, decided by the clock alone: the rows without a node that
+/// no restore or daemon message adopted ([`wipe_unadopted_rows`], #813).
 async fn run_stale_sweep_once() {
     // History a restore replayed and a pass has not settled yet. The orders
     // it just looked up are not looked up again below (PR #524 review).
@@ -12084,7 +12137,7 @@ async fn restore_session_on(node: &str) -> Result<mostro_core::message::RestoreS
             // Before the snapshot: its first pass gives these rows their peer.
             persist_restored_trade_rows(&info, &sender_keys, &mostro_pubkey).await;
             if let Some(db) = crate::db::app_db::db() {
-                adopt_restored_dispute_rows(db, &info, &mostro_pubkey.to_hex()).await;
+                adopt_restored_rows(db, &info, &mostro_pubkey.to_hex()).await;
             }
             if let Some(floor) = resync_floor(daemon_counter, &info) {
                 crate::api::identity::ensure_trade_key_index_at_least(floor).await?;
@@ -13802,17 +13855,17 @@ mod tests {
     }
 
     /// #813: a restore that got the node's answer adopts the rows it names
-    /// only as disputes, which the order details never cover.
+    /// as orders or disputes, whether or not the order details came.
     #[test]
-    fn a_restore_adopts_the_rows_of_its_disputes() {
+    fn a_restore_adopts_the_rows_its_answer_names() {
         let session = fn_body("async fn restore_session_on(node: &str)");
         let rows = session
             .find("persist_restored_trade_rows(")
             .expect("files its orders");
-        let disputes = session
-            .find("adopt_restored_dispute_rows(")
-            .expect("adopts its disputes' rows");
-        assert!(rows < disputes);
+        let named = session
+            .find("adopt_restored_rows(")
+            .expect("adopts the rows its answer names");
+        assert!(rows < named);
     }
 
     /// PR #841 review: a taker's side comes from the order the restored node
@@ -14284,7 +14337,7 @@ mod tests {
             restore_disputes: vec![],
         };
 
-        adopt_restored_dispute_rows(db, &info, RESTORED_NODE).await;
+        adopt_restored_rows(db, &info, RESTORED_NODE).await;
 
         for named in [&active, &parked] {
             let row = db
@@ -14317,7 +14370,7 @@ mod tests {
             restore_disputes: vec![named.clone(), other_index.clone(), known.clone()],
         };
 
-        adopt_restored_dispute_rows(db, &info, RESTORED_NODE).await;
+        adopt_restored_rows(db, &info, RESTORED_NODE).await;
 
         for (dispute, node) in [
             (&named, RESTORED_NODE),
