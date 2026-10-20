@@ -4317,6 +4317,107 @@ class AppLocalizationsFr extends AppLocalizations {
       'L\'envoi a échoué et le portefeuille n\'a pas pu confirmer le retour des fonds. Synchronisez avec le mint avant de réessayer.';
 
   @override
+  String get cashuSendEcashOption => 'Ecash';
+
+  @override
+  String get cashuSendLightningOption => 'Lightning';
+
+  @override
+  String get cashuInvoiceDialogTitle => 'Payer une facture Lightning';
+
+  @override
+  String get cashuInvoiceFieldLabel => 'Facture Lightning';
+
+  @override
+  String get cashuPasteInvoiceHint => 'Collez une facture Lightning';
+
+  @override
+  String get cashuInvoiceScanHint => 'Collez ou scannez une facture Lightning';
+
+  @override
+  String get cashuMeltConfirmTitle => 'Confirmer le paiement';
+
+  @override
+  String get cashuMeltAmount => 'Montant';
+
+  @override
+  String get cashuMeltFees => 'Frais, jusqu\'à';
+
+  @override
+  String get cashuMeltTotal => 'Total, jusqu\'à';
+
+  @override
+  String get cashuMeltFeesNote =>
+      'Les frais que le mint n\'utilise pas reviennent dans votre portefeuille.';
+
+  @override
+  String get cashuMeltQuoteRefreshed =>
+      'Le prix a changé. Vérifiez le nouveau total avant de payer.';
+
+  @override
+  String get cashuPayButton => 'Payer';
+
+  @override
+  String cashuMeltPaidTitle(String sats) {
+    return '$sats sats payés';
+  }
+
+  @override
+  String cashuMeltPaidFee(String fee) {
+    return 'Frais : $fee sats';
+  }
+
+  @override
+  String get cashuMeltPendingTitle => 'Paiement en cours';
+
+  @override
+  String get cashuMeltPendingBody =>
+      'Le résultat n\'est pas encore confirmé. Ces sats restent bloqués ; touchez « Synchroniser avec le mint » plus tard pour le régler.';
+
+  @override
+  String get cashuMeltFailedTitle => 'Le paiement a échoué';
+
+  @override
+  String get cashuErrorInvalidInvoice =>
+      'Ce n\'est pas une facture Lightning que ce portefeuille peut payer.';
+
+  @override
+  String get cashuErrorInvoiceNoAmount =>
+      'Cette facture n\'a pas de montant. Demandez-en une qui indique combien payer.';
+
+  @override
+  String get cashuErrorInvoiceExpired =>
+      'Cette facture a expiré. Demandez-en une nouvelle.';
+
+  @override
+  String get cashuErrorMeltUnsupported =>
+      'Ce mint ne peut pas payer de factures Lightning.';
+
+  @override
+  String get cashuErrorMeltAmountOutOfRange =>
+      'Ce mint ne paie pas de factures de ce montant.';
+
+  @override
+  String get cashuErrorMeltQuoteFailed =>
+      'Le mint n\'a pas pu chiffrer ce paiement. Réessayez plus tard.';
+
+  @override
+  String get cashuErrorMeltQuoteExpired =>
+      'Le devis du paiement a expiré. Rien n\'a été payé ; recommencez.';
+
+  @override
+  String get cashuErrorMeltFeeChanged =>
+      'Les frais ont augmenté depuis votre confirmation. Rien n\'a été payé ; recommencez.';
+
+  @override
+  String get cashuErrorMeltInsufficientFunds =>
+      'Vous n\'avez pas assez dans le portefeuille pour payer cette facture et ses frais.';
+
+  @override
+  String get cashuErrorMeltFailed =>
+      'Le paiement n\'a pas abouti. Rien n\'a été payé ; les sats sont de retour dans votre solde.';
+
+  @override
   String get lockEscrowTitle => 'Bloquer le séquestre';
 
   @override
