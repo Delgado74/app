@@ -214,9 +214,25 @@ final sortedChatRoomsProvider = Provider<List<ChatRoomState>>((ref) {
 /// The rooms the Chats list shows: those of the active node's trades
 /// (#813). The notifier keeps every room live; a room of another node's
 /// trade waits for a switch to that node. A room whose trade row is gone
-/// stays, as before. Until the trades load nothing is shown, so another
-/// node's rooms never flash in; a failed load shows every room.
+/// stays, as before, except the room of a row that did not know its node:
+/// hidden with the row, it leaves with it. Until the trades load nothing is
+/// shown, so another node's rooms never flash in; a failed load shows every
+/// room.
 final activeNodeChatRoomsProvider = Provider<List<ChatRoomState>>((ref) {
+  // A row without a node goes when no restore adopted it (#813): its room
+  // must not come back as the room of a trade that is gone.
+  ref.listen<AsyncValue<List<TradeRow>>>(tradeRowsProvider, (previous, next) {
+    final before = previous?.valueOrNull;
+    final after = next.valueOrNull;
+    if (before == null || after == null) return;
+    final kept = {for (final row in after) row.orderId};
+    final notifier = ref.read(chatRoomsNotifierProvider.notifier);
+    for (final row in before) {
+      if (row.node.isEmpty && !kept.contains(row.orderId)) {
+        notifier.removeRoom(row.orderId);
+      }
+    }
+  });
   final rooms = ref.watch(chatRoomsNotifierProvider);
   final trades = ref.watch(tradeRowsProvider);
   if (!trades.hasValue) return trades.hasError ? rooms : const [];
