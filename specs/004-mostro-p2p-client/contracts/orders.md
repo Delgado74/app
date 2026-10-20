@@ -70,6 +70,12 @@ applies the first two before recording the event, and
   (`TradeActionListener`); its Notifications cards carry an amber node line
   and open nothing (`docs/PUSH_NOTIFICATIONS.md` §9.2). A row without a node
   counts as the active node's.
+- A row without a node is adopted by the restore that names it
+  ([identity](identity.md)). The stale sweep wipes the others 72 h after
+  it first ran on this rule (`unadopted_rows_since`, identity-scoped,
+  written once), with their chat messages (`Storage::delete_messages_for_order`)
+  and without a trade update, so no notice; the Chats list drops their room.
+  A later restore that names one rebuilds it and lifts its tombstone (#813).
 - A trade's chat stays on its node: see [messages](messages.md) and
   [disputes](disputes.md).
 
