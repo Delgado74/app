@@ -108,7 +108,11 @@ keeps the old filters — the node's current orders are refetched, and its PoW
 requirement is refreshed. A re-subscribe that no relay accepts is an error, not
 a silent success.
 
-The switch is **purely local**: no Nostr message is sent to either node. Pass
+The switch sends no trade message to either node; outside full privacy mode
+it asks the new node for the user's reputation (`UserInfo`). Once it returns,
+the app restores the account on the new node when the switch came from
+Settings or an order link (FR-058b, #813): that restore runs after the
+subscriptions are re-targeted and the PoW is refreshed. Pass
 `DEFAULT_MOSTRO_PUBKEY` to return to the default node.
 
 **Persistence**: only the pubkey is stored, under key `active_mostro_pubkey` in

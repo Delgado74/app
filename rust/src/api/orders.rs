@@ -11787,9 +11787,20 @@ pub async fn restore_session() -> Result<mostro_core::message::RestoreSessionInf
     restore_session_on(&active_mostro_pubkey()).await
 }
 
+/// Held by a restore for as long as it runs: restores never overlap.
+fn restore_slot() -> &'static tokio::sync::Mutex<()> {
+    static SLOT: OnceLock<tokio::sync::Mutex<()>> = OnceLock::new();
+    SLOT.get_or_init(Default::default)
+}
+
 /// [`restore_session`] sent to `node` (hex pubkey): every step of the
 /// restore asks that node and files what it answers under it (#812).
 async fn restore_session_on(node: &str) -> Result<mostro_core::message::RestoreSessionInfo> {
+    // One restore at a time (#813): a node switch opens a restore while the
+    // previous node's may still run, its sheet closed. This one waits for all
+    // of it: the reply window, then (if the node answered) the LastTradeIndex
+    // round trip and the order details, each under its own timeout.
+    let _one_at_a_time = restore_slot().lock().await;
     // Once another node is active, what `node` answers would land while the
     // user looks at another one: refused before anything is sent.
     if !active_mostro_pubkey().eq_ignore_ascii_case(node) {
@@ -11799,6 +11810,8 @@ async fn restore_session_on(node: &str) -> Result<mostro_core::message::RestoreS
         );
         return Err(anyhow::anyhow!("NodeChanged"));
     }
+    // From here every step is this restore's (`api::restore_progress`).
+    crate::api::restore_progress::started();
     // Fresh trade key -> event.sender (daemon replies here).
     let trade_key_info = crate::api::identity::derive_trade_key().await?;
     let trade_index = trade_key_info.index;
@@ -13621,6 +13634,28 @@ mod tests {
             .expect("refuses another node");
         let first_step = session.find("derive_trade_key(").expect("derives a key");
         assert!(refused < first_step, "refused before anything is sent");
+    }
+
+    /// #813: a restore waits for one still running, then checks its node,
+    /// and only then opens its steps: a refused restore never starts the
+    /// steps a waiting sheet would follow.
+    #[test]
+    fn a_restore_runs_alone_and_opens_its_steps_once_it_goes_ahead() {
+        let session = fn_body("async fn restore_session_on(node: &str)");
+        let waits = session
+            .find("restore_slot().lock()")
+            .expect("waits its turn");
+        let refused = session.find("\"NodeChanged\"").expect("checks its node");
+        let started = session
+            .find("restore_progress::started()")
+            .expect("opens its steps");
+        let first_step = session.find("derive_trade_key(").expect("derives a key");
+        assert!(waits < refused, "the node is checked once its turn came");
+        assert!(refused < started, "a refused restore opens no steps");
+        assert!(
+            started < first_step,
+            "its steps open before it does anything"
+        );
     }
 
     /// PR #841 review: a taker's side comes from the order the restored node

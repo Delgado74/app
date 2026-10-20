@@ -1,6 +1,10 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:mostro/core/trade_node.dart';
+import 'package:mostro/features/settings/providers/mostro_nodes_provider.dart'
+    show mostroPubkeyProvider;
+import 'package:mostro/features/trades/providers/trade_rows_provider.dart';
 import 'package:mostro/features/trades/providers/trades_providers.dart';
 import 'package:mostro/l10n/app_localizations.dart';
 import 'package:mostro/src/rust/api/identity.dart' as identity_api;
@@ -207,11 +211,28 @@ final sortedChatRoomsProvider = Provider<List<ChatRoomState>>((ref) {
   return sorted;
 });
 
-/// Total unread message count across all rooms.
+/// The rooms the Chats list shows: those of the active node's trades
+/// (#813). The notifier keeps every room live; a room of another node's
+/// trade waits for a switch to that node. A room whose trade row is gone
+/// stays, as before. Until the trades load nothing is shown, so another
+/// node's rooms never flash in; a failed load shows every room.
+final activeNodeChatRoomsProvider = Provider<List<ChatRoomState>>((ref) {
+  final rooms = ref.watch(chatRoomsNotifierProvider);
+  final trades = ref.watch(tradeRowsProvider);
+  if (!trades.hasValue) return trades.hasError ? rooms : const [];
+  final active = ref.watch(mostroPubkeyProvider);
+  final nodeOf = {for (final t in trades.value!) t.orderId: t.node};
+  return rooms.where((room) {
+    final node = nodeOf[room.orderId];
+    return node == null || isOnActiveNode(tradeNode: node, activeNode: active);
+  }).toList();
+});
+
+/// Total unread message count across the rooms the Chats list shows.
 ///
 /// Consumed by [chatNotificationCountProvider] in BottomNavBar.
 final chatCountProvider = Provider<int>((ref) {
-  final rooms = ref.watch(chatRoomsNotifierProvider);
+  final rooms = ref.watch(activeNodeChatRoomsProvider);
   return rooms.fold(0, (sum, r) => sum + r.unreadCount);
 });
 
