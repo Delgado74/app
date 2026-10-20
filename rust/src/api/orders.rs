@@ -14261,6 +14261,41 @@ mod tests {
         assert_eq!(node_of(&other_index).await, "");
     }
 
+    /// #813 (PR #865 review): the restore's own answer names the order and its
+    /// trade index. A row without a node takes the node from that answer
+    /// alone — when the `Orders` details never come (a refusal, a silent node,
+    /// a failed chunk), and for a bond-parked order, whose details are never
+    /// asked — or it would be wiped with its messages.
+    #[tokio::test]
+    async fn a_restore_adopts_the_rows_its_answer_names_without_the_order_details() {
+        use crate::mostro::test_fixtures::trade;
+        let db = bond_test_db().await;
+        let active = restored_order(7);
+        let mut parked = restored_order(7);
+        parked.status = "waiting-taker-bond".to_string();
+        for named in [&active, &parked] {
+            let order_id = named.order_id.to_string();
+            db.save_trade(&trade(&order_id, 7, OrderStatus::Active, ""))
+                .await
+                .unwrap();
+        }
+        let info = mostro_core::message::RestoreSessionInfo {
+            restore_orders: vec![active.clone(), parked.clone()],
+            restore_disputes: vec![],
+        };
+
+        adopt_restored_dispute_rows(db, &info, RESTORED_NODE).await;
+
+        for named in [&active, &parked] {
+            let row = db
+                .get_trade_by_order_id(&named.order_id.to_string())
+                .await
+                .unwrap()
+                .expect("row");
+            assert_eq!(row.order.node_pubkey, RESTORED_NODE);
+        }
+    }
+
     /// #813: mostrod names a disputed order only in `restore_disputes`. A row
     /// of one without a node takes the restore's node there, with the same
     /// trade index; another index, or a row that knows its node, keeps its own.
