@@ -48,7 +48,12 @@ export 'package:mostro/features/settings/widgets/add_custom_node_dialog.dart'
 /// ([cachedNodeStatsProvider]) and a skeleton for the order count — or
 /// skeletons throughout for a node never seen — never a spinner over a card.
 class MostroNodeSelector extends ConsumerStatefulWidget {
-  const MostroNodeSelector({super.key});
+  const MostroNodeSelector({super.key, this.switched});
+
+  /// Completed with the node switched to once a switch goes through, or with
+  /// null once the sheet is gone without one. A switch still running when the
+  /// user dismisses the sheet completes it when it ends (#813).
+  final Completer<String?>? switched;
 
   @override
   ConsumerState<MostroNodeSelector> createState() => _MostroNodeSelectorState();
@@ -65,14 +70,31 @@ class _MostroNodeSelectorState extends ConsumerState<MostroNodeSelector> {
   /// How long the filled radio is shown before the sheet closes itself.
   static const _closeDelay = Duration(milliseconds: 200);
 
+  /// [MostroNodeSelector.switched], kept here: a switch that outlives the
+  /// sheet reports through it after the widget is gone.
+  late final Completer<String?>? _switched;
+
   @override
   void initState() {
     super.initState();
+    _switched = widget.switched;
     // Opportunistic kind 0 refresh (names, avatars) each time the selector
     // opens; the cached registry shows meanwhile.
     Future.microtask(
       () => ref.read(mostroNodesProvider.notifier).refreshMetadata(),
     );
+  }
+
+  @override
+  void dispose() {
+    // A switch still running reports its own outcome when it ends.
+    if (!_switching) _reportSwitch(null);
+    super.dispose();
+  }
+
+  void _reportSwitch(String? node) {
+    final switched = _switched;
+    if (switched != null && !switched.isCompleted) switched.complete(node);
   }
 
   String _activeNodeName() => nodeNameOf(
@@ -87,6 +109,9 @@ class _MostroNodeSelectorState extends ConsumerState<MostroNodeSelector> {
       await _switchTo(entry);
     } finally {
       _switching = false;
+      // Dismissed while it ran: a switch that went through has reported its
+      // node already, and anything else ends without one.
+      if (!mounted) _reportSwitch(null);
     }
   }
 
@@ -121,10 +146,10 @@ class _MostroNodeSelectorState extends ConsumerState<MostroNodeSelector> {
         ref.read(mostroNodesProvider.notifier).selectNode(entry.pubkey),
         Future<void>.delayed(_closeDelay),
       ]);
+      _reportSwitch(entry.pubkey);
       // The user may have dismissed the sheet during the switch; popping via
       // the captured navigator would then close the route underneath it.
-      // The node it returns says the switch went through (#813).
-      if (mounted) navigator.pop(entry.pubkey);
+      if (mounted) navigator.pop();
       messenger.showSnackBar(
         SnackBar(
           content: Text(l10n.nodeSwitchedSuccess(nodeDisplayName(entry))),
@@ -447,21 +472,22 @@ class _AddOwnNodeButton extends StatelessWidget {
   }
 }
 
-/// Open the node selector as a modal sheet over Settings. Once it closes on
-/// a switch, [afterSwitch] restores the account on the new node (#813); a
-/// sheet closed without one, or dismissed while a switch ran, restores
-/// nothing.
+/// Open the node selector as a modal sheet over Settings. Once a switch
+/// goes through, [afterSwitch] restores the account on the new node (#813),
+/// also when the user dismissed the sheet while the switch ran; a sheet
+/// closed without one, or a failed switch, restores nothing.
 Future<void> showMostroNodeSelector(
   BuildContext context, {
   Future<void> Function(BuildContext) afterSwitch = restoreAfterNodeSwitch,
 }) async {
+  final switched = Completer<String?>();
   // A screen, not a question: it paints its own page backdrop and its own
   // footer, so it opens `bare` rather than inside a [MostroSheet].
-  final switched = await showMostroSheet<String>(
+  await showMostroSheet<void>(
     context: context,
     bare: true,
-    builder: (_) => const MostroNodeSelector(),
+    builder: (_) => MostroNodeSelector(switched: switched),
   );
-  if (switched == null || !context.mounted) return;
+  if (await switched.future == null || !context.mounted) return;
   await afterSwitch(context);
 }

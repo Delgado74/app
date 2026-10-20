@@ -1031,5 +1031,47 @@ void main() {
         expect(restores(), 0);
       });
     });
+
+    testWidgets('a switch still running when the sheet is dismissed restores '
+        'once it goes through', (tester) async {
+      await withClock(Clock.fixed(_now), () async {
+        final (notifier, restores) = await _pumpOpener(tester);
+        final gate = Completer<void>();
+        notifier.selectGate = gate.future;
+        await tester.tap(find.text('Kmbalache 🇨🇺'));
+        await tester.pump();
+        Navigator.of(tester.element(find.byType(MostroNodeSelector))).pop();
+        await tester.pumpAndSettle();
+        expect(find.byType(MostroNodeSelector), findsNothing);
+        expect(restores(), 0);
+
+        gate.complete();
+        await tester.pumpAndSettle();
+
+        expect(notifier.selected, [_cubaPubkey]);
+        expect(restores(), 1);
+      });
+    });
+
+    testWidgets('a switch that fails after the sheet was dismissed restores '
+        'nothing', (tester) async {
+      await withClock(Clock.fixed(_now), () async {
+        final (notifier, restores) = await _pumpOpener(
+          tester,
+          failSelect: true,
+        );
+        final gate = Completer<void>();
+        notifier.selectGate = gate.future;
+        await tester.tap(find.text('Kmbalache 🇨🇺'));
+        await tester.pump();
+        Navigator.of(tester.element(find.byType(MostroNodeSelector))).pop();
+        await tester.pumpAndSettle();
+
+        gate.complete();
+        await tester.pumpAndSettle();
+
+        expect(restores(), 0);
+      });
+    });
   });
 }
