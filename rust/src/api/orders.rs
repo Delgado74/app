@@ -15779,6 +15779,8 @@ mod tests {
         let known_id = known.id.unwrap().to_string();
         let mut legacy_row = restored_trade_row(&legacy, &own, 11, RESTORED_NODE).expect("row");
         legacy_row.order.node_pubkey = String::new();
+        // Started before the wait began, as the rows of those releases did.
+        legacy_row.started_at = 500;
         db.save_trade(&legacy_row).await.unwrap();
         db.save_trade(&restored_trade_row(&known, &own, 12, RESTORED_NODE).expect("row"))
             .await
@@ -15829,6 +15831,35 @@ mod tests {
             .unwrap()
             .expect("rebuilt");
         assert_eq!(rebuilt.order.node_pubkey, RESTORED_NODE);
+    }
+
+    /// PR #865 review: the wipe takes only the rows of the releases it is
+    /// for, started before the wait began. A row that loses its node later
+    /// (a writer's regression) is left for someone to see, not wiped.
+    #[cfg(not(target_arch = "wasm32"))]
+    #[tokio::test]
+    async fn the_wipe_leaves_a_row_without_a_node_started_after_the_wait_began() {
+        use crate::mostro::test_fixtures::trade;
+        let db = throwaway_store().await;
+        db.set_setting(crate::db::settings_keys::UNADOPTED_ROWS_SINCE, "1000")
+            .await
+            .unwrap();
+        let old_id = uuid::Uuid::new_v4().to_string();
+        let new_id = uuid::Uuid::new_v4().to_string();
+        let mut old = trade(&old_id, 3, OrderStatus::Active, "");
+        old.started_at = 999;
+        let mut new = trade(&new_id, 4, OrderStatus::Active, "");
+        new.started_at = 1000;
+        db.save_trade(&old).await.unwrap();
+        db.save_trade(&new).await.unwrap();
+
+        assert_eq!(
+            wipe_unadopted_rows(&db, 1_000 + UNADOPTED_ROW_WAIT_SECS).await,
+            1
+        );
+
+        assert!(db.get_trade_by_order_id(&old_id).await.unwrap().is_none());
+        assert!(db.get_trade_by_order_id(&new_id).await.unwrap().is_some());
     }
 
     /// A store of its own: the legacy snapshot key is one per database, and
@@ -17228,6 +17259,48 @@ mod tests {
 
         // Unknown order: nothing local to protect, sync proceeds.
         assert!(!status_sync_blocked_by_terminal("no-such-order", &Action::AddInvoice).await);
+    }
+
+    /// PR #865 review: a row without a node hears only the active node, and
+    /// that node signing a message to the row's trade key that names the
+    /// order is the same evidence a restore gives — and it needs no restore,
+    /// so it reaches privacy mode too. The row takes the node; a message for
+    /// another trade index leaves it as it is.
+    #[tokio::test]
+    async fn a_daemon_message_naming_a_row_without_a_node_adopts_it() {
+        use crate::mostro::test_fixtures::trade;
+        use mostro_core::message::{Action, Message};
+        let db = bond_test_db().await;
+        let named = uuid::Uuid::new_v4();
+        let other_index = uuid::Uuid::new_v4();
+        for order in [named, other_index] {
+            db.save_trade(&trade(&order.to_string(), 7, OrderStatus::Active, ""))
+                .await
+                .unwrap();
+        }
+        let sender = nostr_sdk::prelude::PublicKey::from_hex(&active_mostro_pubkey())
+            .expect("valid mostro pubkey");
+        let message = |order: uuid::Uuid| mostro_core::transport::UnwrappedMessage {
+            message: Message::new_order(Some(order), None, None, Action::FiatSentOk, None),
+            signature: None,
+            sender,
+            identity: sender,
+            created_at: nostr_sdk::prelude::Timestamp::from(0u64),
+        };
+
+        dispatch_mostro_message(message(named), "test-adopt-named", "ff00ff07", 7).await;
+        dispatch_mostro_message(message(other_index), "test-adopt-other", "ff00ff08", 8).await;
+
+        let node_of = |order: uuid::Uuid| async move {
+            db.get_trade_by_order_id(&order.to_string())
+                .await
+                .unwrap()
+                .expect("row")
+                .order
+                .node_pubkey
+        };
+        assert_eq!(node_of(named).await, active_mostro_pubkey());
+        assert_eq!(node_of(other_index).await, "");
     }
 
     /// A stale Canceled replayed over a finished trade (the taker-timeout
