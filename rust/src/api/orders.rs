@@ -5927,7 +5927,9 @@ async fn persist_restored_trade_row(
     let order_id = row.order.id.clone();
     let _guard = lock_order(&order_id).await;
     if let Ok(Some(existing)) = db.get_trade_by_order_id(&order_id).await {
-        return apply_restored_status(db, &existing, row.order.status, sent_at).await;
+        let adopted = crate::mostro::trade_node::trade_node(&existing).is_none()
+            && adopt_restored_row(db, &order_id, trade_index, node).await;
+        return apply_restored_status(db, &existing, row.order.status, sent_at).await || adopted;
     }
     // Before the write it dates, like every status write (`status_write_blocked`):
     // the replay that follows is older and must not walk this status back.
@@ -5954,6 +5956,64 @@ async fn persist_restored_trade_row(
         Some(crate::api::types::TradeUpdateReason::Replayed),
     );
     true
+}
+
+/// Give `node` to the row of `order_id` that does not know its node (written
+/// before #809), now that a restore on `node` named that order with
+/// `trade_index` (#813). Returns whether it did. Runs under the order's guard.
+async fn adopt_restored_row(
+    db: &impl crate::db::Storage,
+    order_id: &str,
+    trade_index: u32,
+    node: &str,
+) -> bool {
+    match db.adopt_trade_node(order_id, trade_index, node).await {
+        Ok(true) => {
+            crate::api::logging::blog_info(
+                "restore",
+                format!(
+                    "order={} without a node adopted by node={}",
+                    crate::api::logging::short_id(order_id),
+                    crate::api::logging::short_id(node),
+                ),
+            );
+            crate::api::trade_touch::touch_trade(order_id);
+            crate::api::push::request_reconcile();
+            true
+        }
+        Ok(false) => false,
+        Err(e) => {
+            crate::api::logging::blog_warn(
+                "restore",
+                format!("order={order_id} not adopted by node={node}: {e}"),
+            );
+            false
+        }
+    }
+}
+
+/// The rows a restore on `node` names only as disputes: mostrod leaves a
+/// disputed order out of `restore_orders`, so [`persist_restored_trade_rows`]
+/// never sees it. A row of one that does not know its node is adopted here,
+/// or it would stay without one, and be wiped, with its dispute still open
+/// (#813). Nothing else of the row changes.
+async fn adopt_restored_dispute_rows(
+    db: &impl crate::db::Storage,
+    info: &mostro_core::message::RestoreSessionInfo,
+    node: &str,
+) {
+    for dispute in &info.restore_disputes {
+        let Some(trade_index) = sanitize_trade_index(dispute.trade_index) else {
+            continue;
+        };
+        let order_id = dispute.order_id.to_string();
+        let _guard = lock_order(&order_id).await;
+        if let Ok(Some(existing)) = db.get_trade_by_order_id(&order_id).await {
+            if crate::mostro::trade_node::trade_node(&existing).is_none() {
+                adopt_restored_row(db, &order_id, trade_index, node).await;
+            }
+        }
+    }
 }
 
 /// Whether the daemon's status for a restored order, dated `sent_at`, may
@@ -11943,6 +12003,9 @@ async fn restore_session_on(node: &str) -> Result<mostro_core::message::RestoreS
             };
             // Before the snapshot: its first pass gives these rows their peer.
             persist_restored_trade_rows(&info, &sender_keys, &mostro_pubkey).await;
+            if let Some(db) = crate::db::app_db::db() {
+                adopt_restored_dispute_rows(db, &info, &mostro_pubkey.to_hex()).await;
+            }
             if let Some(floor) = resync_floor(daemon_counter, &info) {
                 crate::api::identity::ensure_trade_key_index_at_least(floor).await?;
                 // What is still in progress, so the history the replay below
@@ -13658,6 +13721,20 @@ mod tests {
         );
     }
 
+    /// #813: a restore that got the node's answer adopts the rows it names
+    /// only as disputes, which the order details never cover.
+    #[test]
+    fn a_restore_adopts_the_rows_of_its_disputes() {
+        let session = fn_body("async fn restore_session_on(node: &str)");
+        let rows = session
+            .find("persist_restored_trade_rows(")
+            .expect("files its orders");
+        let disputes = session
+            .find("adopt_restored_dispute_rows(")
+            .expect("adopts its disputes' rows");
+        assert!(rows < disputes);
+    }
+
     /// PR #841 review: a taker's side comes from the order the restored node
     /// published. The book holds the active node's orders and the node may
     /// have changed during the restore, so neither the book nor the relay
@@ -14102,6 +14179,44 @@ mod tests {
         };
         assert_eq!(node_of(&named).await, RESTORED_NODE);
         assert_eq!(node_of(&other_index).await, "");
+    }
+
+    /// #813: mostrod names a disputed order only in `restore_disputes`. A row
+    /// of one without a node takes the restore's node there, with the same
+    /// trade index; another index, or a row that knows its node, keeps its own.
+    #[tokio::test]
+    async fn a_restore_adopts_the_row_without_a_node_of_a_dispute_it_names() {
+        use crate::mostro::test_fixtures::trade;
+        let db = bond_test_db().await;
+        let named = restored_dispute(11);
+        let other_index = restored_dispute(12);
+        let known = restored_dispute(11);
+        for (dispute, node) in [(&named, ""), (&other_index, ""), (&known, "node")] {
+            let order_id = dispute.order_id.to_string();
+            db.save_trade(&trade(&order_id, 11, OrderStatus::Dispute, node))
+                .await
+                .unwrap();
+        }
+        let info = mostro_core::message::RestoreSessionInfo {
+            restore_orders: vec![],
+            restore_disputes: vec![named.clone(), other_index.clone(), known.clone()],
+        };
+
+        adopt_restored_dispute_rows(db, &info, RESTORED_NODE).await;
+
+        for (dispute, node) in [
+            (&named, RESTORED_NODE),
+            (&other_index, ""),
+            (&known, "node"),
+        ] {
+            let row = db
+                .get_trade_by_order_id(&dispute.order_id.to_string())
+                .await
+                .unwrap()
+                .expect("row");
+            assert_eq!(row.order.node_pubkey, node);
+            assert_eq!(row.order.status, OrderStatus::Dispute);
+        }
     }
 
     #[tokio::test]
