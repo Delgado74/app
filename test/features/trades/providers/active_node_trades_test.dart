@@ -107,7 +107,6 @@ void main() {
     test('counts only the active node\'s trades in progress', () async {
       final c = tradeRowsContainer([
         _needsAction('other', _otherNode),
-        _needsAction('unknown', ''),
         fakeTrade(id: 'done', status: OrderStatus.success, completedAt: 2000),
       ]);
       final lookup = c.read(tradeInProgressLookupProvider);
@@ -117,6 +116,16 @@ void main() {
       c.read(mostroPubkeyProvider.notifier).state = _otherNode;
       expect(await lookup(), isTrue);
     });
+
+    test(
+      'counts a trade in progress whose row does not know its node',
+      () async {
+        // Its actions go to whichever node is active (#810).
+        final c = tradeRowsContainer([_needsAction('unknown', '')]);
+
+        expect(await c.read(tradeInProgressLookupProvider)(), isTrue);
+      },
+    );
   });
 
   group('the Chats list shows the active node\'s rooms (#813)', () {
