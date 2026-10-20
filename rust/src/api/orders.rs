@@ -9352,6 +9352,84 @@ fn newest_book_revision(
 /// offline when the daemon's waiting window expired). The clock only
 /// *triggers* the check — every decision needs a positive daemon signal
 /// (see [`sweep_action`]); the daemon stays the authority on order state.
+/// How long a trade row without a node waits for a restore to adopt it
+/// before the sweep wipes it (#813): time to restore on each node, where an
+/// order lives about 48 h.
+const UNADOPTED_ROW_WAIT_SECS: i64 = 72 * 3600;
+
+/// Wipe the trade rows without a node that no restore adopted (#813), once
+/// [`UNADOPTED_ROW_WAIT_SECS`] have passed since the sweep first ran on this
+/// version (`UNADOPTED_ROWS_SINCE`, written on that first run, when nothing
+/// is wiped). Each goes with its chat messages, and silently: no update, so
+/// no notice about an order the user has not seen since #813 hid it. A
+/// later restore that names one rebuilds it and lifts its tombstone.
+/// Returns how many it wiped.
+async fn wipe_unadopted_rows(db: &impl Storage, now: i64) -> usize {
+    let key = crate::db::settings_keys::UNADOPTED_ROWS_SINCE;
+    let since = match db.get_setting(key).await {
+        Ok(stored) => stored.and_then(|value| value.parse::<i64>().ok()),
+        Err(e) => {
+            crate::api::logging::blog_warn("orders", format!("sweep: {key} not read: {e}"));
+            return 0;
+        }
+    };
+    let Some(since) = since else {
+        // The first run, or a value that no longer reads: the wait starts now.
+        if let Err(e) = db.set_setting(key, &now.to_string()).await {
+            crate::api::logging::blog_warn("orders", format!("sweep: {key} not stored: {e}"));
+        }
+        return 0;
+    };
+    if now < since + UNADOPTED_ROW_WAIT_SECS {
+        return 0;
+    }
+    let candidates: Vec<String> = match db.list_trades().await {
+        Ok(trades) => trades
+            .into_iter()
+            .filter(|t| crate::mostro::trade_node::trade_node(t).is_none())
+            .map(|t| t.order.id)
+            .collect(),
+        Err(e) => {
+            crate::api::logging::blog_warn("orders", format!("sweep: unadopted rows skipped: {e}"));
+            return 0;
+        }
+    };
+    let mut wiped = 0;
+    for order_id in candidates {
+        // On the row as it is now: a restore may have adopted it since.
+        let _guard = lock_order(&order_id).await;
+        let row = match db.get_trade_by_order_id(&order_id).await {
+            Ok(Some(row)) if crate::mostro::trade_node::trade_node(&row).is_none() => row,
+            _ => continue,
+        };
+        if let Err(e) = wipe_trade_row(db, &order_id, now, row.trade_key_index).await {
+            crate::api::logging::blog_warn(
+                "orders",
+                format!("sweep: unadopted order={order_id} not wiped: {e}"),
+            );
+            continue;
+        }
+        if let Err(e) = db.delete_messages_for_order(&order_id).await {
+            crate::api::logging::blog_warn(
+                "orders",
+                format!("sweep: messages of unadopted order={order_id} not deleted: {e}"),
+            );
+        }
+        crate::api::logging::blog_info(
+            "orders",
+            format!(
+                "sweep: wiped order={} that no restore gave a node",
+                crate::api::logging::short_id(&order_id)
+            ),
+        );
+        wiped += 1;
+    }
+    if wiped > 0 {
+        crate::api::push::request_reconcile();
+    }
+    wiped
+}
+
 async fn run_stale_sweep_once() {
     // History a restore replayed and a pass has not settled yet. The orders
     // it just looked up are not looked up again below (PR #524 review).
@@ -9359,6 +9437,8 @@ async fn run_stale_sweep_once() {
     let Some(db) = crate::db::app_db::db() else {
         return;
     };
+    // Before the rows are listed: what it wipes is not examined below.
+    let unadopted = wipe_unadopted_rows(db, crate::rt::unix_now()).await;
     let trades = match db.list_trades().await {
         Ok(trades) => trades,
         Err(e) => {
@@ -9367,7 +9447,7 @@ async fn run_stale_sweep_once() {
         }
     };
     let now = crate::rt::unix_now();
-    let (mut examined, mut wiped, mut resynced) = (0usize, 0usize, 0usize);
+    let (mut examined, mut wiped, mut resynced) = (0usize, unadopted, 0usize);
     for trade in trades {
         // An unpaid bond past its deadline (a taker's bolt11 expiry, a
         // maker's bolt11 or order expiry): the daemon says nothing, so the
@@ -15596,6 +15676,124 @@ mod tests {
             .map(|t| t.order.id)
             .collect();
         assert_eq!(shown, vec!["other-active", "no-node"]);
+    }
+
+    /// A chat message of `order_id`, for the unadopted-row wipe.
+    fn chat_message(id: &str, order_id: &str) -> crate::api::types::ChatMessage {
+        crate::api::types::ChatMessage {
+            id: id.into(),
+            trade_id: order_id.into(),
+            sender_pubkey: "peer".into(),
+            content: "hi".into(),
+            message_type: crate::api::types::MessageType::Peer,
+            is_mine: false,
+            is_read: false,
+            has_attachment: false,
+            attachment: None,
+            created_at: 2,
+            reactions: Vec::new(),
+        }
+    }
+
+    /// #813: the first sweep starts the wait and wipes nothing; the start is
+    /// written once, and a value that no longer reads starts it again.
+    #[cfg(not(target_arch = "wasm32"))]
+    #[tokio::test]
+    async fn the_first_sweep_starts_the_wait_for_rows_without_a_node() {
+        use crate::mostro::test_fixtures::trade;
+        let db = throwaway_store().await;
+        let key = crate::db::settings_keys::UNADOPTED_ROWS_SINCE;
+        let order_id = uuid::Uuid::new_v4().to_string();
+        db.save_trade(&trade(&order_id, 3, OrderStatus::Active, ""))
+            .await
+            .unwrap();
+
+        assert_eq!(wipe_unadopted_rows(&db, 1_000).await, 0);
+        assert_eq!(db.get_setting(key).await.unwrap().as_deref(), Some("1000"));
+        assert_eq!(wipe_unadopted_rows(&db, 2_000).await, 0);
+        assert_eq!(
+            db.get_setting(key).await.unwrap().as_deref(),
+            Some("1000"),
+            "written once"
+        );
+        assert!(db.get_trade_by_order_id(&order_id).await.unwrap().is_some());
+
+        db.set_setting(key, "garbled").await.unwrap();
+        assert_eq!(wipe_unadopted_rows(&db, 3_000).await, 0);
+        assert_eq!(db.get_setting(key).await.unwrap().as_deref(), Some("3000"));
+
+        assert!(crate::db::settings_keys::IDENTITY_SCOPED_KEYS.contains(&key));
+    }
+
+    /// #813: 72 h after the wait began, a row without a node goes with its
+    /// chat messages, silently, and a row that knows its node stays with its
+    /// own. A later restore that names the wiped order rebuilds it.
+    #[cfg(not(target_arch = "wasm32"))]
+    #[tokio::test]
+    async fn a_row_without_a_node_is_wiped_72_hours_after_the_wait_began() {
+        use mostro_core::order::{Kind, Status};
+        let db = throwaway_store().await;
+        db.set_setting(crate::db::settings_keys::UNADOPTED_ROWS_SINCE, "1000")
+            .await
+            .unwrap();
+        let own = nostr_sdk::prelude::Keys::generate().public_key().to_hex();
+        let peer = nostr_sdk::prelude::Keys::generate().public_key().to_hex();
+        let legacy = own_order(Kind::Sell, Status::Active, Some(&peer), Some(&own));
+        let known = own_order(Kind::Sell, Status::Active, Some(&peer), Some(&own));
+        let legacy_id = legacy.id.unwrap().to_string();
+        let known_id = known.id.unwrap().to_string();
+        let mut legacy_row = restored_trade_row(&legacy, &own, 11, RESTORED_NODE).expect("row");
+        legacy_row.order.node_pubkey = String::new();
+        db.save_trade(&legacy_row).await.unwrap();
+        db.save_trade(&restored_trade_row(&known, &own, 12, RESTORED_NODE).expect("row"))
+            .await
+            .unwrap();
+        db.save_message(&chat_message(&format!("{legacy_id}-msg"), &legacy_id))
+            .await
+            .unwrap();
+        db.save_message(&chat_message(&format!("{known_id}-msg"), &known_id))
+            .await
+            .unwrap();
+        let mut updates = trade_updates_tx().subscribe();
+
+        assert_eq!(
+            wipe_unadopted_rows(&db, 1_000 + UNADOPTED_ROW_WAIT_SECS - 1).await,
+            0
+        );
+        assert!(db
+            .get_trade_by_order_id(&legacy_id)
+            .await
+            .unwrap()
+            .is_some());
+
+        assert_eq!(
+            wipe_unadopted_rows(&db, 1_000 + UNADOPTED_ROW_WAIT_SECS).await,
+            1
+        );
+        assert!(db
+            .get_trade_by_order_id(&legacy_id)
+            .await
+            .unwrap()
+            .is_none());
+        assert!(db.list_messages(&legacy_id).await.unwrap().is_empty());
+        assert!(db
+            .get_setting(&crate::db::settings_keys::trade_wiped(&legacy_id))
+            .await
+            .unwrap()
+            .is_some());
+        assert!(db.get_trade_by_order_id(&known_id).await.unwrap().is_some());
+        assert_eq!(db.list_messages(&known_id).await.unwrap().len(), 1);
+        while let Ok(update) = updates.try_recv() {
+            assert_ne!(update.order_id, legacy_id, "the wipe is silent");
+        }
+
+        assert!(persist_restored_trade_row(&db, &legacy, &own, 11, 2_000, RESTORED_NODE).await);
+        let rebuilt = db
+            .get_trade_by_order_id(&legacy_id)
+            .await
+            .unwrap()
+            .expect("rebuilt");
+        assert_eq!(rebuilt.order.node_pubkey, RESTORED_NODE);
     }
 
     /// A store of its own: the legacy snapshot key is one per database, and

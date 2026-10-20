@@ -62,6 +62,12 @@ pub mod settings_keys {
     /// the next identity.
     pub const PENDING_REPUTATION_ATTESTATION: &str = "pending_reputation_attestation";
 
+    /// When the stale sweep first ran on a version that wipes the trade rows
+    /// without a node no restore adopted (#813), unix seconds. They are
+    /// wiped 72 h after it, not after their own start: they are weeks old.
+    /// Written once. Identity-scoped: the rows are that identity's.
+    pub const UNADOPTED_ROWS_SINCE: &str = "unadopted_rows_since";
+
     // ── Push notifications (docs/PUSH_NOTIFICATIONS.md §7.1, §8.1) ──────────
 
     /// The master toggle, `"true"` / `"false"`; absent reads as enabled.
@@ -310,11 +316,12 @@ pub mod settings_keys {
     /// The single keys that describe the identity, not the device, dropped
     /// with [`IDENTITY_SCOPED_PREFIXES`] by
     /// [`super::Storage::clear_identity_data`].
-    pub const IDENTITY_SCOPED_KEYS: [&str; 4] = [
+    pub const IDENTITY_SCOPED_KEYS: [&str; 5] = [
         BOND_CLAIM_RETAINED_NODES,
         RESTORE_SNAPSHOT,
         MY_REPUTATION,
         PENDING_REPUTATION_ATTESTATION,
+        UNADOPTED_ROWS_SINCE,
     ];
 
     /// Build the settings key of the restore snapshot of `node` (hex).
