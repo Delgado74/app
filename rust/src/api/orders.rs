@@ -13854,18 +13854,41 @@ mod tests {
         );
     }
 
-    /// #813: a restore that got the node's answer adopts the rows it names
-    /// as orders or disputes, whether or not the order details came.
+    /// #813: a restore that got the node's answer files its orders and adopts
+    /// the rows it names as orders or disputes, whether or not the order
+    /// details came. Either order leaves the same rows.
     #[test]
     fn a_restore_adopts_the_rows_its_answer_names() {
         let session = fn_body("async fn restore_session_on(node: &str)");
-        let rows = session
-            .find("persist_restored_trade_rows(")
-            .expect("files its orders");
-        let named = session
-            .find("adopt_restored_rows(")
-            .expect("adopts the rows its answer names");
-        assert!(rows < named);
+        assert!(
+            session.contains("persist_restored_trade_rows("),
+            "files its orders"
+        );
+        assert!(
+            session.contains("adopt_restored_rows("),
+            "adopts the rows its answer names"
+        );
+    }
+
+    /// PR #865 review: the first sweep of a process runs 60 s after start,
+    /// while the history replay that adopts the rows may still be arriving.
+    /// It wipes no row without a node; the next one, 30 min later, may.
+    #[test]
+    fn the_first_sweep_of_a_process_wipes_no_row_without_a_node() {
+        let spawn = fn_body("fn spawn_stale_sweep()");
+        let first = spawn
+            .find("run_stale_sweep_once(SweepRun::FirstOfProcess)")
+            .expect("the first sweep says it is the first");
+        let later = spawn
+            .find("run_stale_sweep_once(SweepRun::Later)")
+            .expect("the later sweeps say they are later");
+        assert!(first < later);
+        let sweep = fn_body("async fn run_stale_sweep_once(");
+        let gate = sweep
+            .find("if run == SweepRun::Later")
+            .expect("the wipe waits for a later sweep");
+        let wipe = sweep.find("wipe_unadopted_rows(").expect("wipes");
+        assert!(gate < wipe);
     }
 
     /// PR #841 review: a taker's side comes from the order the restored node
@@ -15832,8 +15855,10 @@ mod tests {
         let known_id = known.id.unwrap().to_string();
         let mut legacy_row = restored_trade_row(&legacy, &own, 11, RESTORED_NODE).expect("row");
         legacy_row.order.node_pubkey = String::new();
-        // Started before the wait began, as the rows of those releases did.
+        // Started before the wait began, as the rows of those releases did,
+        // and over: a live one waits for its node (PR #865 review).
         legacy_row.started_at = 500;
+        legacy_row.order.status = OrderStatus::Success;
         db.save_trade(&legacy_row).await.unwrap();
         db.save_trade(&restored_trade_row(&known, &own, 12, RESTORED_NODE).expect("row"))
             .await
@@ -15899,9 +15924,9 @@ mod tests {
             .unwrap();
         let old_id = uuid::Uuid::new_v4().to_string();
         let new_id = uuid::Uuid::new_v4().to_string();
-        let mut old = trade(&old_id, 3, OrderStatus::Active, "");
+        let mut old = trade(&old_id, 3, OrderStatus::Success, "");
         old.started_at = 999;
-        let mut new = trade(&new_id, 4, OrderStatus::Active, "");
+        let mut new = trade(&new_id, 4, OrderStatus::Success, "");
         new.started_at = 1000;
         db.save_trade(&old).await.unwrap();
         db.save_trade(&new).await.unwrap();
@@ -15913,6 +15938,112 @@ mod tests {
 
         assert!(db.get_trade_by_order_id(&old_id).await.unwrap().is_none());
         assert!(db.get_trade_by_order_id(&new_id).await.unwrap().is_some());
+    }
+
+    /// PR #865 review: the clock wipes only what is over. A row without a node
+    /// in a live status may be a trade still running on a node other than
+    /// the active one, which neither a restore nor a message there can adopt
+    /// while the user stays put: it waits, hidden, for its node to name it.
+    #[cfg(not(target_arch = "wasm32"))]
+    #[tokio::test]
+    async fn the_wipe_leaves_a_row_without_a_node_in_a_live_status() {
+        use crate::mostro::test_fixtures::trade;
+        let db = throwaway_store().await;
+        db.set_setting(crate::db::settings_keys::UNADOPTED_ROWS_SINCE, "1000")
+            .await
+            .unwrap();
+        let mut ids = Vec::new();
+        for status in [
+            OrderStatus::Active,
+            OrderStatus::FiatSent,
+            OrderStatus::Dispute,
+            OrderStatus::WaitingBuyerInvoice,
+            OrderStatus::SettledHoldInvoice,
+            OrderStatus::Success,
+        ] {
+            let id = uuid::Uuid::new_v4().to_string();
+            let mut row = trade(&id, 3, status, "");
+            row.started_at = 500;
+            db.save_trade(&row).await.unwrap();
+            ids.push(id);
+        }
+
+        assert_eq!(
+            wipe_unadopted_rows(&db, 1_000 + UNADOPTED_ROW_WAIT_SECS).await,
+            1
+        );
+
+        let (over, live) = ids.split_last().unwrap();
+        assert!(db.get_trade_by_order_id(over).await.unwrap().is_none());
+        for id in live {
+            assert!(db.get_trade_by_order_id(id).await.unwrap().is_some());
+        }
+    }
+
+    /// PR #865 review: what the wipe leaves behind would outlive the row. The
+    /// chat cursors go, so a rebuild fetches the chat again from the relays;
+    /// so do the chat cached in memory and the trade's session.
+    #[cfg(not(target_arch = "wasm32"))]
+    #[tokio::test]
+    async fn the_wipe_forgets_the_chat_cursors_the_cached_chat_and_the_session() {
+        use crate::mostro::test_fixtures::trade;
+        let db = throwaway_store().await;
+        db.set_setting(crate::db::settings_keys::UNADOPTED_ROWS_SINCE, "1000")
+            .await
+            .unwrap();
+        let order_id = uuid::Uuid::new_v4().to_string();
+        let mut row = trade(&order_id, 3, OrderStatus::Success, "");
+        row.started_at = 500;
+        db.save_trade(&row).await.unwrap();
+        let peer_cursor = crate::db::settings_keys::chat_cursor(&order_id);
+        let dispute_cursor = crate::db::settings_keys::chat_cursor(&format!("dispute-{order_id}"));
+        for key in [&peer_cursor, &dispute_cursor] {
+            db.set_setting(key, "1700000000").await.unwrap();
+        }
+        // The chat as the process holds it: read once through the shared
+        // store, then gone from the database.
+        let shared = bond_test_db().await;
+        shared
+            .save_message(&chat_message(&format!("{order_id}-msg"), &order_id))
+            .await
+            .unwrap();
+        assert_eq!(
+            crate::api::messages::get_messages(order_id.clone())
+                .await
+                .unwrap()
+                .len(),
+            1
+        );
+        shared.delete_messages_for_order(&order_id).await.unwrap();
+        crate::mostro::session::session_manager()
+            .create_session(
+                order_id.clone(),
+                crate::api::types::TradeRole::Buyer,
+                3,
+                dummy_order_info(&order_id),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(
+            wipe_unadopted_rows(&db, 1_000 + UNADOPTED_ROW_WAIT_SECS).await,
+            1
+        );
+
+        for key in [&peer_cursor, &dispute_cursor] {
+            assert_eq!(db.get_setting(key).await.unwrap(), None, "{key}");
+        }
+        assert!(
+            crate::api::messages::get_messages(order_id.clone())
+                .await
+                .unwrap()
+                .is_empty(),
+            "the cached chat goes too"
+        );
+        assert!(crate::mostro::session::session_manager()
+            .get_session(&order_id)
+            .await
+            .is_none());
     }
 
     /// A store of its own: the legacy snapshot key is one per database, and
@@ -17354,6 +17485,46 @@ mod tests {
         };
         assert_eq!(node_of(named).await, active_mostro_pubkey());
         assert_eq!(node_of(other_index).await, "");
+    }
+
+    /// PR #865 review: a refusal names the order the request named, known to
+    /// the node or not (mostrod's `manage_errors` echoes the request's id), so
+    /// it is no evidence that the active node issued the trade. A row without
+    /// a node keeps it, or a CantDo from the wrong node would bind it for good.
+    #[tokio::test]
+    async fn a_cant_do_from_the_active_node_adopts_nothing() {
+        use crate::mostro::test_fixtures::trade;
+        use mostro_core::error::CantDoReason;
+        use mostro_core::message::{Action, Message, Payload};
+        let db = bond_test_db().await;
+        let order = uuid::Uuid::new_v4();
+        db.save_trade(&trade(&order.to_string(), 7, OrderStatus::Active, ""))
+            .await
+            .unwrap();
+        let sender = nostr_sdk::prelude::PublicKey::from_hex(&active_mostro_pubkey())
+            .expect("valid mostro pubkey");
+        let refusal = mostro_core::transport::UnwrappedMessage {
+            message: Message::new_order(
+                Some(order),
+                None,
+                None,
+                Action::CantDo,
+                Some(Payload::CantDo(Some(CantDoReason::NotFound))),
+            ),
+            signature: None,
+            sender,
+            identity: sender,
+            created_at: nostr_sdk::prelude::Timestamp::from(0u64),
+        };
+
+        dispatch_mostro_message(refusal, "test-cant-do-adopts-nothing", "ff00ff07", 7).await;
+
+        let row = db
+            .get_trade_by_order_id(&order.to_string())
+            .await
+            .unwrap()
+            .expect("row");
+        assert_eq!(row.order.node_pubkey, "");
     }
 
     /// A stale Canceled replayed over a finished trade (the taker-timeout

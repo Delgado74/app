@@ -186,8 +186,9 @@ void main() {
 
     test('the room of a row without a node stays out once the row is '
         'gone, even when the Chats list was not open', () async {
-      // The rooms were filled (a resume's hydration) while nothing showed
-      // the Chats list, and the row went before it was opened.
+      // The rooms were filled (a resume's hydration) while no screen watched
+      // the trades nor the Chats list, and the row went before it was opened:
+      // only what the notifier itself listens to may notice.
       final trades = [
         _needsAction('own', defaultMostroPubkey),
         _needsAction('legacy', ''),
@@ -196,13 +197,16 @@ void main() {
       c.read(chatRoomsNotifierProvider.notifier)
         ..upsertRoom(_room('order-own'))
         ..upsertRoom(_room('order-legacy', unread: 3));
-      await loadTradeRows(c);
+      await c.read(rawTradesProvider.future);
 
       trades.removeWhere((t) => t.order.id == 'order-legacy');
       c.invalidate(rawTradesProvider);
       await c.read(rawTradesProvider.future);
       await pumpEventQueue();
 
+      expect(c.read(chatRoomsNotifierProvider).map((r) => r.orderId), [
+        'order-own',
+      ]);
       expect(c.read(activeNodeChatRoomsProvider).map((r) => r.orderId), [
         'order-own',
       ]);
