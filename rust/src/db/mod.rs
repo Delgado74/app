@@ -658,4 +658,35 @@ pub trait Storage: Send + Sync {
     async fn get_attachment_blob(&self, _sha256: &str) -> Result<Option<Vec<u8>>> {
         Ok(None)
     }
+
+    // ── Node pictures (`crate::node_pictures`) ──────────────────────────────
+    //
+    // Each registry node's kind 0 picture as downloaded, keyed by the node's
+    // pubkey, with the URL it came from. Device-scoped:
+    // [`Self::clear_identity_data`] leaves them alone. The defaults keep
+    // nothing, for stores with no cache: the UI then loads the picture from
+    // its URL. SQLite and IndexedDB both implement all four.
+
+    /// Insert or replace `pubkey`'s picture.
+    async fn save_node_picture(&self, _pubkey: &str, _url: &str, _bytes: &[u8]) -> Result<()> {
+        Ok(())
+    }
+
+    /// `pubkey`'s stored picture, if any.
+    async fn get_node_picture(
+        &self,
+        _pubkey: &str,
+    ) -> Result<Option<crate::api::types::MostroNodePicture>> {
+        Ok(None)
+    }
+
+    /// The URL of every stored picture, by node pubkey, without the bytes.
+    async fn list_node_picture_urls(&self) -> Result<std::collections::HashMap<String, String>> {
+        Ok(std::collections::HashMap::new())
+    }
+
+    /// Remove `pubkey`'s picture. No-op when absent.
+    async fn delete_node_picture(&self, _pubkey: &str) -> Result<()> {
+        Ok(())
+    }
 }

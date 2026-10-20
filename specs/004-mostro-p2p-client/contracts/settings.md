@@ -163,6 +163,28 @@ cached, even when some authors never answered; only an outright query failure
 errors, leaving the cache untouched. `picture`/`website` are kept only when
 `https://` — a kind 0 event is attacker-controlled input.
 
+### sync_mostro_node_pictures() → Vec<String>
+Called by the UI, in the background, after every `refresh_mostro_node_metadata`
+— at startup once the warm-up has the relays connected, and whenever the
+selector refreshes.
+Downloads the `picture` of each node whose stored copy is missing or came from
+another URL, keeps the bytes as served with that URL (`node_pictures`, a
+SQLite table / two IndexedDB stores, device-scoped: an identity wipe keeps
+them), and drops the copies no node names any more (node removed, or its
+profile dropped its picture). A picture is therefore downloaded once per URL,
+not once per launch. Each download: `https://` only (natively no redirect
+off https is followed; on the web the browser blocks plain http), 30 s, at
+most 5 MB, and the bytes must start like PNG, JPEG, GIF, WebP, BMP or ICO. Returns the
+pubkeys whose stored picture changed. Best effort per picture: a failure is
+logged and retried on the next call; empty without storage.
+
+### get_mostro_node_picture(pubkey: String) → Option<MostroNodePicture>
+The stored copy, `{ url, bytes }`. The UI (`NodeAvatar`) draws it only while
+the node's `picture` is still `url`, and falls back to loading the URL itself
+otherwise — or when none is stored (a download that failed, a host refusing
+the web build's CORS request). Decoding stays in Flutter: on the web, Rust
+shares the page's only thread.
+
 ### fetch_mostro_node_stats(pubkeys: Vec<String>) → Vec<MostroNodeStats> (`api/node_stats.rs`)
 Decision data for the selector cards, one row per requested pubkey in request
 order. Two batched relay queries (10s each, run concurrently): the nodes'
