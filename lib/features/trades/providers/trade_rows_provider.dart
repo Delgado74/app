@@ -40,10 +40,10 @@ class TradeRow {
     required this.paymentMethod,
     required this.startedAt,
     required this.peerHandle,
+    required this.node,
     this.completedAt,
     this.claimBadge = TradeClaimBadge.none,
     this.claimOnly = false,
-    this.node = '',
   });
 
   final String orderId;
