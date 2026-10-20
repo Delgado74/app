@@ -187,23 +187,25 @@ where
     let plan = plan(nodes, &db.list_node_picture_urls().await?);
     let mut changed = Vec::new();
 
-    // Side by side: a first launch fetches every node's picture.
+    // Each URL once, though several nodes may name it; side by side, since
+    // a first launch fetches every node's picture.
+    let mut urls: Vec<&String> = plan.fetch.iter().map(|(_, url)| url).collect();
+    urls.sort();
+    urls.dedup();
     let downloads =
-        futures_util::future::join_all(plan.fetch.iter().map(|(_, url)| fetch(url.clone()))).await;
-    for ((pubkey, url), result) in plan.fetch.into_iter().zip(downloads) {
-        let bytes = match result {
+        futures_util::future::join_all(urls.iter().map(|url| fetch((*url).clone()))).await;
+    let downloaded: HashMap<&String, Result<Vec<u8>>> = urls.into_iter().zip(downloads).collect();
+    for (pubkey, url) in &plan.fetch {
+        let bytes = match &downloaded[url] {
             Ok(bytes) => bytes,
             Err(e) => {
-                log::warn!(
-                    "[node_pictures] {}: download failed: {e}",
-                    short_id(&pubkey)
-                );
+                log::warn!("[node_pictures] {}: download failed: {e}", short_id(pubkey));
                 continue;
             }
         };
-        match db.save_node_picture(&pubkey, &url, &bytes).await {
-            Ok(()) => changed.push(pubkey),
-            Err(e) => log::warn!("[node_pictures] {}: not stored: {e}", short_id(&pubkey)),
+        match db.save_node_picture(pubkey, url, bytes).await {
+            Ok(()) => changed.push(pubkey.clone()),
+            Err(e) => log::warn!("[node_pictures] {}: not stored: {e}", short_id(pubkey)),
         }
     }
 
@@ -408,6 +410,24 @@ mod tests {
         assert_eq!(calls.load(Ordering::Relaxed), 3);
         let a = db.get_node_picture("a").await.unwrap().unwrap();
         assert_eq!(a.url, "https://a/2.png");
+    }
+
+    #[tokio::test]
+    async fn sync_downloads_a_url_two_nodes_share_once() {
+        let db = store().await;
+        let calls = AtomicU32::new(0);
+        let shared = [
+            node("a", Some("https://same/p.png")),
+            node("b", Some("https://same/p.png")),
+        ];
+
+        let changed = sync_with(&db, &shared, fake(&calls)).await.unwrap();
+        assert_eq!(changed, vec!["a".to_string(), "b".to_string()]);
+        assert_eq!(calls.load(Ordering::Relaxed), 1);
+        assert_eq!(
+            db.get_node_picture("b").await.unwrap().unwrap().bytes,
+            [PNG, b"https://same/p.png"].concat()
+        );
     }
 
     #[tokio::test]
