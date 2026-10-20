@@ -4294,6 +4294,107 @@ class AppLocalizationsNl extends AppLocalizations {
       'Het versturen is mislukt en de wallet kon niet bevestigen dat het geld terug is. Synchroniseer met de mint voordat je het opnieuw probeert.';
 
   @override
+  String get cashuSendEcashOption => 'Ecash';
+
+  @override
+  String get cashuSendLightningOption => 'Lightning';
+
+  @override
+  String get cashuInvoiceDialogTitle => 'Een Lightning-factuur betalen';
+
+  @override
+  String get cashuInvoiceFieldLabel => 'Lightning-factuur';
+
+  @override
+  String get cashuPasteInvoiceHint => 'Plak een Lightning-factuur';
+
+  @override
+  String get cashuInvoiceScanHint => 'Plak of scan een Lightning-factuur';
+
+  @override
+  String get cashuMeltConfirmTitle => 'Betaling bevestigen';
+
+  @override
+  String get cashuMeltAmount => 'Bedrag';
+
+  @override
+  String get cashuMeltFees => 'Kosten, tot';
+
+  @override
+  String get cashuMeltTotal => 'Totaal, tot';
+
+  @override
+  String get cashuMeltFeesNote =>
+      'Kosten die de mint niet gebruikt, komen terug in je wallet.';
+
+  @override
+  String get cashuMeltQuoteRefreshed =>
+      'De prijs is veranderd. Controleer het nieuwe totaal voordat je betaalt.';
+
+  @override
+  String get cashuPayButton => 'Betalen';
+
+  @override
+  String cashuMeltPaidTitle(String sats) {
+    return '$sats sats betaald';
+  }
+
+  @override
+  String cashuMeltPaidFee(String fee) {
+    return 'Kosten: $fee sats';
+  }
+
+  @override
+  String get cashuMeltPendingTitle => 'Betaling bezig';
+
+  @override
+  String get cashuMeltPendingBody =>
+      'De uitkomst is nog niet bevestigd. Die sats blijven vastgehouden; tik later op ‘Synchroniseren met mint’ om het af te ronden.';
+
+  @override
+  String get cashuMeltFailedTitle => 'Betaling mislukt';
+
+  @override
+  String get cashuErrorInvalidInvoice =>
+      'Dat is geen Lightning-factuur die deze wallet kan betalen.';
+
+  @override
+  String get cashuErrorInvoiceNoAmount =>
+      'Deze factuur heeft geen bedrag. Vraag om een factuur die zegt hoeveel je moet betalen.';
+
+  @override
+  String get cashuErrorInvoiceExpired =>
+      'Deze factuur is verlopen. Vraag om een nieuwe.';
+
+  @override
+  String get cashuErrorMeltUnsupported =>
+      'Deze mint kan geen Lightning-facturen betalen.';
+
+  @override
+  String get cashuErrorMeltAmountOutOfRange =>
+      'Deze mint betaalt geen facturen van dat bedrag.';
+
+  @override
+  String get cashuErrorMeltQuoteFailed =>
+      'De mint kon geen offerte voor deze betaling geven. Probeer het later opnieuw.';
+
+  @override
+  String get cashuErrorMeltQuoteExpired =>
+      'De offerte voor de betaling is verlopen. Er is niets betaald; begin opnieuw.';
+
+  @override
+  String get cashuErrorMeltFeeChanged =>
+      'De kosten zijn gestegen sinds je bevestigde. Er is niets betaald; begin opnieuw.';
+
+  @override
+  String get cashuErrorMeltInsufficientFunds =>
+      'Je hebt niet genoeg in de wallet om deze factuur en de kosten te betalen.';
+
+  @override
+  String get cashuErrorMeltFailed =>
+      'De betaling is niet gelukt. Er is niets betaald; de sats staan weer in je saldo.';
+
+  @override
   String get lockEscrowTitle => 'De escrow vergrendelen';
 
   @override

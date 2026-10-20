@@ -785,6 +785,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   CashuEscrowQuote dco_decode_cashu_escrow_quote(dynamic raw);
 
   @protected
+  CashuMeltQuote dco_decode_cashu_melt_quote(dynamic raw);
+
+  @protected
+  CashuMeltResult dco_decode_cashu_melt_result(dynamic raw);
+
+  @protected
   CashuWalletStatus dco_decode_cashu_wallet_status(dynamic raw);
 
   @protected
@@ -1850,6 +1856,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   CashuEscrowQuote sse_decode_cashu_escrow_quote(SseDeserializer deserializer);
+
+  @protected
+  CashuMeltQuote sse_decode_cashu_melt_quote(SseDeserializer deserializer);
+
+  @protected
+  CashuMeltResult sse_decode_cashu_melt_result(SseDeserializer deserializer);
 
   @protected
   CashuWalletStatus sse_decode_cashu_wallet_status(
@@ -3161,6 +3173,18 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   @protected
   void sse_encode_cashu_escrow_quote(
     CashuEscrowQuote self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_cashu_melt_quote(
+    CashuMeltQuote self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_cashu_melt_result(
+    CashuMeltResult self,
     SseSerializer serializer,
   );
 
