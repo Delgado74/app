@@ -11797,8 +11797,9 @@ fn restore_slot() -> &'static tokio::sync::Mutex<()> {
 /// restore asks that node and files what it answers under it (#812).
 async fn restore_session_on(node: &str) -> Result<mostro_core::message::RestoreSessionInfo> {
     // One restore at a time (#813): a node switch opens a restore while the
-    // previous node's may still run, its sheet closed. This one waits, at
-    // most until that one's reply window ends.
+    // previous node's may still run, its sheet closed. This one waits for all
+    // of it: the reply window, then (if the node answered) the LastTradeIndex
+    // round trip and the order details, each under its own timeout.
     let _one_at_a_time = restore_slot().lock().await;
     // Once another node is active, what `node` answers would land while the
     // user looks at another one: refused before anything is sent.
