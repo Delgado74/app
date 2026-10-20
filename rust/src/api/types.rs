@@ -1375,8 +1375,9 @@ pub enum CashuMeltResult {
         amount_sats: u64,
         fee_paid_sats: u64,
     },
-    /// The mint is still routing the payment. Its ecash stays reserved, and
-    /// the balance settles when the wallet next syncs.
+    /// How it ended is not known yet: the mint is still routing it, or did
+    /// not answer after the request left. Its ecash stays reserved until the
+    /// mint says, at the next sync.
     Pending,
 }
 

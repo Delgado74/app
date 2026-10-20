@@ -99,9 +99,13 @@ Future<CashuMeltQuote> cashuMeltQuote({required String invoice}) =>
 /// The wallet's change is broadcast after every attempt, failed ones
 /// included: a failure may have gone through cdk's recovery and moved proofs.
 ///
+/// `Pending` covers every payment whose outcome is unknown: still routing,
+/// or interrupted after the request left with the mint not answering. Its
+/// ecash stays reserved until the mint says how it ended.
+///
 /// **Errors**: `CashuNotConnected`, `CashuMeltQuoteExpired` and
 /// `CashuMeltFeeChanged` (refused before paying — ask for a new quote),
-/// `CashuMeltInsufficientFunds`, `CashuMeltFailed`.
+/// `CashuMeltInsufficientFunds`, `CashuMeltFailed` (nothing was paid).
 Future<CashuMeltResult> cashuMelt({
   required String quoteId,
   required BigInt maxTotalSats,

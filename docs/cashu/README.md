@@ -587,6 +587,14 @@ mints is inconsistent), no general wallet features.
     `Pending` (the Lightning payment is in flight: the proofs stay reserved and
     recovery finalizes them), or a marker. Change from the fee reserve
     returns through NUT-08, handled by cdk.
+  - **An error from confirming is not a failure by itself.** cdk's
+    `recover_failed_melt_confirm` returns the original error both when it rolled
+    the melt back and when the mint said pending or unknown, or could not be
+    asked (a connection lost after the request left). Only a rollback deletes
+    the saga, so a saga still recorded after the error reads as `Pending`, and
+    `CashuMeltFailed` / `CashuMeltQuoteExpired` always mean nothing was paid.
+    A mint down before the request leaves can read as `Pending` too; it
+    settles on the next sync.
   - Markers: `CashuInvalidInvoice`, `CashuInvoiceNoAmount` (amountless invoices are
     out of scope), `CashuInvoiceExpired`, `CashuMeltUnsupported`,
     `CashuMeltAmountOutOfRange`, `CashuMeltQuoteFailed`, `CashuMeltQuoteExpired`,

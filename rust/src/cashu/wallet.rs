@@ -592,9 +592,10 @@ impl CashuWallet {
     ///
     /// **Errors** (stable markers): `CashuMeltQuoteExpired`,
     /// `CashuMeltFeeChanged` (both refused before paying, nothing spent),
-    /// `CashuMeltInsufficientFunds`, `CashuMeltFailed` (the payment did not
-    /// go through; cdk has already run its recovery, so the proofs are back
-    /// or, when the mint could not say, settled at the next sync).
+    /// `CashuMeltInsufficientFunds`, `CashuMeltFailed` (nothing was paid and
+    /// the proofs are back). A payment the mint has not settled — or could
+    /// not be asked about — after an error is `Pending`, not an error: see
+    /// [`confirm_error_outcome`].
     pub async fn melt(&self, quote_id: &str, max_total_sats: u64) -> Result<MeltOutcomeInfo> {
         let prepared = self
             .inner
@@ -703,9 +704,19 @@ async fn after_confirm_error(
 /// What an error from confirming a melt means for the user, given whether its
 /// saga is `still_recorded` once cdk's recovery has run.
 ///
-/// **Errors**: `CashuMeltQuoteExpired` when the mint refused the quote as
-/// expired, `CashuMeltFailed` otherwise.
-fn confirm_error_outcome(_still_recorded: bool, e: cdk::Error) -> Result<MeltOutcomeInfo> {
+/// A rolled-back melt has no saga: cdk deletes it with the reservation
+/// (`compensate_melt`, `wallet/melt/saga/resume.rs`). One still recorded was
+/// sent and the mint did not say how it ended — or could not be asked — so the
+/// payment may yet settle: [`MeltOutcomeInfo::Pending`], whatever the error
+/// said. Telling the user it failed would invite paying a second invoice.
+///
+/// **Errors**, for a melt rolled back only: `CashuMeltQuoteExpired` when the
+/// mint refused the quote as expired, `CashuMeltFailed` otherwise.
+fn confirm_error_outcome(still_recorded: bool, e: cdk::Error) -> Result<MeltOutcomeInfo> {
+    if still_recorded {
+        log::info!("[cashu] melt unresolved after a confirm error: {e}");
+        return Ok(MeltOutcomeInfo::Pending);
+    }
     match e {
         cdk::Error::ExpiredQuote(..) => bail!("CashuMeltQuoteExpired"),
         e => bail!("CashuMeltFailed: {e}"),
