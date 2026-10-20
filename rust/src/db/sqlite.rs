@@ -1065,6 +1065,27 @@ impl Storage for SqliteStorage {
         Ok(done.rows_affected() > 0)
     }
 
+    async fn adopt_trade_node(&self, order_id: &str, trade_index: u32, node: &str) -> Result<bool> {
+        if node.is_empty() {
+            return Ok(false);
+        }
+        // One statement, like `forget_trade_node`: the check and the write
+        // cannot be split by another writer, and only the node changes.
+        let sql = "UPDATE trades SET data = json_set(\
+             json_remove(data, '$.order.creator_pubkey'), '$.order.node_pubkey', ?) \
+             WHERE json_extract(data, '$.order.id') = ? \
+             AND json_extract(data, '$.trade_key_index') = ? \
+             AND coalesce(json_extract(data, '$.order.node_pubkey'), \
+             json_extract(data, '$.order.creator_pubkey'), '') = ''";
+        let done = sqlx::query(sql)
+            .bind(node)
+            .bind(order_id)
+            .bind(trade_index)
+            .execute(&self.pool)
+            .await?;
+        Ok(done.rows_affected() > 0)
+    }
+
     async fn update_trade_counterparty(
         &self,
         order_id: &str,
@@ -2111,6 +2132,84 @@ mod tests {
             .unwrap()
             .expect("order-b survives");
         assert_eq!(b.cooperative_cancel_state, None);
+
+        drop(storage);
+        let _ = std::fs::remove_file(&path);
+    }
+
+    /// #813: a restore gives its node to a row that does not know one, when
+    /// the order and its trade index match, and changes nothing else; a row
+    /// with a node, another index or a stored legacy name keeps what it has.
+    #[tokio::test]
+    async fn adopt_trade_node_gives_an_unknown_node_and_nothing_else() {
+        use crate::api::types::OrderStatus;
+        use crate::mostro::test_fixtures::trade;
+
+        let path = temp_db_path();
+        let storage = SqliteStorage::open(path.to_str().unwrap()).await.unwrap();
+
+        // `trade(id, index, ..)` stores `index` as its trade key index.
+        storage
+            .save_trade(&trade("legacy", 7, OrderStatus::Active, ""))
+            .await
+            .unwrap();
+        storage.mark_trade_rated("legacy", 1234).await.unwrap();
+        assert!(
+            !storage.adopt_trade_node("legacy", 8, "abcd").await.unwrap(),
+            "another trade index is another trade"
+        );
+        assert!(!storage.adopt_trade_node("legacy", 7, "").await.unwrap());
+        assert!(storage.adopt_trade_node("legacy", 7, "abcd").await.unwrap());
+        let adopted = storage
+            .get_trade_by_order_id("legacy")
+            .await
+            .unwrap()
+            .unwrap();
+        assert_eq!(adopted.order.node_pubkey, "abcd");
+        assert_eq!(adopted.rated_at, Some(1234));
+        assert_eq!(adopted.order.status, OrderStatus::Active);
+        assert!(
+            !storage.adopt_trade_node("legacy", 7, "ef01").await.unwrap(),
+            "a node, once known, is kept"
+        );
+
+        // A row stored under the legacy name, empty: one name left, and it loads.
+        storage
+            .save_trade(&trade("old-name", 7, OrderStatus::Active, ""))
+            .await
+            .unwrap();
+        sqlx::query(
+            "UPDATE trades SET data = json_set(json_remove(data, '$.order.node_pubkey'), \
+             '$.order.creator_pubkey', '') WHERE id = 'old-name'",
+        )
+        .execute(&storage.pool)
+        .await
+        .unwrap();
+        assert!(storage
+            .adopt_trade_node("old-name", 7, "abcd")
+            .await
+            .unwrap());
+        let old_name = storage.get_trade_by_order_id("old-name").await.unwrap();
+        assert_eq!(
+            old_name.expect("the row still loads").order.node_pubkey,
+            "abcd"
+        );
+
+        // A row that knows its node is not moved.
+        storage
+            .save_trade(&trade("real", 7, OrderStatus::Active, "node"))
+            .await
+            .unwrap();
+        assert!(!storage.adopt_trade_node("real", 7, "abcd").await.unwrap());
+        let real = storage
+            .get_trade_by_order_id("real")
+            .await
+            .unwrap()
+            .unwrap();
+        assert_eq!(real.order.node_pubkey, "node");
+
+        // No row, nothing adopted.
+        assert!(!storage.adopt_trade_node("gone", 7, "abcd").await.unwrap());
 
         drop(storage);
         let _ = std::fs::remove_file(&path);

@@ -16645,6 +16645,14 @@ mod tests {
         async fn forget_trade_node(&self, _row_id: &str, _node: &str) -> Result<bool> {
             unimplemented!()
         }
+        async fn adopt_trade_node(
+            &self,
+            _order_id: &str,
+            _trade_index: u32,
+            _node: &str,
+        ) -> Result<bool> {
+            unimplemented!()
+        }
         async fn mark_trade_completed(&self, _order_id: &str, _completed_at: i64) -> Result<()> {
             unimplemented!()
         }

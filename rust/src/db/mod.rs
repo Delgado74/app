@@ -588,6 +588,14 @@ pub trait Storage: Send + Sync {
     /// empty `node` matches nothing. Returns whether it changed the row.
     async fn forget_trade_node(&self, row_id: &str, node: &str) -> Result<bool>;
 
+    /// Give `node` to the trade rows of `order_id` whose node is unknown
+    /// (`""` or absent, under either name) and whose `trade_key_index` is
+    /// `trade_index`: a restore on `node` named that order with that index
+    /// (#813). The reverse of [`Self::forget_trade_node`]: only the node
+    /// changes, a row that knows its node is never moved, and an empty `node`
+    /// matches nothing. Returns whether it changed a row.
+    async fn adopt_trade_node(&self, order_id: &str, trade_index: u32, node: &str) -> Result<bool>;
+
     /// Persist the counterparty's trade pubkey on the trade identified by
     /// `order.id` (issue #334). Written when a daemon message reveals it, for
     /// both roles — the trade row is the durable peer record; the in-memory

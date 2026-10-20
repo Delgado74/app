@@ -776,6 +776,29 @@ impl Storage for IndexedDbStorage {
         Ok(true)
     }
 
+    async fn adopt_trade_node(&self, order_id: &str, trade_index: u32, node: &str) -> Result<bool> {
+        // The whole read-modify-write inside the trades' exclusive section,
+        // like every patch: no write can land between the check and the put.
+        let _section = self.exclusive(TRADES_LOCK).await;
+        let mut adopted = false;
+        for mut doc in self.trade_documents().await? {
+            if trade_json::order_id_of(&doc) != Some(order_id)
+                || !trade_json::adopt_node(&mut doc, trade_index, node)?
+            {
+                continue;
+            }
+            let key = doc
+                .get("id")
+                .and_then(serde_json::Value::as_str)
+                .ok_or_else(|| anyhow!("trade document without an id"))?
+                .to_owned();
+            self.put_string(TRADES_STORE, &key, &doc.to_string())
+                .await?;
+            adopted = true;
+        }
+        Ok(adopted)
+    }
+
     async fn update_trade_counterparty(
         &self,
         order_id: &str,
