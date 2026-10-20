@@ -144,6 +144,36 @@ void main() {
     },
   );
 
+  test(
+    'a refresh reads every stored picture, so the first QR need not',
+    () async {
+      // Arrange
+      await start();
+      MostroNodeEntry node(String pubkey, String? picture) => MostroNodeEntry(
+        pubkey: pubkey,
+        region: null,
+        isTrusted: true,
+        isActive: false,
+        name: null,
+        picture: picture,
+        about: null,
+        website: null,
+      );
+
+      // Act
+      final run = notifier.refreshMetadata();
+      notifier.fetches.single.complete([
+        node('AA', 'https://x/a.png'),
+        node('bb', null),
+      ]);
+      await run;
+      await pumpEventQueue();
+
+      // Assert: by the lowercase key the avatar reads; none for no picture.
+      expect(pictureReads, {'aa': 1});
+    },
+  );
+
   test('a failed fetch still syncs the pictures the cache names', () async {
     // Arrange
     await start();

@@ -130,6 +130,19 @@ class MostroNodesNotifier extends AsyncNotifier<List<MostroNodeEntry>> {
     } catch (e) {
       debugPrint('[mostroNodes] picture sync failed: $e');
     }
+    _warmPictures();
+  }
+
+  /// Read every node's stored picture, which decodes it into the image
+  /// cache: the first QR of the session then paints it in its first frame
+  /// instead of reading it from the device as it opens.
+  void _warmPictures() {
+    for (final node in state.valueOrNull ?? const <MostroNodeEntry>[]) {
+      if (node.picture == null) continue;
+      ref.container
+          .read(nodePictureProvider(node.pubkey.toLowerCase()).future)
+          .ignore();
+    }
   }
 
   /// A refresh that starts only after the one in flight, when there is one,
