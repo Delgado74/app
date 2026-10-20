@@ -185,6 +185,12 @@ otherwise — or when none is stored (a download that failed, a host refusing
 the web build's CORS request). Decoding stays in Flutter: on the web, Rust
 shares the page's only thread.
 
+### forget_mostro_node_picture(pubkey: String) → ()
+Drops a stored copy the UI could not decode (truncated, corrupt, or a format
+its platform lacks); otherwise the same URL would never be fetched again. The
+avatar then loads the URL, and the next `sync_mostro_node_pictures` downloads
+the picture anew. No-op without storage.
+
 ### fetch_mostro_node_stats(pubkeys: Vec<String>) → Vec<MostroNodeStats> (`api/node_stats.rs`)
 Decision data for the selector cards, one row per requested pubkey in request
 order. Two batched relay queries (10s each, run concurrently): the nodes'

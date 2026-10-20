@@ -1,6 +1,6 @@
 import 'dart:async';
-import 'dart:typed_data';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/painting.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -17,7 +17,10 @@ import 'package:mostro/src/rust/api/types.dart';
 ///
 /// Resolves once the picture is decoded into the image cache under the key
 /// [nodePictureImage] gives it: a QR opened after that paints the picture in
-/// its first frame.
+/// its first frame. Bytes that look like an image but do not decode —
+/// truncated, corrupt, or a format this platform lacks — resolve to null and
+/// are forgotten: the avatar loads the URL, and the next sync downloads the
+/// picture again instead of keeping the broken copy for good.
 ///
 /// Kept for the process: a node's picture is the device's, no identity's.
 final nodePictureProvider = FutureProvider.family<MostroNodePicture?, String>((
@@ -25,8 +28,14 @@ final nodePictureProvider = FutureProvider.family<MostroNodePicture?, String>((
   pubkey,
 ) async {
   final picture = await nodes_api.getMostroNodePicture(pubkey: pubkey);
-  if (picture != null) await _decode(nodePictureImage(picture.bytes));
-  return picture;
+  if (picture == null) return null;
+  if (await _decode(nodePictureImage(picture.bytes))) return picture;
+  try {
+    await nodes_api.forgetMostroNodePicture(pubkey: pubkey);
+  } catch (e) {
+    debugPrint('[nodePicture] could not forget an undecodable picture: $e');
+  }
+  return null;
 });
 
 /// One decode width for every size: the node selector and a QR's centre
@@ -40,15 +49,14 @@ ImageProvider nodePictureImage(Uint8List bytes) =>
     ResizeImage(MemoryImage(bytes), width: nodePictureCacheWidth);
 
 /// Decode [image] into the image cache: `precacheImage` without a
-/// `BuildContext`. A picture that does not decode is left to the widget's
-/// error builder.
-Future<void> _decode(ImageProvider image) {
-  final done = Completer<void>();
+/// `BuildContext`. Whether it decoded.
+Future<bool> _decode(ImageProvider image) {
+  final done = Completer<bool>();
   final stream = image.resolve(ImageConfiguration.empty);
   late final ImageStreamListener listener;
   listener = ImageStreamListener(
     (info, _) {
-      if (!done.isCompleted) done.complete();
+      if (!done.isCompleted) done.complete(true);
       // Not before the frame ends, as in `precacheImage`: the last listener
       // gone, the cache would let go of an image a widget is about to take.
       SchedulerBinding.instance.addPostFrameCallback((_) {
@@ -57,7 +65,7 @@ Future<void> _decode(ImageProvider image) {
       });
     },
     onError: (_, __) {
-      if (!done.isCompleted) done.complete();
+      if (!done.isCompleted) done.complete(false);
       stream.removeListener(listener);
     },
   );

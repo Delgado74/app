@@ -404,6 +404,17 @@ pub async fn get_mostro_node_picture(pubkey: String) -> Result<Option<MostroNode
     db.get_node_picture(&pubkey.to_lowercase()).await
 }
 
+/// Drop `pubkey`'s stored picture, for bytes the UI could not decode:
+/// truncated, corrupt, or in a format its platform lacks. The UI then loads
+/// the URL, and the next [`sync_mostro_node_pictures`] downloads it again —
+/// kept, the same URL would never be fetched anew. A no-op without storage.
+pub async fn forget_mostro_node_picture(pubkey: String) -> Result<()> {
+    let Some(db) = crate::db::app_db::db() else {
+        return Ok(());
+    };
+    db.delete_node_picture(&pubkey.to_lowercase()).await
+}
+
 // ── Tests ────────────────────────────────────────────────────────────────────
 
 #[cfg(test)]
