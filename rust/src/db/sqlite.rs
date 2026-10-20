@@ -6,7 +6,8 @@ use sqlx::{
 };
 
 use crate::api::types::{
-    ChatMessage, IdentityInfo, OrderInfo, QueuedMessageStatus, RelayInfo, TradeInfo,
+    ChatMessage, IdentityInfo, MostroNodePicture, OrderInfo, QueuedMessageStatus, RelayInfo,
+    TradeInfo,
 };
 use crate::db::{schema::SQLITE_INIT_SQL, settings_keys, Storage};
 use crate::queue::outbox::QueuedMessage;
@@ -922,6 +923,44 @@ impl Storage for SqliteStorage {
                 .fetch_optional(&self.pool)
                 .await?;
         Ok(row.map(|(data,)| data))
+    }
+
+    async fn save_node_picture(&self, pubkey: &str, url: &str, bytes: &[u8]) -> Result<()> {
+        sqlx::query(
+            "INSERT OR REPLACE INTO node_pictures (pubkey, url, data, fetched_at)
+             VALUES (?, ?, ?, ?)",
+        )
+        .bind(pubkey)
+        .bind(url)
+        .bind(bytes)
+        .bind(crate::rt::unix_now())
+        .execute(&self.pool)
+        .await?;
+        Ok(())
+    }
+
+    async fn get_node_picture(&self, pubkey: &str) -> Result<Option<MostroNodePicture>> {
+        let row: Option<(String, Vec<u8>)> =
+            sqlx::query_as("SELECT url, data FROM node_pictures WHERE pubkey = ?")
+                .bind(pubkey)
+                .fetch_optional(&self.pool)
+                .await?;
+        Ok(row.map(|(url, bytes)| MostroNodePicture { url, bytes }))
+    }
+
+    async fn list_node_picture_urls(&self) -> Result<std::collections::HashMap<String, String>> {
+        let rows: Vec<(String, String)> = sqlx::query_as("SELECT pubkey, url FROM node_pictures")
+            .fetch_all(&self.pool)
+            .await?;
+        Ok(rows.into_iter().collect())
+    }
+
+    async fn delete_node_picture(&self, pubkey: &str) -> Result<()> {
+        sqlx::query("DELETE FROM node_pictures WHERE pubkey = ?")
+            .bind(pubkey)
+            .execute(&self.pool)
+            .await?;
+        Ok(())
     }
 
     async fn mark_trade_rated(&self, order_id: &str, rated_at: i64) -> Result<()> {
@@ -2691,6 +2730,52 @@ mod tests {
 
         storage.clear_identity_data().await.unwrap();
         assert_eq!(storage.get_attachment_blob("c").await.unwrap(), None);
+        let _ = std::fs::remove_file(path);
+    }
+
+    /// The node pictures: each comes back with the URL it was downloaded
+    /// from, a new one replaces the old, and they belong to the device — a
+    /// new identity finds them where they were.
+    #[tokio::test]
+    async fn node_pictures_are_kept_per_node_and_survive_an_identity_wipe() {
+        let path = temp_db_path();
+        let storage = SqliteStorage::open(path.to_str().unwrap()).await.unwrap();
+        assert_eq!(storage.get_node_picture("node-a").await.unwrap(), None);
+        assert!(storage.list_node_picture_urls().await.unwrap().is_empty());
+
+        storage
+            .save_node_picture("node-a", "https://a.example/1.png", &[1u8; 4])
+            .await
+            .unwrap();
+        storage
+            .save_node_picture("node-b", "https://b.example/b.png", &[2u8; 4])
+            .await
+            .unwrap();
+        storage
+            .save_node_picture("node-a", "https://a.example/2.png", &[3u8; 4])
+            .await
+            .unwrap();
+        assert_eq!(
+            storage.get_node_picture("node-a").await.unwrap(),
+            Some(MostroNodePicture {
+                url: "https://a.example/2.png".into(),
+                bytes: vec![3u8; 4],
+            })
+        );
+        assert_eq!(
+            storage.list_node_picture_urls().await.unwrap(),
+            std::collections::HashMap::from([
+                ("node-a".to_string(), "https://a.example/2.png".to_string()),
+                ("node-b".to_string(), "https://b.example/b.png".to_string()),
+            ])
+        );
+
+        storage.clear_identity_data().await.unwrap();
+        assert!(storage.get_node_picture("node-b").await.unwrap().is_some());
+
+        storage.delete_node_picture("node-b").await.unwrap();
+        storage.delete_node_picture("node-b").await.unwrap();
+        assert_eq!(storage.get_node_picture("node-b").await.unwrap(), None);
         let _ = std::fs::remove_file(path);
     }
 

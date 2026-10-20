@@ -405,5 +405,11 @@ bridged by flutter_rust_bridge.
   stays on 6.x until the app builds with Flutter 3.44 (7.1+). Release Linux and Windows builds
   are single-instance on purpose — that is how a link reaches the window already open — and
   debug builds are not, so `flutter run` still works next to an open release.
+- **A node's picture is drawn from the device, not from its URL.** `rust/src/node_pictures.rs`
+  downloads each node's kind 0 `picture` once per URL, after every metadata refresh (the first
+  at launch, once the warm-up has the relays), and `NodeAvatar` draws the stored bytes
+  (`nodePictureProvider`); `Image.network` is only the fallback while nothing is stored from the
+  URL the profile names now. Don't go back to the URL: on native nothing caches it across
+  launches, so every first QR downloaded it with its centre blank meanwhile.
 
 <!-- MANUAL ADDITIONS END -->

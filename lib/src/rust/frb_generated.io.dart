@@ -717,6 +717,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   LogEntry dco_decode_box_autoadd_log_entry(dynamic raw);
 
   @protected
+  MostroNodePicture dco_decode_box_autoadd_mostro_node_picture(dynamic raw);
+
+  @protected
   MyReputation dco_decode_box_autoadd_my_reputation(dynamic raw);
 
   @protected
@@ -914,6 +917,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   MostroNodeEntry dco_decode_mostro_node_entry(dynamic raw);
 
   @protected
+  MostroNodePicture dco_decode_mostro_node_picture(dynamic raw);
+
+  @protected
   MostroNodeStats dco_decode_mostro_node_stats(dynamic raw);
 
   @protected
@@ -986,6 +992,11 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   LogEntry? dco_decode_opt_box_autoadd_log_entry(dynamic raw);
+
+  @protected
+  MostroNodePicture? dco_decode_opt_box_autoadd_mostro_node_picture(
+    dynamic raw,
+  );
 
   @protected
   MyReputation? dco_decode_opt_box_autoadd_my_reputation(dynamic raw);
@@ -1774,6 +1785,11 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   LogEntry sse_decode_box_autoadd_log_entry(SseDeserializer deserializer);
 
   @protected
+  MostroNodePicture sse_decode_box_autoadd_mostro_node_picture(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   MyReputation sse_decode_box_autoadd_my_reputation(
     SseDeserializer deserializer,
   );
@@ -2005,6 +2021,11 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   MostroNodeEntry sse_decode_mostro_node_entry(SseDeserializer deserializer);
 
   @protected
+  MostroNodePicture sse_decode_mostro_node_picture(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   MostroNodeStats sse_decode_mostro_node_stats(SseDeserializer deserializer);
 
   @protected
@@ -2097,6 +2118,11 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   LogEntry? sse_decode_opt_box_autoadd_log_entry(SseDeserializer deserializer);
+
+  @protected
+  MostroNodePicture? sse_decode_opt_box_autoadd_mostro_node_picture(
+    SseDeserializer deserializer,
+  );
 
   @protected
   MyReputation? sse_decode_opt_box_autoadd_my_reputation(
@@ -3054,6 +3080,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  void sse_encode_box_autoadd_mostro_node_picture(
+    MostroNodePicture self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_box_autoadd_my_reputation(
     MyReputation self,
     SseSerializer serializer,
@@ -3387,6 +3419,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  void sse_encode_mostro_node_picture(
+    MostroNodePicture self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_mostro_node_stats(
     MostroNodeStats self,
     SseSerializer serializer,
@@ -3506,6 +3544,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   @protected
   void sse_encode_opt_box_autoadd_log_entry(
     LogEntry? self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_opt_box_autoadd_mostro_node_picture(
+    MostroNodePicture? self,
     SseSerializer serializer,
   );
 

@@ -1076,6 +1076,15 @@ pub struct MostroNodeEntry {
     pub website: Option<String>,
 }
 
+/// A node's kind 0 picture as the device keeps it (`crate::node_pictures`):
+/// the bytes as downloaded and the URL they came from, so the UI shows them
+/// only while the profile still names that URL.
+#[derive(Debug, Clone, PartialEq)]
+pub struct MostroNodePicture {
+    pub url: String,
+    pub bytes: Vec<u8>,
+}
+
 fn default_expiration_seconds() -> u32 {
     900
 }
