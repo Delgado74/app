@@ -9557,7 +9557,7 @@ async fn run_stale_sweep_once() {
     let sessions_dropped = crate::mostro::session::session_manager()
         .cleanup_stale_sessions(SWEEP_SESSION_TTL_SECS)
         .await;
-    if examined > 0 || sessions_dropped > 0 {
+    if examined > 0 || wiped > 0 || sessions_dropped > 0 {
         crate::api::logging::blog_info(
             "orders",
             format!(
