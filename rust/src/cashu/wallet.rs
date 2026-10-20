@@ -652,6 +652,9 @@ impl CashuWallet {
         let swap_fee = u64::from(prepared.swap_fee());
         let operation_id = prepared.operation_id();
         let localstore = self.inner.localstore.as_ref();
+        // From before the request, so the whole payment answers within
+        // [`MELT_WAIT`] — the time the request took counts against it.
+        let deadline = tokio::time::Instant::now() + MELT_WAIT;
 
         let finalized = match prepared.confirm_prefer_async().await {
             Ok(MeltOutcome::Paid(finalized)) => finalized,
@@ -659,16 +662,16 @@ impl CashuWallet {
             // a mint does with `Prefer: respond-async` (cdk-mintd always does)
             // however fast the payment then settles. Waiting a while turns the
             // common case into its real result: proofs settled, change stored,
-            // the fee known. Past [`MELT_WAIT`] the handle is dropped, which cdk
+            // the fee known. Past the deadline the handle is dropped, which cdk
             // allows ("can be awaited or dropped"): the saga is recorded as
             // in flight and `finalize_pending_melts` settles it at the next
             // sync or connect.
             Ok(MeltOutcome::Pending(pending)) => {
-                match tokio::time::timeout(MELT_WAIT, pending.into_future()).await {
+                match tokio::time::timeout_at(deadline, pending.into_future()).await {
                     Ok(Ok(finalized)) => finalized,
                     Ok(Err(e)) => return after_confirm_error(localstore, operation_id, e).await,
                     Err(_) => {
-                        log::info!("[cashu] melt still pending after {}s", MELT_WAIT.as_secs());
+                        log::info!("[cashu] melt still pending {}s in", MELT_WAIT.as_secs());
                         return Ok(MeltOutcomeInfo::Pending);
                     }
                 }
@@ -693,10 +696,16 @@ impl CashuWallet {
     }
 }
 
-/// How long [`CashuWallet::melt`] waits for a payment the mint answered as
-/// pending before reporting it so. Long enough for an ordinary Lightning
-/// payment, which settles in seconds; short enough that a held one (a hold
-/// invoice, a stuck route) does not keep the confirmation spinning.
+/// How long [`CashuWallet::melt`] gives a payment, counted from before its
+/// request, before reporting one the mint answered as pending so. Long enough
+/// for an ordinary Lightning payment, which settles in seconds; short enough
+/// that a held one (a hold invoice, a stuck route) does not keep the
+/// confirmation spinning.
+///
+/// It cannot bound a request the mint holds open, ignoring `respond-async`:
+/// cdk sets no timeout on it, and dropping it mid-flight could leave a swap
+/// half recorded. The payment dialog stops waiting a little after this
+/// instead (`_meltDialogWait` in `cashu_wallet_screen.dart`) — keep it above.
 const MELT_WAIT: Duration = Duration::from_secs(30);
 
 /// What an error from confirming the melt `operation_id` means, read against

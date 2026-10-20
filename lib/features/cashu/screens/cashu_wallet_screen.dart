@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -1026,6 +1028,13 @@ class _InvoiceDialogState extends State<_InvoiceDialog> {
   }
 }
 
+/// How long the payment dialog waits on Pay before it reports the payment as
+/// pending — never closing the way out for good. Rust answers within its
+/// `MELT_WAIT` (30 s, `rust/src/cashu/wallet.rs`) unless the mint holds the
+/// request open, ignoring `respond-async`, which nothing below times out.
+/// Above that wait, so a real answer is never cut short.
+const _meltDialogWait = Duration(seconds: 40);
+
 /// Why the payment dialog closed, when the caller has more to do: the quote
 /// expired or now costs more than the user confirmed, so nothing was paid and
 /// a fresh quote is due. Every other end — cancelled, or an outcome the user
@@ -1054,7 +1063,9 @@ bool _isStaleQuote(Object error) {
 /// runs there is no way out — not Cancel, not the back gesture: closing would
 /// not stop it. Then the same dialog shows how it ended, with Close as its
 /// only button: paid, with the fee actually charged; still in flight; or
-/// failed, with the reason. A stale quote pops [_MeltStale] instead.
+/// failed, with the reason. A stale quote pops [_MeltStale] instead. A
+/// payment with no answer after [_meltDialogWait] shows as still in flight,
+/// so the busy state always ends.
 class _MeltConfirmDialog extends StatefulWidget {
   const _MeltConfirmDialog({
     required this.quote,
@@ -1080,8 +1091,18 @@ class _MeltConfirmDialogState extends State<_MeltConfirmDialog> {
 
   Future<void> _pay() async {
     setState(() => _paying = true);
+    final payment = widget.pay();
     try {
-      final result = await widget.pay();
+      // Not cancelled on timeout — it cannot be, and the payment may still
+      // settle: its late answer is dropped, and Rust broadcasts the balance
+      // whenever it comes.
+      final result = await payment.timeout(
+        _meltDialogWait,
+        onTimeout: () {
+          payment.ignore();
+          return const CashuMeltResult.pending();
+        },
+      );
       if (mounted) {
         setState(() {
           _paying = false;

@@ -594,8 +594,9 @@ mints is inconsistent), no general wallet features.
     confirmed (`CashuMeltFeeChanged`), all after cancelling, then
     `confirm_prefer_async()`. A mint that honours `Prefer: respond-async`
     (cdk-mintd always does) answers *pending* before it routes, however fast the
-    payment then settles, so a pending answer is awaited for up to 30 s. The
-    result is `Paid` (amount and the fee actually charged) or, past that wait,
+    payment then settles, so a pending answer is awaited until 30 s after the
+    request left (`MELT_WAIT`, a deadline, so a slow request counts against it).
+    The result is `Paid` (amount and the fee actually charged) or, past that wait,
     `Pending` (the Lightning payment is in flight: the proofs stay reserved and
     recovery finalizes them), or a marker. Change from the fee reserve
     returns through NUT-08, handled by cdk.
@@ -619,7 +620,10 @@ mints is inconsistent), no general wallet features.
   open while the payment runs, Pay busy and no way out, since closing would not
   stop it, and then shows how it ended in the same dialog, with Close: *paid*
   (with the fee actually charged), *in progress*, or *failed* with the localized
-  reason. An expired quote or a changed fee goes back to a fresh quote, never pays
+  reason. A mint that ignores `respond-async` holds the request open, and nothing
+  in cdk times it out, so the dialog stops waiting after 40 s — above `MELT_WAIT`,
+  so a real answer is never cut short — and shows *in progress*. The payment is
+  not cancelled; its late answer is dropped, and the balance follows. An expired quote or a changed fee goes back to a fresh quote, never pays
   stale. l10n in all locales;
   `DESIGN_SYSTEM.md`.
 - **Out of scope:** Lightning addresses / LNURL (who resolves the LNURL, and from
