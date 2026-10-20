@@ -378,6 +378,10 @@ pub trait Storage: Send + Sync {
     /// Notification recovery must not depend on a live chat subscription.
     async fn list_unread_messages(&self) -> Result<Vec<crate::api::types::ChatMessage>>;
     async fn mark_messages_read(&self, trade_id: &str) -> Result<()>;
+    /// Delete every chat message of the order `order_id` (`trade_id` holds
+    /// the order id): the peer's and the dispute's alike. Other orders'
+    /// messages stay. No-op when it has none.
+    async fn delete_messages_for_order(&self, order_id: &str) -> Result<()>;
 
     /// `true` if a message with this id was already accepted and stored.
     ///

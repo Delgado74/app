@@ -1409,6 +1409,9 @@ mod tests {
         async fn mark_messages_read(&self, _trade_id: &str) -> Result<()> {
             unimplemented!()
         }
+        async fn delete_messages_for_order(&self, _order_id: &str) -> Result<()> {
+            unimplemented!()
+        }
         async fn message_exists(&self, _id: &str) -> Result<bool> {
             unimplemented!()
         }

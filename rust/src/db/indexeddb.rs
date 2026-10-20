@@ -384,6 +384,15 @@ impl Storage for IndexedDbStorage {
         Ok(())
     }
 
+    async fn delete_messages_for_order(&self, order_id: &str) -> Result<()> {
+        // No index on the order id: the store is read whole, as
+        // `list_messages` does. A message that no longer decodes is left.
+        for msg in self.list_messages(order_id).await? {
+            self.delete_key(MESSAGES_STORE, &msg.id).await?;
+        }
+        Ok(())
+    }
+
     async fn message_exists(&self, id: &str) -> Result<bool> {
         // Fail closed: an `Err` here makes the chat pipeline DROP the event.
         Ok(self.get_string(MESSAGES_STORE, id).await?.is_some())

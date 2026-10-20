@@ -345,6 +345,14 @@ impl Storage for SqliteStorage {
         Ok(row.is_some())
     }
 
+    async fn delete_messages_for_order(&self, order_id: &str) -> Result<()> {
+        sqlx::query("DELETE FROM messages WHERE trade_id = ?")
+            .bind(order_id)
+            .execute(&self.pool)
+            .await?;
+        Ok(())
+    }
+
     async fn mark_messages_read(&self, trade_id: &str) -> Result<()> {
         // `list_messages` reconstructs ChatMessage from the JSON `data` blob,
         // so the flag must be rewritten there too — updating only the
@@ -1283,6 +1291,49 @@ mod tests {
             plan.contains("idx_trades_order_id"),
             "expected the order-id expression index, got: {plan}"
         );
+
+        drop(storage);
+        let _ = std::fs::remove_file(&path);
+    }
+
+    /// #813: wiping a trade without a node takes its chat with it — the
+    /// peer's and the dispute's — and nothing of another order's.
+    #[tokio::test]
+    async fn delete_messages_for_order_takes_only_that_orders_messages() {
+        use crate::api::types::*;
+
+        let path = temp_db_path();
+        let storage = SqliteStorage::open(path.to_str().unwrap()).await.unwrap();
+        let message = |id: &str, order: &str, message_type: MessageType| ChatMessage {
+            id: id.into(),
+            trade_id: order.into(),
+            sender_pubkey: "peer".into(),
+            content: "hi".into(),
+            message_type,
+            is_mine: false,
+            is_read: false,
+            has_attachment: false,
+            attachment: None,
+            created_at: 2,
+            reactions: Vec::new(),
+        };
+        for msg in [
+            message("peer", "wiped", MessageType::Peer),
+            message("admin", "wiped", MessageType::Admin),
+            message("kept", "other", MessageType::Peer),
+        ] {
+            storage.save_message(&msg).await.unwrap();
+        }
+
+        storage.delete_messages_for_order("wiped").await.unwrap();
+
+        assert!(storage.list_messages("wiped").await.unwrap().is_empty());
+        assert!(!storage.message_exists("admin").await.unwrap());
+        let kept = storage.list_messages("other").await.unwrap();
+        assert_eq!(kept.len(), 1);
+        assert_eq!(kept[0].id, "kept");
+        // An order with nothing left to delete is not an error.
+        storage.delete_messages_for_order("wiped").await.unwrap();
 
         drop(storage);
         let _ = std::fs::remove_file(&path);
