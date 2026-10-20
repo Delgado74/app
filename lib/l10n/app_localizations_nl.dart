@@ -15,9 +15,6 @@ class AppLocalizationsNl extends AppLocalizations {
   String get loading => 'Laden…';
 
   @override
-  String get error => 'Fout';
-
-  @override
   String get actionFailedAnnouncement => 'Actie mislukt';
 
   @override
@@ -52,7 +49,7 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get disputeSolverAssigned =>
-      'Een solver heeft je dispuut opgepakt. Hij neemt hier binnenkort contact met je op.';
+      'Een solver heeft je dispuut opgepakt en neemt hier binnenkort contact met je op.';
 
   @override
   String get disputeChatClosed =>
@@ -67,7 +64,7 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get disputeSolverNotAssigned =>
-      'Nog geen solver heeft dit dispuut opgepakt. Je kunt schrijven zodra iemand dat doet.';
+      'Er heeft nog geen solver dit dispuut opgepakt. Je kunt schrijven zodra iemand dat doet.';
 
   @override
   String get disputeNotFound => 'Dispuut niet gevonden.';
@@ -80,7 +77,7 @@ class AppLocalizationsNl extends AppLocalizations {
   String get disputeResolved => 'Opgelost';
 
   @override
-  String get disputeSuccessfullyCompleted => 'Afgerond';
+  String get disputeSuccessfullyCompleted => 'Met succes afgerond';
 
   @override
   String get disputeCoopCancelMessage =>
@@ -141,7 +138,7 @@ class AppLocalizationsNl extends AppLocalizations {
   }
 
   @override
-  String get disputeWaitingForAdmin => 'Wacht op toewijzing van een beheerder';
+  String get disputeWaitingForAdmin => 'Wachten tot een solver is toegewezen';
 
   @override
   String get disputeLostFundsToBuyer =>
@@ -211,7 +208,7 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get walkthroughChatBody2 =>
-      'Bij een dispuut kan een solver de chat lezen als je de sleutel met hem deelt, en zo helpen de zaak op te lossen.';
+      'Bij een dispuut kan een solver de chat lezen als je de sleutel met de solver deelt, en zo helpen de zaak op te lossen.';
 
   @override
   String get walkthroughTakeTitle => 'Een order accepteren';
@@ -259,10 +256,14 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String filtersActiveCount(int count) {
+    final intl.NumberFormat countNumberFormat = intl
+        .NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count filters actief',
+      other: '$countString filters actief',
       one: '1 filter actief',
     );
     return '$_temp0';
@@ -286,7 +287,13 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String daysAgo(int d) {
-    return '$d d geleden';
+    String _temp0 = intl.Intl.pluralLogic(
+      d,
+      locale: localeName,
+      other: '$d dagen geleden',
+      one: '1 dag geleden',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -304,15 +311,19 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get nodeProtocolUnsupported =>
-      'Deze Mostro-node spreekt een protocolversie die de app niet ondersteunt. Kies een andere node in de instellingen, of kijk of er een app-update is';
+      'Deze Mostro-node spreekt een protocolversie die de app niet ondersteunt. Kies een andere node in Instellingen, of kijk of er een app-update is';
 
   @override
   String get nodeCapabilitiesUnknown =>
-      'Nog aan het nagaan wat de gekozen Mostro-node ondersteunt. Probeer het zo weer';
+      'Nog aan het nagaan wat de geselecteerde Mostro-node ondersteunt. Probeer het zo weer';
+
+  @override
+  String get tradeOnOtherNode =>
+      'Deze trade hoort bij een andere Mostro-node. Schakel over naar die node om verder te gaan';
 
   @override
   String get mostroMaintenanceMode =>
-      'De Mostro-node waarmee je verbonden bent is in onderhoud. Probeer het later opnieuw, of verbind met een andere Mostro-node in de instellingen';
+      'De Mostro-node waarmee je verbonden bent is in onderhoud. Probeer het later opnieuw, of verbind met een andere Mostro-node in Instellingen';
 
   @override
   String get storageUnavailable =>
@@ -320,7 +331,7 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get rangeOrderWithSats =>
-      'Een order met een bereik kan geen vast aantal sats hebben: hij wordt bij het aannemen tegen de marktprijs geprijsd.';
+      'Een bandbreedte-order kan geen vast aantal sats hebben: de prijs wordt bij het accepteren op de marktprijs vastgesteld.';
 
   @override
   String get orderIdCopied => 'Order-ID gekopieerd';
@@ -614,10 +625,14 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String nodeStatusOnline(int count) {
+    final intl.NumberFormat countNumberFormat = intl
+        .NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count orders',
+      other: '$countString orders',
       one: '1 order',
     );
     return 'Online · $_temp0';
@@ -841,7 +856,7 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get tradeCardCancelRequestedByPeerMessage =>
-      'Hij heeft gevraagd deze trade te annuleren. Ga je akkoord, dan eindigt hij zonder dat er geld verschuift; anders gaat de handel door.';
+      'De tegenpartij heeft gevraagd deze trade te annuleren. Ga je akkoord, dan eindigt hij zonder dat er geld verschuift; anders gaat de trade door.';
 
   @override
   String get tradeCancelRequestedByMeNotice =>
@@ -849,7 +864,7 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get tradeCancelRequestedByPeerNotice =>
-      'De tegenpartij heeft gevraagd deze trade te annuleren. Ga je akkoord, dan eindigt hij zonder dat er geld verschuift; anders gaat de handel door.';
+      'De tegenpartij heeft gevraagd deze trade te annuleren. Ga je akkoord, dan eindigt hij zonder dat er geld verschuift; anders gaat de trade door.';
 
   @override
   String get acceptCancelButton => 'Annulering accepteren';
@@ -880,7 +895,7 @@ class AppLocalizationsNl extends AppLocalizations {
   String get cancelTradeButton => 'Trade annuleren';
 
   @override
-  String get payHoldInvoiceButton => 'Hold invoice betalen';
+  String get payHoldInvoiceButton => 'Invoice betalen';
 
   @override
   String get openDisputeButton => 'Dispuut openen';
@@ -996,10 +1011,10 @@ class AppLocalizationsNl extends AppLocalizations {
   String get aboutMostroCommitLabel => 'Mostro-commit';
 
   @override
-  String get aboutHoldInvoiceExpLabel => 'Verlooptijd hold invoice';
+  String get aboutHoldInvoiceExpLabel => 'Tijd om sats vast te zetten';
 
   @override
-  String get aboutHoldInvoiceCltvLabel => 'CLTV hold invoice';
+  String get aboutHoldInvoiceCltvLabel => 'CLTV bij vastzetten';
 
   @override
   String get aboutInvoiceExpWindowLabel => 'Geldigheidsduur invoice';
@@ -1068,15 +1083,19 @@ class AppLocalizationsNl extends AppLocalizations {
   String get aboutBondSlashOnTimeoutLabel => 'Inhouden bij te lang wachten';
 
   @override
-  String get aboutBondClaimWindowLabel => 'Termijn om op te halen';
+  String get aboutBondClaimWindowLabel => 'Ophaaltermijn';
 
   @override
   String aboutBondClaimWindowValue(int count) {
+    final intl.NumberFormat countNumberFormat = intl
+        .NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count dagen',
-      one: '$count dag',
+      other: '$countString dagen',
+      one: '$countString dag',
     );
     return '$_temp0';
   }
@@ -1109,13 +1128,13 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get tradeWaitingPaymentSellerInstruction =>
-      'Betaal de hold invoice om het geld vast te zetten en de trade te starten.';
+      'Betaal de invoice om de sats in je wallet vast te zetten en de trade te starten.';
 
   @override
   String get tradeLoadError => 'Er ging iets mis bij het laden van de trade.';
 
   @override
-  String get tradeWaitingForHoldInvoice => 'Wachten op de hold invoice…';
+  String get tradeWaitingForHoldInvoice => 'Wachten op de invoice…';
 
   @override
   String get shareButtonLabel => 'Delen';
@@ -1159,6 +1178,30 @@ class AppLocalizationsNl extends AppLocalizations {
   @override
   String get failedToGenerateIdentityMessage =>
       'De identiteit kon niet worden aangemaakt. Probeer het opnieuw.';
+
+  @override
+  String get pendingWipeBannerTitle =>
+      'De gegevens van de vorige gebruiker staan nog op dit apparaat';
+
+  @override
+  String get pendingWipeBannerBody =>
+      'Bij het verwijderen van de vorige identiteit konden de trades en chats niet van dit apparaat worden gewist. De app probeert het opnieuw wanneer een nieuwe gebruiker wordt aangemaakt of geïmporteerd.';
+
+  @override
+  String get pendingWipeBlockedMessage =>
+      'De gegevens van de vorige gebruiker konden niet van dit apparaat worden verwijderd, dus de nieuwe gebruiker is niet ingesteld en je huidige gebruiker is behouden. Probeer het opnieuw.';
+
+  @override
+  String get wipeNotRecordedMessage =>
+      'De huidige gebruiker kon niet veilig worden verwijderd, dus er is niets gewijzigd. Probeer het opnieuw.';
+
+  @override
+  String get identitySwapStorageUnavailableMessage =>
+      'De opslag van het apparaat is nu niet beschikbaar, dus de huidige gebruiker is behouden en er is niets gewijzigd. Start de app opnieuw en probeer het nog eens.';
+
+  @override
+  String get identitySwapPreviousNotReloadedMessage =>
+      'De nieuwe gebruiker is niet ingesteld, en de huidige gebruiker kon niet volledig worden hersteld. Start de app opnieuw om hem opnieuw te laden.';
 
   @override
   String get invalidMnemonicMessage =>
@@ -1413,15 +1456,15 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get tradeInstructionActiveSeller =>
-      'Geef de koper via de chat hierboven door hoe hij moet betalen.';
+      'Laat de koper via de chat hierboven weten hoe er betaald moet worden.';
 
   @override
   String get tradeInstructionFiatSentSeller =>
-      'De koper heeft bevestigd dat hij de fiat heeft overgemaakt. Controleer of het binnen is en geef daarna de sats vrij.';
+      'De koper heeft bevestigd dat de fiat is overgemaakt. Controleer of het binnen is en geef daarna de sats vrij.';
 
   @override
   String get tradeInstructionDisputed =>
-      'Er is een solver toegewezen. Hij neemt via de app contact met je op.';
+      'Er is een solver toegewezen, die via de app contact met je opneemt.';
 
   @override
   String get tradeInstructionPending =>
@@ -1429,7 +1472,7 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get tradeInstructionCancelled =>
-      'Deze trade is geannuleerd. Er is geen geld geruild.';
+      'Deze trade is geannuleerd. Er is geen geld overgemaakt.';
 
   @override
   String get tradeInstructionInProgress => 'Trade loopt.';
@@ -1457,7 +1500,7 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get tradeHeadlineWaitingPaymentSeller =>
-      'Betaal de hold invoice om de sats vast te zetten';
+      'Betaal de invoice om de sats vast te zetten';
 
   @override
   String tradeHeadlineActiveBuyer(String amount) {
@@ -1508,14 +1551,21 @@ class AppLocalizationsNl extends AppLocalizations {
       'Geschatte tijd. Is die om, dan opent Mostro een dispuut.';
 
   @override
-  String get tradeTimerEscrowCancelling =>
+  String get tradeTimerEscrowCancellingBuyer =>
       'Mostro annuleert zo de trade en geeft de sats terug aan de verkoper.';
+
+  @override
+  String get tradeTimerEscrowCancellingSeller =>
+      'Mostro annuleert zo de trade. Je sats blijven in je wallet.';
 
   @override
   String get tradeTimerEscrowDisputing => 'Er wordt zo een dispuut geopend.';
 
   @override
   String get tradeStepOrderTaken => 'Order geaccepteerd';
+
+  @override
+  String get tradeStepWaitingTaker => 'Wacht op een tegenpartij';
 
   @override
   String get tradeStepInvoiceBuyer => 'De verkoper zet de sats vast';
@@ -1534,6 +1584,9 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get tradeStepReleaseSeller => 'Jij bevestigt en geeft de sats vrij';
+
+  @override
+  String get tradeStepPayoutBuyer => 'Mostro stuurt je je sats';
 
   @override
   String get tradeStepRate => 'Beoordeel de trade';
@@ -1573,7 +1626,7 @@ class AppLocalizationsNl extends AppLocalizations {
   }
 
   @override
-  String get exchangeInfoTooltip => 'Gegevens van de ruil';
+  String get exchangeInfoTooltip => 'Tradegegevens';
 
   @override
   String get userInfoTooltip => 'Gebruikersgegevens';
@@ -1668,31 +1721,16 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get waitingForTradeAmount =>
-      'Wachten op het handelsbedrag. Probeer het zo weer.';
+      'Wachten op het tradebedrag. Probeer het zo weer.';
 
   @override
-  String get fetchingTradeAmount => 'Handelsbedrag ophalen…';
+  String get fetchingTradeAmount => 'Tradebedrag ophalen…';
 
   @override
   String get enterInvoiceManually => 'Invoice handmatig invullen';
 
   @override
   String get rangeAmountTakeAction => 'Order accepteren';
-
-  @override
-  String get buyerReputation => 'Reputatie van de koper';
-
-  @override
-  String get sellerReputation => 'Reputatie van de verkoper';
-
-  @override
-  String get ratingStatLabel => 'beoordeling';
-
-  @override
-  String get tradesStatLabel => 'trades';
-
-  @override
-  String get daysActiveStatLabel => 'dagen actief';
 
   @override
   String orderAmountOutOfRange(int min, int max) {
@@ -1730,7 +1768,7 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get priceTypesDialogContent =>
-      'Marktprijs: je orderprijs volgt de marktkoers, met een premie of korting erbij.\n\nVaste prijs: je legt een exact bedrag in satoshi vast.';
+      'Marktprijs: je order volgt de marktkoers, met de premie of korting die je instelt.\n\nVaste prijs: je legt het exacte aantal sats vast; dat volgt de markt niet.';
 
   @override
   String get newOrderTitle => 'Nieuwe order';
@@ -1755,10 +1793,14 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String paymentMethodsChosenCount(int count) {
+    final intl.NumberFormat countNumberFormat = intl
+        .NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count geselecteerd',
+      other: '$countString geselecteerd',
       one: '1 geselecteerd',
       zero: 'niets geselecteerd',
     );
@@ -1891,10 +1933,14 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String selectStarTooltip(int count) {
+    final intl.NumberFormat countNumberFormat = intl
+        .NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count sterren geven',
+      other: '$countString sterren geven',
       one: '1 ster geven',
     );
     return '$_temp0';
@@ -1973,36 +2019,18 @@ class AppLocalizationsNl extends AppLocalizations {
   String get marketPriceCaption => 'Marktprijs';
 
   @override
-  String reputationTradesLabel(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: 'trades',
-      one: 'trade',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String reputationDaysLabel(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: 'dagen',
-      one: 'dag',
-    );
-    return '$_temp0';
-  }
-
-  @override
   String get sortNewest => 'Nieuwste';
 
   @override
   String ordersCount(int count) {
+    final intl.NumberFormat countNumberFormat = intl
+        .NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count orders',
+      other: '$countString orders',
       one: '1 order',
     );
     return '$_temp0';
@@ -2021,15 +2049,15 @@ class AppLocalizationsNl extends AppLocalizations {
   String get orderCardPremiumCaption => 'premie';
 
   @override
+  String get orderCardPriceCaption => 'prijs';
+
+  @override
   String orderFixedAmount(String sats) {
     return 'Vast bedrag · voor $sats';
   }
 
   @override
   String get reputationNew => 'Nieuw';
-
-  @override
-  String get reputationNoTrades => 'geen trades';
 
   @override
   String get bottomNavBook => 'Orderboek';
@@ -2059,10 +2087,14 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String viewEarlierEvents(int count) {
+    final intl.NumberFormat countNumberFormat = intl
+        .NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count eerdere gebeurtenissen tonen',
+      other: '$countString eerdere gebeurtenissen tonen',
       one: '1 eerdere gebeurtenis tonen',
     );
     return '$_temp0';
@@ -2082,10 +2114,14 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String notificationDeletedSnack(int count) {
+    final intl.NumberFormat countNumberFormat = intl
+        .NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count meldingen verwijderd',
+      other: '$countString meldingen verwijderd',
       one: 'Melding verwijderd',
     );
     return '$_temp0';
@@ -2144,10 +2180,14 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String notificationsBellUnread(int count) {
+    final intl.NumberFormat countNumberFormat = intl
+        .NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: 'Meldingen, $count ongelezen',
+      other: 'Meldingen, $countString ongelezen',
       one: 'Meldingen, 1 ongelezen',
     );
     return '$_temp0';
@@ -2155,10 +2195,14 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String drawerBadgeNewCount(int count) {
+    final intl.NumberFormat countNumberFormat = intl
+        .NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count nieuw',
+      other: '$countString nieuw',
       one: '1 nieuw',
     );
     return '$_temp0';
@@ -2185,12 +2229,12 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String bondSlashedMessageTimeout(String amount, String orderId) {
-    return 'Je borg tegen misbruik van $amount sats voor order $orderId is vervallen nadat een wachtstap te lang duurde. De status van je order verandert niet.';
+    return 'Je borg tegen misbruik van $amount sats voor order $orderId is verbeurd nadat een wachtstap te lang duurde. De status van je order verandert niet.';
   }
 
   @override
   String bondSlashedMessageDispute(String amount, String orderId) {
-    return 'Je borg tegen misbruik van $amount sats voor order $orderId is vervallen na de uitkomst van een dispuut. De status van je order verandert niet.';
+    return 'Je borg tegen misbruik van $amount sats voor order $orderId is verbeurd na de uitkomst van een dispuut. De status van je order verandert niet.';
   }
 
   @override
@@ -2216,11 +2260,15 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String aboutDaysValue(int count) {
+    final intl.NumberFormat countNumberFormat = intl
+        .NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count dagen',
-      one: '$count dag',
+      other: '$countString dagen',
+      one: '$countString dag',
     );
     return '$_temp0';
   }
@@ -2284,12 +2332,11 @@ class AppLocalizationsNl extends AppLocalizations {
   String get tradeStatusPayoutPending => 'Uitbetaling wacht';
 
   @override
-  String get tradeHeadlinePayoutPending =>
-      'Wachten op de uitbetaling aan de koper';
+  String get tradeHeadlinePayoutPending => 'Wachten op je sats';
 
   @override
   String get tradeInstructionPayoutPending =>
-      'De verkoper heeft de escrow vrijgegeven. Wachten tot de Lightning-betaling aan de koper slaagt.';
+      'De verkoper heeft je sats vrijgegeven en Mostro stuurt ze naar je. Mislukt de betaling, dan kun je een nieuwe Lightning-invoice toevoegen.';
 
   @override
   String get tradeScreenTitle => 'Jouw trade';
@@ -2327,10 +2374,14 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String tradeChatNewMessages(int count) {
+    final intl.NumberFormat countNumberFormat = intl
+        .NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count nieuwe berichten',
+      other: '$countString nieuwe berichten',
       one: '1 nieuw bericht',
     );
     return '$_temp0';
@@ -2345,7 +2396,7 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get tradeBodyWaitingPaymentBuyer =>
-      'Hij betaalt de hold invoice. Zodra de sats vaststaan, is het aan jou om de fiat over te maken.';
+      'De verkoper zet de sats vast. Zodra ze vaststaan, is het aan jou om de fiat over te maken.';
 
   @override
   String tradeBodyActiveSeller(String method) {
@@ -2354,7 +2405,7 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String tradeBodyActiveBuyer(String method) {
-    return 'Via $method, met de gegevens die hij in de chat heeft gedeeld. Heb je het overgemaakt, meld dat dan hieronder.';
+    return 'Via $method, met de gegevens die de verkoper in de chat heeft gedeeld. Heb je het overgemaakt, meld dat dan hieronder.';
   }
 
   @override
@@ -2370,7 +2421,7 @@ class AppLocalizationsNl extends AppLocalizations {
   String get tradeTimerYouHave => 'Jij hebt nog';
 
   @override
-  String get tradeTimerTheyHave => 'Hij heeft nog';
+  String get tradeTimerTheyHave => 'De tegenpartij heeft nog';
 
   @override
   String get tradeTimerOrderHas => 'Resterende tijd';
@@ -2380,28 +2431,6 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get tradeRoleSeller => 'Verkoper';
-
-  @override
-  String reputationTradesCount(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count trades',
-      one: '1 trade',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String reputationDaysOnMostro(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count dagen op Mostro',
-      one: '1 dag op Mostro',
-    );
-    return '$_temp0';
-  }
 
   @override
   String get tradeFiatSentAction => 'Ik heb betaald';
@@ -2525,28 +2554,6 @@ class AppLocalizationsNl extends AppLocalizations {
   String get counterpartyBuyer => 'Koper';
 
   @override
-  String counterpartyTrades(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count trades',
-      one: '$count trade',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String counterpartyDaysOnMostro(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count dagen op Mostro',
-      one: '$count dag op Mostro',
-    );
-    return '$_temp0';
-  }
-
-  @override
   String get takeOrderPayWithLabel => 'Jij betaalt met';
 
   @override
@@ -2574,7 +2581,7 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get takeOrderFailed =>
-      'De order kon niet worden aangenomen. Probeer het opnieuw.';
+      'De order kon niet worden geaccepteerd. Probeer het opnieuw.';
 
   @override
   String get takeOrderClosed => 'Gesloten';
@@ -2715,10 +2722,14 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String pushStatusCleanupPending(int count) {
+    final intl.NumberFormat countNumberFormat = intl
+        .NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: 'Uit: $count push-registraties worden nog verwijderd',
+      other: 'Uit: $countString push-registraties worden nog verwijderd',
       one: 'Uit: 1 push-registratie wordt nog verwijderd',
     );
     return '$_temp0';
@@ -2732,10 +2743,14 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String pushStatusRegistered(int count) {
+    final intl.NumberFormat countNumberFormat = intl
+        .NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: 'Geregistreerd voor $count trades',
+      other: 'Geregistreerd voor $countString trades',
       one: 'Geregistreerd voor 1 trade',
     );
     return '$_temp0';
@@ -2850,18 +2865,22 @@ class AppLocalizationsNl extends AppLocalizations {
   String get aboutCurrenciesCell => 'Valuta';
 
   @override
-  String get aboutOrderExpiryCell => 'Verloop';
+  String get aboutOrderExpiryCell => 'Verlooptijd';
 
   @override
   String get aboutNodeTechnicalDataRow => 'Technische gegevens van de node';
 
   @override
   String aboutFieldCount(int count) {
+    final intl.NumberFormat countNumberFormat = intl
+        .NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count velden',
-      one: '$count veld',
+      other: '$countString velden',
+      one: '$countString veld',
     );
     return '$_temp0';
   }
@@ -2923,7 +2942,7 @@ class AppLocalizationsNl extends AppLocalizations {
   String get tradesDirectionSell => 'Je verkoopt';
 
   @override
-  String get tradesDirectionBondClaim => 'Borg ophalen';
+  String get tradesDirectionBondClaim => 'Borguitbetaling';
 
   @override
   String get tradesDirectionBuy => 'Je koopt';
@@ -3219,7 +3238,7 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get bondAbandoned =>
-      'Order laten vallen. Er is niets gepubliceerd en niets in rekening gebracht.';
+      'Order ingetrokken. Er is niets gepubliceerd en niets in rekening gebracht.';
 
   @override
   String bondPublishesIn(String time) {
@@ -3251,7 +3270,7 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get bondCancelRefusedBody =>
-      'Deze Mostro-node ondersteunt het annuleren van een onbetaalde borg misschien nog niet, of je borg is net betaald. Heb je hem niet betaald, dan kun je de order van dit apparaat verwijderen. Wordt de factuur later betaald, dan wordt de order toch gepubliceerd.';
+      'Deze Mostro-node ondersteunt het annuleren van een onbetaalde borg misschien nog niet, of je borg is net betaald. Heb je hem niet betaald, dan kun je de order van dit apparaat verwijderen. Wordt de invoice later betaald, dan wordt de order toch gepubliceerd.';
 
   @override
   String get bondRemoveFromDevice => 'Verwijderen van dit apparaat';
@@ -3261,14 +3280,14 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get bondLeaveMakerBody =>
-      'De order wordt niet gepubliceerd en de borgfactuur wordt geannuleerd.';
+      'De order wordt niet gepubliceerd en de borg-invoice wordt geannuleerd.';
 
   @override
   String get bondLeaveTakerTitle => 'Deze order niet accepteren?';
 
   @override
   String get bondLeaveTakerBody =>
-      'De order blijft voor anderen in het orderboek en de borgfactuur wordt geannuleerd.';
+      'De order blijft voor anderen in het orderboek en de borg-invoice wordt geannuleerd.';
 
   @override
   String get bondKeepWaiting => 'Blijven wachten';
@@ -3444,7 +3463,7 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get bondLockedNowEscrow =>
-      'Borg vastgezet. Zet nu het handelsbedrag vast.';
+      'Borg vastgezet. Zet nu het tradebedrag vast.';
 
   @override
   String get bondLostRace =>
@@ -3505,9 +3524,6 @@ class AppLocalizationsNl extends AppLocalizations {
   String invoiceExpiresIn(String time) {
     return 'De invoice verloopt over $time';
   }
-
-  @override
-  String get invoiceFieldLabel => 'Lightning-invoice of -adres';
 
   @override
   String get invoiceFieldHint => 'lnbc… of gebruiker@domein';
@@ -3578,9 +3594,6 @@ class AppLocalizationsNl extends AppLocalizations {
   String get invoiceYouGetLabel => 'Jij ontvangt';
 
   @override
-  String get invoiceNoTrades => 'geen trades';
-
-  @override
   String get invoiceSendButton => 'Invoice versturen';
 
   @override
@@ -3643,7 +3656,7 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get tradeCardWaitingPaymentMessage =>
-      'De trade gaat verder zodra de verkoper de hold invoice betaalt.';
+      'De trade gaat verder zodra de verkoper de sats vastzet.';
 
   @override
   String get tradeCardWaitingTakerBondTitle => 'Borgbetaling staat open';
@@ -3755,10 +3768,14 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String chatCardMessage(int count) {
+    final intl.NumberFormat countNumberFormat = intl
+        .NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count nieuwe berichten van je tegenpartij',
+      other: '$countString nieuwe berichten van je tegenpartij',
       one: '1 nieuw bericht van je tegenpartij',
     );
     return '$_temp0';
@@ -3766,10 +3783,14 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String chatCardSolverMessage(int count) {
+    final intl.NumberFormat countNumberFormat = intl
+        .NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count nieuwe berichten van de solver',
+      other: '$countString nieuwe berichten van de solver',
       one: '1 nieuw bericht van de solver',
     );
     return '$_temp0';
@@ -3789,10 +3810,14 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String recoveredTradesMessage(int count) {
+    final intl.NumberFormat countNumberFormat = intl
+        .NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: 'Account geïmporteerd. $count trades hersteld',
+      other: 'Account geïmporteerd. $countString trades hersteld',
       one: 'Account geïmporteerd. 1 trade hersteld',
       zero: 'Account geïmporteerd. Je had geen lopende trades',
     );
@@ -3808,10 +3833,14 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String paymentMethodsSelectedCount(int count) {
+    final intl.NumberFormat countNumberFormat = intl
+        .NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count methodes geselecteerd',
+      other: '$countString methodes geselecteerd',
       one: '1 methode geselecteerd',
       zero: 'Selecteer minstens één methode',
     );
@@ -3848,16 +3877,16 @@ class AppLocalizationsNl extends AppLocalizations {
   String get fundsAtRiskBondLocked => 'Borg vastgezet';
 
   @override
-  String get fundsAtRiskPayoutClaim => 'Borguitbetaling nog niet geïnd';
+  String get fundsAtRiskPayoutClaim => 'Borguitbetaling nog niet opgehaald';
 
   @override
   String get fundsAtRiskTradeInProgress => 'Trade bezig';
 
   @override
-  String get fundsAtRiskBondInvoicePending => 'Borgfactuur nog te betalen';
+  String get fundsAtRiskBondInvoicePending => 'Borg-invoice nog te betalen';
 
   @override
-  String get fundsAtRiskCashuBalance => 'Ecash in de Cashu-portemonnee';
+  String get fundsAtRiskCashuBalance => 'Ecash in de Cashu-wallet';
 
   @override
   String get fundsAtRiskCashuHint =>
@@ -3891,10 +3920,14 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String restoreStageFound(int count) {
+    final intl.NumberFormat countNumberFormat = intl
+        .NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count orders gevonden',
+      other: '$countString orders gevonden',
       one: '1 order gevonden',
     );
     return '$_temp0';
@@ -3943,10 +3976,14 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String restoreActionNotice(int count) {
+    final intl.NumberFormat countNumberFormat = intl
+        .NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: 'Er wachten $count actieve orders op jou',
+      other: 'Er wachten $countString actieve orders op jou',
       one: 'Er wacht 1 actieve order op jou',
     );
     return '$_temp0';
@@ -4001,7 +4038,7 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get attachmentPeerUnknown =>
-      'Je kunt bestanden versturen zodra iemand de order heeft aangenomen.';
+      'Je kunt bestanden versturen zodra iemand de order heeft geaccepteerd.';
 
   @override
   String get attachmentUploadFailed =>
@@ -4065,10 +4102,7 @@ class AppLocalizationsNl extends AppLocalizations {
       'Dit type bestand kan alleen worden opgeslagen.';
 
   @override
-  String get cashuWalletTitle => 'Cashu-portemonnee';
-
-  @override
-  String get cashuWalletSubtitle => 'Bewaar ecash voor trades op deze node';
+  String get cashuWalletTitle => 'Cashu-wallet';
 
   @override
   String get cashuBalanceLabel => 'Saldo';
@@ -4109,8 +4143,7 @@ class AppLocalizationsNl extends AppLocalizations {
   }
 
   @override
-  String get cashuErrorNoMint =>
-      'Stel eerst een mint in de Cashu-portemonnee in.';
+  String get cashuErrorNoMint => 'Stel eerst een mint in de Cashu-wallet in.';
 
   @override
   String get cashuErrorInvalidMintUrl =>
@@ -4118,7 +4151,7 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get cashuErrorWalletOnOtherMint =>
-      'Je Cashu-portemonnee gebruikt een andere mint. Schakel in Instellingen → Cashu-portemonnee over naar de mint van deze node en probeer het opnieuw.';
+      'Je Cashu-wallet gebruikt een andere mint. Schakel in Instellingen → Cashu-wallet over naar de mint van deze node en probeer het opnieuw.';
 
   @override
   String get cashuReceiveButton => 'Ontvangen';
@@ -4170,7 +4203,7 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get cashuWalletExplanation =>
-      'Deze portemonnee bewaart ecash van de mint die je kiest. Hij dient om Cashu-trades te financieren en te ontvangen — het is geen portemonnee voor algemeen gebruik.';
+      'Deze wallet bewaart ecash van de mint die je kiest. Hij dient om Cashu-trades te financieren en te ontvangen; het is geen wallet voor algemeen gebruik.';
 
   @override
   String get cashuErrorNotEnabled =>
@@ -4178,7 +4211,7 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get cashuErrorNotConnected =>
-      'De portemonnee is nog niet verbonden met een mint.';
+      'De wallet is nog niet verbonden met een mint.';
 
   @override
   String get cashuErrorMintUnreachable =>
@@ -4186,11 +4219,11 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get cashuErrorMintUnusable =>
-      'Deze mint mist functies die de portemonnee nodig heeft. Kies een andere mint.';
+      'Deze mint mist functies die de wallet nodig heeft. Kies een andere mint.';
 
   @override
   String get cashuErrorUnsupportedOnWeb =>
-      'De Cashu-portemonnee is nog niet beschikbaar in de webversie.';
+      'De Cashu-wallet is nog niet beschikbaar in de webversie.';
 
   @override
   String get cashuErrorAmountZero => 'Voer een bedrag groter dan nul in.';
@@ -4210,15 +4243,15 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get cashuErrorNoIdentity =>
-      'Maak een account aan of importeer er een voordat je de portemonnee gebruikt.';
+      'Maak een account aan of importeer er een voordat je de wallet gebruikt.';
 
   @override
   String get cashuErrorGeneric =>
-      'Er ging iets mis met de portemonnee. Probeer het opnieuw.';
+      'Er ging iets mis met de wallet. Probeer het opnieuw.';
 
   @override
   String get cashuLastTokenPending =>
-      'Je hebt een token geëxporteerd. Het is geld totdat iemand hem inwisselt — bewaar hem tot je zeker weet dat hij is aangekomen.';
+      'Je hebt een token geëxporteerd. Het is geld totdat iemand hem inwisselt: bewaar hem tot je zeker weet dat hij is aangekomen.';
 
   @override
   String get cashuShowLastToken => 'Opnieuw tonen';
@@ -4232,28 +4265,46 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get cashuErrorNoMnemonic =>
-      'Dit account is geïmporteerd vanuit een nsec, dus er is geen herstelzin om de portemonnee van af te leiden. De Cashu-portemonnee heeft een account nodig dat met een herstelzin is aangemaakt.';
+      'Dit account is geïmporteerd met een privésleutel, dus er zijn geen geheime woorden om de wallet van af te leiden. De Cashu-wallet heeft een account nodig dat met geheime woorden is aangemaakt.';
 
   @override
   String get cashuErrorTokenUnverified =>
       'Deze token kon niet worden geverifieerd: hij bevat geen bewijs van de handtekening van de mint, dus hij is niet geaccepteerd.';
 
   @override
+  String get cashuErrorUnsupportedUnit =>
+      'Deze wallet bevat alleen sats en deze token is in een andere eenheid (bijvoorbeeld millisats of dollars). Hij is niet aangeraakt: je kunt hem inwisselen in een wallet die die eenheid ondersteunt.';
+
+  @override
+  String cashuErrorUnsupportedUnitNamed(String unit) {
+    return 'Deze wallet bevat alleen sats en deze token is in $unit. Hij is niet aangeraakt: je kunt hem inwisselen in een wallet die deze eenheid ondersteunt.';
+  }
+
+  @override
+  String get cashuUnitMsat => 'millisats';
+
+  @override
+  String get cashuUnitUsd => 'dollars (USD)';
+
+  @override
+  String get cashuUnitEur => 'euro\'s (EUR)';
+
+  @override
   String get cashuErrorSendUnresolved =>
-      'Het versturen is mislukt en de portemonnee kon niet bevestigen dat het geld terug is. Synchroniseer met de mint voordat je het opnieuw probeert.';
+      'Het versturen is mislukt en de wallet kon niet bevestigen dat het geld terug is. Synchroniseer met de mint voordat je het opnieuw probeert.';
 
   @override
   String get lockEscrowTitle => 'De escrow vergrendelen';
 
   @override
   String get lockEscrowExplanation =>
-      'Vergrendel je ecash in een 2-van-3-escrow bij de mint van deze node. Noch jij noch de koper kan het alleen verplaatsen — en als de node verdwijnt, kun je het zelf terugvorderen zodra de locktime verstreken is.';
+      'Vergrendel je ecash in een 2-van-3-escrow bij de mint van deze node. Noch jij noch de koper kan het alleen verplaatsen. En als de node verdwijnt, kun je het zelf terugvorderen zodra de locktime verstreken is.';
 
   @override
   String get lockEscrowAmount => 'Escrow';
 
   @override
-  String get lockEscrowFee => 'Mostro-vergoeding';
+  String get lockEscrowFee => 'Mostro-kosten';
 
   @override
   String get lockEscrowTotal => 'Totaal';
@@ -4265,14 +4316,14 @@ class AppLocalizationsNl extends AppLocalizations {
   String get lockEscrowConfirm => 'Escrow vergrendelen';
 
   @override
-  String get lockEscrowFundWallet => 'Portemonnee opwaarderen';
+  String get lockEscrowFundWallet => 'Wallet opwaarderen';
 
   @override
   String get lockEscrowSubmitted => 'Escrow vergrendeld en verstuurd';
 
   @override
   String get lockEscrowInsufficientFunds =>
-      'Je portemonnee bevat niet genoeg voor de escrow en de vergoeding.';
+      'Je wallet bevat niet genoeg voor de escrow en de kosten.';
 
   @override
   String get lockEscrowNotTheSeller =>
@@ -4298,11 +4349,11 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get lockEscrowRequestMissing =>
-      'Deze trade heeft nog geen escrow-verzoek. Wacht tot de take van de koper binnenkomt en probeer het dan opnieuw.';
+      'Deze trade heeft nog geen escrow-verzoek. Wacht tot de acceptatie van de koper binnenkomt en probeer het dan opnieuw.';
 
   @override
   String get lockEscrowWrongTradeKey =>
-      'Dit apparaat heeft niet de sleutel waarmee deze order is genomen. Herstel je account op het apparaat waarop je de trade bent begonnen.';
+      'Dit apparaat heeft niet de sleutel waarmee deze order is geaccepteerd. Herstel je account op het apparaat waarop je de trade bent begonnen.';
 
   @override
   String get lockEscrowLocktimeNotReached =>
@@ -4317,7 +4368,7 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get lockEscrowPendingSubmission =>
-      'Je escrow is vergrendeld, maar de node heeft het nog niet bevestigd. Opnieuw proberen is veilig — hij wordt niet een tweede keer vergrendeld.';
+      'Je escrow is vergrendeld, maar de node heeft hem nog niet bevestigd. Opnieuw proberen is veilig: hij wordt niet een tweede keer vergrendeld.';
 
   @override
   String get lockEscrowMintNotSupported =>
@@ -4329,11 +4380,11 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get lockEscrowRejectedToken =>
-      'De node heeft deze escrow niet geaccepteerd. Hij is opzijgezet — hij komt naar je terug als zijn vergrendeling afloopt — en de volgende poging vergrendelt een nieuwe.';
+      'De node heeft deze escrow niet geaccepteerd. Hij is opzijgezet en komt naar je terug als zijn vergrendeling afloopt; de volgende poging vergrendelt een nieuwe.';
 
   @override
   String get lockEscrowRejectedMint =>
-      'De node gebruikt een andere mint. Deze escrow is opzijgezet — hij komt naar je terug als zijn vergrendeling afloopt. Controleer de mint van de node voordat je het opnieuw probeert.';
+      'De node gebruikt een andere mint. Deze escrow is opzijgezet en komt naar je terug als zijn vergrendeling afloopt. Controleer de mint van de node voordat je het opnieuw probeert.';
 
   @override
   String get lockEscrowMintUnavailableAtNode =>
@@ -4361,7 +4412,7 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get tradeBodyWaitingPaymentBuyerCashu =>
-      'Ze vergrendelen de sats in de escrow. Zodra die vergrendeld is, ben jij aan de beurt om de fiat te betalen.';
+      'De verkoper vergrendelt de sats in de escrow. Zodra die vergrendeld is, ben jij aan de beurt om de fiat te betalen.';
 
   @override
   String get shareChatKeyAction => 'Chatsleutel delen met de solver';
@@ -4440,31 +4491,36 @@ class AppLocalizationsNl extends AppLocalizations {
   String get myReputationTitle => 'Jouw reputatie';
 
   @override
-  String myReputationReviews(int count) {
+  String reputationRatingsCount(int count) {
+    final intl.NumberFormat countNumberFormat = intl
+        .NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count beoordelingen',
+      other: '$countString beoordelingen',
       one: '1 beoordeling',
+      zero: 'geen beoordelingen',
     );
     return '$_temp0';
   }
 
   @override
-  String myReputationSince(String date) {
+  String reputationSince(String date) {
     return 'sinds $date';
   }
 
   @override
   String get myReputationNoReviews =>
-      'Nog geen beoordelingen. Je reputatie begint bij je eerste beoordeelde ruil.';
+      'Nog geen beoordelingen. Je reputatie begint bij je eerste beoordeelde trade.';
 
   @override
   String get myReputationPrivacyMode =>
-      'De volledige privacymodus houdt geen reputatie bij. Kies hieronder de reputatiemodus om er een op te bouwen.';
+      'In de modus Volledig privé wordt geen reputatie bijgehouden. Kies hieronder Reputatiemodus om er een op te bouwen.';
 
   @override
-  String get myReputationLoading => 'Je node wordt gevraagd…';
+  String get myReputationLoading => 'Je node raadplegen…';
 
   @override
   String get myReputationUnavailable => 'Je node heeft nog niet geantwoord.';
@@ -4517,4 +4573,346 @@ class AppLocalizationsNl extends AppLocalizations {
   @override
   String get orderLinkUnknownNodeWarning =>
       'Deze node staat niet in je lijst. Schakel er alleen naar over als je vertrouwt wie je de link stuurde: de node waarop je handelt rondt je trades af en beslist over hun disputen.';
+
+  @override
+  String get reputationNodeDoesNotExport =>
+      'Deze Mostro exporteert geen reputatie.';
+
+  @override
+  String get reputationNodeDoesNotImport =>
+      'Deze Mostro importeert geen reputatie.';
+
+  @override
+  String get reputationIdentityRequired =>
+      'Reputatie kan alleen worden verplaatst vanaf een account dat zijn reputatie bewaart. Zet de modus Volledig privé uit en probeer het opnieuw.';
+
+  @override
+  String get reputationNotEligible =>
+      'Je account kan zijn reputatie nog niet exporteren: er zijn minstens 10 voltooide trades en 5 ontvangen beoordelingen nodig.';
+
+  @override
+  String get reputationBoundToOtherIdentity =>
+      'Je reputatie daar is al gekoppeld aan een andere identiteit. Geef toestemming voor de verplaatsing vanuit de identiteit waaraan ze gekoppeld is.';
+
+  @override
+  String get reputationInvalidRebind =>
+      'De toestemming om je reputatie te verplaatsen is ongeldig of verlopen. Maak een nieuwe aan.';
+
+  @override
+  String get reputationExpiredAttestation =>
+      'Deze reputatie is verlopen. Vraag ze opnieuw aan bij de bron.';
+
+  @override
+  String get reputationUntrustedIssuer =>
+      'Deze Mostro accepteert geen reputatie van die bron.';
+
+  @override
+  String get reputationIdentityMismatch =>
+      'Deze reputatie is uitgegeven voor een andere identiteit dan die je gebruikt.';
+
+  @override
+  String get reputationAlreadyImported =>
+      'Deze reputatie is al geïmporteerd op deze Mostro.';
+
+  @override
+  String get reputationInvalidAttestation =>
+      'Dit is geen geldige reputatie. Vraag ze opnieuw aan bij de bron.';
+
+  @override
+  String get reputationImportTitle => 'Reputatie importeren';
+
+  @override
+  String get reputationImportIntro =>
+      'Breng de reputatie die je op lnp2pBot of op een andere Mostro hebt verdiend naar deze. Importeren koppelt de twee accounts: de bron en deze Mostro weten dat ze van dezelfde persoon zijn.';
+
+  @override
+  String get reputationOpenLnp2pbot => 'Ophalen bij lnp2pBot';
+
+  @override
+  String get reputationPasteHint => 'Plak de ontvangen reputatie';
+
+  @override
+  String get reputationCheck => 'Controleren';
+
+  @override
+  String get reputationImported => 'Je reputatie is geïmporteerd.';
+
+  @override
+  String get reputationImportConfirm => 'Importeren in deze Mostro';
+
+  @override
+  String get reputationFiguresNote =>
+      'Geïmporteerde reputatie wordt opgeteld bij die van hier; je tegenpartijen zien ze samen.';
+
+  @override
+  String get reputationOpenLnp2pbotFailed =>
+      'Telegram kon niet worden geopend. Open lnp2pBot zelf in Telegram en plak hier wat hij je stuurt.';
+
+  @override
+  String get reputationIdentityHint =>
+      'Controleer voordat je in lnp2pBot bevestigt of dezelfde publieke sleutel wordt getoond:';
+
+  @override
+  String get reputationUnavailable =>
+      'Kan niet controleren of de reputatie kan worden geïmporteerd. Probeer het opnieuw.';
+
+  @override
+  String get reputationIdentityChanged =>
+      'Je identiteit is gewijzigd. Controleer de publieke sleutel die hier wordt getoond voordat je het opnieuw probeert.';
+
+  @override
+  String get reputationSettingTitle => 'Reputatie';
+
+  @override
+  String get reputationImportCardBody =>
+      'Breng de reputatie die je op lnp2pBot of een andere Mostro verdiende naar deze.';
+
+  @override
+  String get reputationExportTitle => 'Mijn reputatie exporteren';
+
+  @override
+  String get reputationExportCardBody =>
+      'Haal een ondertekende kopie op van de reputatie die je op deze Mostro verdiende, om ze op een andere te importeren.';
+
+  @override
+  String get reputationExportConfirmTitle => 'Exporteren naar deze identiteit?';
+
+  @override
+  String reputationExportConfirmBody(String npub) {
+    return 'Je reputatie op deze Mostro wordt geëxporteerd voor deze identiteit:\n\n$npub\n\nNa het exporteren is ze eraan gekoppeld: later exporteren voor een andere identiteit vereist een toestemming ondertekend met deze.';
+  }
+
+  @override
+  String get reputationExportConfirmButton => 'Exporteren';
+
+  @override
+  String get reputationExported =>
+      'Je reputatie is klaar. Schakel over naar de Mostro waar je ze wilt en importeer ze; ze is 7 dagen geldig.';
+
+  @override
+  String get reputationRebindBody =>
+      'Stap je over op een nieuwe identiteit? Onderteken hier een toestemming voor de nieuwe, met de identiteit waaraan je reputatie nu gekoppeld is. Plak die daarna vanaf de nieuwe identiteit in het toestemmingsveld hierboven en exporteer.';
+
+  @override
+  String get reputationNewIdentityHint => 'Nieuwe identiteit (npub of hex)';
+
+  @override
+  String get reputationRebindSign => 'Toestemming ondertekenen';
+
+  @override
+  String get reputationInvalidIdentity =>
+      'Dat is geen geldige npub- of hex-sleutel.';
+
+  @override
+  String get reputationRebindInputHint =>
+      'Toestemming van je vorige identiteit (optioneel)';
+
+  @override
+  String get reputationRebindConfirmTitle =>
+      'Deze identiteit toestemming geven?';
+
+  @override
+  String reputationRebindConfirmBody(String npub) {
+    return 'Wie deze identiteit bezit, kan je reputatie van deze Mostro exporteren, en je huidige identiteit kan dat niet meer:\n\n$npub\n\nOnderteken alleen voor een identiteit die van jou is.';
+  }
+
+  @override
+  String get payoutPaidToLabel => 'Betaald aan';
+
+  @override
+  String get payoutSendingToLabel => 'Wordt verzonden naar';
+
+  @override
+  String get payoutNotPaidLabel => 'Niet betaald aan';
+
+  @override
+  String get payoutChosenByLabel => 'Gekozen door';
+
+  @override
+  String get payoutAmountLabel => 'Bedrag';
+
+  @override
+  String get payoutHashLabel => 'Betalingshash';
+
+  @override
+  String get payoutTriedBeforeLabel => 'Eerder geprobeerd';
+
+  @override
+  String payoutTriedBeforeValue(String destination, String outcome) {
+    return '$destination · $outcome';
+  }
+
+  @override
+  String get payoutNwcWallet => 'Je NWC-wallet';
+
+  @override
+  String payoutNwcWalletNamed(String name) {
+    return '$name (NWC)';
+  }
+
+  @override
+  String payoutInvoice(String invoice) {
+    return 'Invoice $invoice';
+  }
+
+  @override
+  String get payoutSourceDefaultAddress => 'Je standaardadres';
+
+  @override
+  String get payoutSourceNwcWallet => 'Je NWC-wallet';
+
+  @override
+  String get payoutSourceEntered => 'Jij, voor deze trade';
+
+  @override
+  String get payoutOutcomeSubmitted => 'In afwachting';
+
+  @override
+  String get payoutOutcomeRetrying => 'Mislukt, nieuwe poging';
+
+  @override
+  String get payoutOutcomeFailed => 'Mislukt';
+
+  @override
+  String payoutOutcomeFailedAttempts(int count) {
+    final intl.NumberFormat countNumberFormat = intl
+        .NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Mislukt na $countString pogingen',
+      one: 'Mislukt na 1 poging',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get payoutOutcomeRejected => 'Geweigerd door de node';
+
+  @override
+  String get payoutOutcomePaid => 'Betaald';
+
+  @override
+  String get payoutHashCopied => 'Betalingshash gekopieerd';
+
+  @override
+  String get takeOrderPayoutLabel => 'Je sats gaan naar';
+
+  @override
+  String get takeOrderPayoutInvoice => 'Een invoice die je toevoegt';
+
+  @override
+  String get takeOrderPayoutChangeHint => 'Wijzig waar je sats naartoe gaan';
+
+  @override
+  String takeOrderPayoutNoteDefault(String address) {
+    return 'Je sats worden naar $address gestuurd, je standaard Lightning-adres.';
+  }
+
+  @override
+  String takeOrderPayoutNoteAddress(String address) {
+    return 'Je sats worden naar $address gestuurd, alleen voor deze trade.';
+  }
+
+  @override
+  String get takeOrderPayoutNoteInvoice =>
+      'Nadat je de order accepteert, voeg je de invoice toe waarop je sats worden betaald.';
+
+  @override
+  String get takeOrderPayoutSheetTitle => 'Waar je sats naartoe gaan';
+
+  @override
+  String get takeOrderPayoutSheetDefault => 'Mijn standaard Lightning-adres';
+
+  @override
+  String get takeOrderPayoutSheetOther => 'Een ander Lightning-adres';
+
+  @override
+  String get takeOrderPayoutSheetInvoice =>
+      'Een invoice die ik na het accepteren toevoeg';
+
+  @override
+  String get takeOrderPayoutSheetApply => 'Gebruiken voor deze trade';
+
+  @override
+  String invoicePayoutFailed(String destination) {
+    return 'De betaling aan $destination is mislukt.';
+  }
+
+  @override
+  String invoicePayoutFailedAttempts(String destination, int count) {
+    final intl.NumberFormat countNumberFormat = intl
+        .NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          'De betaling aan $destination is mislukt na $countString pogingen.',
+      one: 'De betaling aan $destination is mislukt na 1 poging.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get invoicePayoutFailedNwc =>
+      'Je NWC-wallet maakt een nieuwe invoice voor deze sats.';
+
+  @override
+  String invoicePayoutFailedNwcNamed(String name) {
+    return '$name maakt een nieuwe invoice voor deze sats.';
+  }
+
+  @override
+  String get invoicePayoutFailedManual =>
+      'Voeg een nieuwe invoice toe om je sats te ontvangen.';
+
+  @override
+  String get tradeCardPayoutFailedTitle => 'Mostro kon je sats niet versturen';
+
+  @override
+  String get tradeCardPayoutFailedMessage =>
+      'Mostro kon je sats niet versturen naar het adres of de invoice die je gaf. Open de trade om te zien welke mislukte, en voeg een nieuwe invoice toe als dat nog nodig is.';
+
+  @override
+  String get tradeCardOrderPublishedTitle => 'Order gepubliceerd';
+
+  @override
+  String get tradeCardOrderPublishedMessage =>
+      'Je order staat nu in het orderboek en andere gebruikers kunnen hem aannemen.';
+
+  @override
+  String get payoutInvoiceLabel => 'Invoice';
+
+  @override
+  String get payoutInvoiceCopied => 'Invoice gekopieerd';
+
+  @override
+  String get payoutWillGoToLabel => 'De sats gaan naar';
+
+  @override
+  String get payoutMaybePaidToLabel => 'Misschien betaald aan';
+
+  @override
+  String get payoutOutcomeReplaced => 'Vervangen door een latere';
+
+  @override
+  String get payoutOutcomeMaybePaid =>
+      'Betaald aan deze of een andere die hier staat';
+
+  @override
+  String otherNodeCardLine(String nodeName) {
+    return 'Trade op node: $nodeName';
+  }
+
+  @override
+  String get otherNodeCardDialogTitle => 'Trade op een andere node';
+
+  @override
+  String otherNodeCardOpenHint(String nodeName) {
+    return 'Deze trade staat op node $nodeName. Schakel in Instellingen over naar die node om ermee verder te gaan.';
+  }
 }

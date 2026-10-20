@@ -18,6 +18,7 @@ import 'package:mostro/features/notifications/models/notification_model.dart';
 import 'package:mostro/features/notifications/providers/notifications_provider.dart';
 import 'package:mostro/features/order/providers/invoice_providers.dart';
 import 'package:mostro/features/order/providers/trade_state_provider.dart';
+import 'package:mostro/features/trades/widgets/payout_destination_card.dart';
 import 'package:mostro/features/rate/providers/rating_providers.dart';
 import 'package:mostro/features/rate/screens/rate_counterpart_screen.dart';
 import 'package:mostro/features/rate/widgets/star_rating.dart';
@@ -39,6 +40,7 @@ import 'package:mostro/shared/utils/platform_int64.dart';
 import 'package:mostro/src/rust/api/types.dart';
 
 import '../../support/fake_orders.dart';
+import '../../support/fake_payout.dart';
 import '../../support/fake_trades.dart';
 import '../../support/provider_harness.dart';
 
@@ -297,6 +299,15 @@ Finder _filledButtonWithText(String label) => find.ancestor(
   matching: find.byWidgetPredicate((widget) => widget is FilledButton),
 );
 
+/// Every text on screen that names [role] (`buyer`, `seller`) as a word.
+List<String> _textsNaming(WidgetTester tester, String role) {
+  final word = RegExp('\\b$role\\b', caseSensitive: false);
+  return [
+    for (final text in tester.widgetList<RichText>(find.byType(RichText)))
+      if (word.hasMatch(text.text.toPlainText())) text.text.toPlainText(),
+  ];
+}
+
 /// Matches any `PopupMenuButton`, regardless of its generic type argument.
 Finder _anyPopupMenuButton() =>
     find.byWidgetPredicate((widget) => widget is PopupMenuButton);
@@ -378,7 +389,7 @@ void main() {
         );
 
         expect(find.text(_en.tradeScreenTitle), findsOneWidget);
-        expect(find.text(_en.stepIndicator(2, 5)), findsOneWidget);
+        expect(find.text(_en.stepIndicator(2, 6)), findsOneWidget);
         expect(find.text(_en.tradeChipWaiting), findsOneWidget);
         expect(find.text(_en.tradeHeadlineWaitingPaymentBuyer), findsOneWidget);
         expect(find.byType(TradeChatLockedLine), findsOneWidget);
@@ -602,8 +613,23 @@ void main() {
         escrowDeadlineIn: const Duration(seconds: -30),
       );
 
-      expect(find.text(_en.tradeTimerEscrowCancelling), findsOneWidget);
+      expect(find.text(_en.tradeTimerEscrowCancellingBuyer), findsOneWidget);
       expect(find.text(_en.tradeTimerEscrowCancels), findsNothing);
+    });
+
+    testWidgets('at zero, active tells the seller their sats stay', (
+      tester,
+    ) async {
+      await _pumpTradeDetail(
+        tester,
+        orderId: 'order-escrow-active-zero-seller',
+        isBuyer: false,
+        status: OrderStatus.active,
+        escrowDeadlineIn: const Duration(seconds: -30),
+      );
+
+      expect(find.text(_en.tradeTimerEscrowCancellingSeller), findsOneWidget);
+      expect(find.text(_en.tradeTimerEscrowCancellingBuyer), findsNothing);
     });
 
     testWidgets('at zero, fiat sent says a dispute is about to be opened', (
@@ -996,6 +1022,121 @@ void main() {
 
       expect(find.text(_en.successfulOrder), findsOneWidget);
       expect(find.byType(StarRating), findsOneWidget);
+    });
+
+    // The seller already released: the buyer's current step is Mostro
+    // paying them, until `success` opens the rating (#844).
+    testWidgets('the buyer is past the release, on step 5 of 6', (
+      tester,
+    ) async {
+      // Tall enough for the timeline, the last item of the scroll, to build.
+      tester.view.physicalSize = const Size(800, 2000);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      await _pumpTradeDetail(
+        tester,
+        orderId: 'order-payout-step',
+        isBuyer: true,
+        status: OrderStatus.settledHoldInvoice,
+      );
+
+      expect(find.text(_en.stepIndicator(5, 6)), findsOneWidget);
+      final timeline = tester.widget<TradeTimeline>(find.byType(TradeTimeline));
+      expect(timeline.steps, hasLength(6));
+      expect(timeline.current, 4);
+      expect(timeline.steps[3], _en.tradeStepReleaseBuyer);
+    });
+  });
+
+  /// The first step is the take. While the maker's order still waits in the
+  /// book it is the current step, and reading "Order taken" there told a
+  /// new user someone had taken it.
+  group('timeline · the first step', () {
+    Future<TradeTimeline> pumpTimeline(
+      WidgetTester tester,
+      OrderStatus status,
+    ) async {
+      // Tall enough for the timeline, the last item of the scroll, to build.
+      tester.view.physicalSize = const Size(800, 2000);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      await _pumpTradeDetail(
+        tester,
+        orderId: 'order-first-step',
+        isBuyer: false,
+        status: status,
+        book: [fakeOrder(id: 'order-first-step', isMine: true)],
+      );
+      return tester.widget<TradeTimeline>(find.byType(TradeTimeline));
+    }
+
+    testWidgets('a pending order waits for a taker', (tester) async {
+      final timeline = await pumpTimeline(tester, OrderStatus.pending);
+
+      expect(timeline.current, 0);
+      expect(timeline.steps.first, _en.tradeStepWaitingTaker);
+      expect(find.text(_en.tradeStepOrderTaken), findsNothing);
+    });
+
+    testWidgets('once taken, the step reads as the take', (tester) async {
+      final timeline = await pumpTimeline(tester, OrderStatus.active);
+
+      expect(timeline.current, greaterThan(0));
+      expect(timeline.steps.first, _en.tradeStepOrderTaken);
+      expect(find.text(_en.tradeStepWaitingTaker), findsNothing);
+    });
+  });
+
+  /// The screen speaks to the user and names only the counterpart by role:
+  /// the buyer is never "the buyer" on their own screen, nor the seller
+  /// "the seller" on theirs (#844).
+  group('second person', () {
+    const buyerSteps = [
+      OrderStatus.waitingBuyerInvoice,
+      OrderStatus.waitingPayment,
+      OrderStatus.active,
+      OrderStatus.fiatSent,
+      OrderStatus.settledHoldInvoice,
+    ];
+    const sellerSteps = [
+      OrderStatus.waitingBuyerInvoice,
+      OrderStatus.waitingPayment,
+      OrderStatus.active,
+      OrderStatus.fiatSent,
+    ];
+
+    for (final (isBuyer, statuses) in [
+      (true, buyerSteps),
+      (false, sellerSteps),
+    ]) {
+      final role = isBuyer ? 'buyer' : 'seller';
+      for (final status in statuses) {
+        testWidgets('the $role at ${status.name}', (tester) async {
+          tester.view.physicalSize = const Size(800, 2000);
+          tester.view.devicePixelRatio = 1;
+          addTearDown(tester.view.reset);
+          await _pumpTradeDetail(
+            tester,
+            orderId: 'order-voice-$role-${status.name}',
+            isBuyer: isBuyer,
+            status: status,
+          );
+
+          expect(_textsNaming(tester, role), isEmpty);
+        });
+      }
+    }
+
+    testWidgets('the seller whose escrow deadline has passed', (tester) async {
+      await _pumpTradeDetail(
+        tester,
+        orderId: 'order-voice-seller-escrow-zero',
+        isBuyer: false,
+        status: OrderStatus.active,
+        escrowDeadlineIn: const Duration(seconds: -30),
+      );
+
+      expect(_textsNaming(tester, 'seller'), isEmpty);
     });
   });
 
@@ -1592,6 +1733,54 @@ void main() {
       }
     });
 
+    // The Linux build opens a 1280 × 720 window
+    // (linux/runner/my_application.cc), and the accessibility bridge only
+    // exposes what is on screen. The buyer's payout card (#823) sits under
+    // the step block, so the id row must come before it, not at the end of
+    // the scroll where the card pushed it out of the window.
+    testWidgets(
+      'order.id is on screen above the buyer payout card in a 1280 × 720 window',
+      (tester) async {
+        tester.view.physicalSize = const Size(1280, 720);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.reset);
+        final semantics = tester.ensureSemantics();
+        try {
+          // Arrange + Act
+          await _pumpTradeDetail(
+            tester,
+            orderId: 'a-very-long-order-identifier-0123',
+            isBuyer: true,
+            status: OrderStatus.active,
+            extraOverrides: [
+              payoutDestinationsReaderProvider.overrideWithValue(
+                // A paid destination is final, so the payout stream ends
+                // instead of arming its safety poll.
+                (orderId) async => [
+                  fakePayoutDestination(outcome: PayoutOutcome.paid),
+                ],
+              ),
+              tradeTouchProvider.overrideWith(
+                (ref) => const Stream<TradeTouch>.empty(),
+              ),
+            ],
+          );
+
+          // Assert: the card is shown, as in the run that failed...
+          final card = find.byType(PayoutDestinationCard);
+          expect(card, findsOneWidget);
+          // ...and the id is in the window, above it, found on screen.
+          final id = find.bySemanticsIdentifier(AutomationIds.orderId);
+          expect(id, findsOneWidget);
+          final idRect = tester.getRect(id);
+          expect(idRect.bottom, lessThanOrEqualTo(720));
+          expect(idRect.top, lessThan(tester.getRect(card).top));
+        } finally {
+          semantics.dispose();
+        }
+      },
+    );
+
     testWidgets('the completed card keeps the stars addressable', (
       tester,
     ) async {
@@ -1830,6 +2019,63 @@ void main() {
       expect(find.byType(TradeDetailScreen), findsOneWidget);
       expect(find.text(AppLocalizationsEn().tradeNoLongerYours), findsNothing);
     });
+
+    // A maker's order canceled before anyone took it loses its trade row
+    // (Rust's `wipe_never_active_trade`), while the book keeps it as theirs
+    // with its `canceled`. Nothing else holds a maker's role, so the screen,
+    // opened from the "Trade canceled" notice, stayed on "Loading trade…".
+    testWidgets('a maker\'s canceled order without a trade row shows the '
+        'cancellation', (tester) async {
+      await _pumpTradeDetail(
+        tester,
+        orderId: orderId,
+        isBuyer: false,
+        roleKnown: false,
+        status: OrderStatus.canceled,
+        trades: const [],
+        book: [
+          fakeOrder(id: orderId, status: OrderStatus.canceled, isMine: true),
+        ],
+      );
+
+      expect(find.text(_en.tradeHeadlineLoading), findsNothing);
+      expect(find.text(_en.tradeHeadlineCancelled), findsOneWidget);
+    });
+
+    // "Cancelled" reads the same on both sides, so the role the order gives
+    // is checked where it shows: a step whose headline is one side's.
+    for (final (kind, status, mine, theirs) in [
+      (
+        'buy',
+        OrderStatus.waitingBuyerInvoice,
+        _en.tradeHeadlineWaitingInvoiceBuyer,
+        _en.tradeHeadlineWaitingInvoiceSeller,
+      ),
+      (
+        'sell',
+        OrderStatus.waitingPayment,
+        _en.tradeHeadlineWaitingPaymentSeller,
+        _en.tradeHeadlineWaitingPaymentBuyer,
+      ),
+    ]) {
+      testWidgets('without a trade row, the maker of a $kind order takes '
+          'its side', (tester) async {
+        await _pumpTradeDetail(
+          tester,
+          orderId: orderId,
+          isBuyer: kind == 'sell',
+          roleKnown: false,
+          status: status,
+          trades: const [],
+          book: [
+            fakeOrder(id: orderId, kind: kind, status: status, isMine: true),
+          ],
+        );
+
+        expect(find.text(mine), findsOneWidget);
+        expect(find.text(theirs), findsNothing);
+      });
+    }
 
     testWidgets('a take is not judged before its trade row has loaded', (
       tester,

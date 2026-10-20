@@ -165,7 +165,7 @@ bridged by flutter_rust_bridge.
 - Wire status strings are **kebab-case** (`waiting-buyer-invoice`, `fiat-sent`).
 
 ## Translations
-- **All user-facing strings are Dart-level** (Flutter l10n): `lib/l10n/app_{en,es,fr,de,it,nl}.arb`,
+- **All user-facing strings are Dart-level** (Flutter l10n): `lib/l10n/app_{en,es,fr,de,it,nl,pt}.arb`,
   config `l10n.yaml`, generated `AppLocalizations` via `flutter gen-l10n`, used with
   `AppLocalizations.of(context)`.
 - **One exception, deliberate:** `lib/core/startup_failure.dart` hard-codes its
@@ -265,13 +265,35 @@ bridged by flutter_rust_bridge.
   `delete_identity` (generate *and* import go through it) wipes what the identity produced:
   rows via `Storage::clear_identity_data`, Rust's in-memory stores via `forget_identity_state`,
   relay subscriptions via `release_identity_subscriptions`, and the Dart caches via
-  `resetIdentityScopedState` (issue #533). Device preferences stay (relays, node choice,
+  `resetIdentityScopedState` (issue #533). A task that can still write for the old identity is
+  stopped **first**, and awaited, before anything is cleared — today the late-take retries
+  (#566), by `forget_late_take_retries` at the head of `release_identity_subscriptions`. A new
+  one goes there too, or what it writes after the clears leaks into the next user's session.
+  Device preferences stay (relays, node choice,
   push token, overrides). Anything new that holds per-trade or per-identity data — a table, a
   `settings` key family (add its prefix to `IDENTITY_SCOPED_PREFIXES`), a process-wide store,
   a non-`autoDispose` provider — must be added to the matching one, or it leaks into the next
   user's session. The stores are process-wide and tests run in parallel, which is why the
   identity lifecycle test exercises `delete_identity_inner` with a throwaway store and effect
-  doubles (#553).
+  doubles (#553). `clear_identity_data` wipes the identity row and the trade-key mappings in
+  the same transaction as the rows, on both stores: all or nothing. Before giving anything up
+  the deletion records the device-scoped `identity_wipe_pending` key (value: the identity's
+  pubkey; an earlier marker stays) and is refused — identity untouched — with `WipeNotRecorded`
+  when it cannot, or `StorageUnavailable` when there is no database (a deliberate lockout until
+  the store is back: rotating would leave the old rows with no trace). A successful wipe clears
+  it; a failed one is reported *after* the log clear and leaves it, and creation and both
+  imports retry the wipe off it while the slot is empty, refusing the new identity
+  (`PendingWipeFailed`) if it fails again or the marker is unreadable. The launch reload never
+  wipes — with a live identity that would take its payout claims, which no restore brings
+  back — it only drops a marker that names the identity it reloaded, whose rows are its own
+  (issue #555). Every slot transition (create, load, both imports, delete) takes
+  `IdentitySlot::lifecycle` first and holds it to its last write — a deletion through its
+  wipe — so none interleaves with another; a new one must too (a source scan checks). The
+  Account screen validates an imported phrase (`validate_mnemonic`) before the deletion. A
+  replacement refused after the deletion went through reloads the previous identity in the
+  same session (`IdentityService`), and `restore_identity_session` rebuilds what the deletion
+  gave up, as a cold start would: a new teardown step needs its rebuild there, or a note on
+  why a restart leaves it empty too (`every_identity_teardown_has_its_restore`).
 - **`OrderInfo::created_at` is when the order was created, not the event's time.** It comes from
   the NIP-69 `published_at` tag (mostro#1000), then the legacy `created_at` tag (daemon builds
   between mostro#971 and #1000), then the event's time on older nodes; a tag value is capped at
@@ -311,6 +333,14 @@ bridged by flutter_rust_bridge.
   (`wire_status_applies`), and a verdict refines a replayed `success` in either order
   (`status_write_blocked`). Dart decides the room on the persisted row (`TradeRow.rowStatus` +
   `completedAt`), like `chat_still_relevant_at`, not on the live book status.
+- **An order's take window ends at the Kind 38383 `expires_at` tag, never NIP-40 `expiration`.**
+  `expiration` is how long relays keep the event: the same value on a pending order from a
+  current mostrod, 180 days of retention on an older one. A node that no longer holds an order
+  never publishes its expiry, so a `pending` revision can outlive its window on the relays for
+  months; the node refuses to take it (`CantDo:NotFound` / `InvalidOrderStatus`).
+  `order_events::is_past_take_window` is the one rule: such a stranger's order leaves the book —
+  at ingest, or within a minute of its window closing (`OrderBook::drop_past_take_window`).
+  A taker's own pending order stays: ownership comes from its trade-key binding.
 - **Bond statuses never reach the wire book.** `WaitingTakerBond` publishes as `pending` (the
   order stays takeable by others until a bond locks) and `WaitingMakerBond` publishes nothing
   (the order is invisible until the maker's bond locks). Both exist only on the local trade row,

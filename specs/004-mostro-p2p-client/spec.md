@@ -57,7 +57,7 @@ The user taps the backup reminder or navigates to the Account screen. Until the 
 
 ### User Story 3 — Browse the Order Book (Priority: P1)
 
-A user browses available buy/sell offers in the public order book. The list is organized into two tabs (BUY BTC / SELL BTC) from the taker's perspective. Each order card shows fiat amount, currency, price type (market or fixed with premium), payment methods, and the maker's reputation stats. The user can filter by currency, payment method, rating range, and premium range.
+A user browses available buy/sell offers in the public order book. The list is organized into two tabs (BUY BTC / SELL BTC) from the taker's perspective. Each order card shows fiat amount, currency, price type (market price with its premium, or fixed sats with the price per BTC they represent, in the order's currency; fixed-sats orders carry no premium, so the premium filter, the best-premium sort and the best-premium highlight leave them out), payment methods, and the maker's reputation stats. The user can filter by currency, payment method, rating range, and premium range.
 
 **Why this priority**: This is the core discovery surface. Users must see and evaluate existing offers before taking or creating one.
 
@@ -66,7 +66,7 @@ A user browses available buy/sell offers in the public order book. The list is o
 **Acceptance Scenarios**:
 
 1. **Given** the order book has pending orders, **When** a user opens the app, **Then** the order book shows two tabs (BUY BTC / SELL BTC) with a scrollable list of order cards.
-2. **Given** an order card is rendered, **When** a user looks at it, **Then** they can see: fiat amount or range, currency code, country flag, price type, premium, payment methods, maker rating, trade count, and days active.
+2. **Given** an order card is rendered, **When** a user looks at it, **Then** they can see: fiat amount or range, currency code, country flag, price type, premium, payment methods, and the maker's reputation: rating, ratings count and the month of their first trade (`★ 4.97 · 687 ratings · since Mar 2023`, DS-L10N-5).
 3. **Given** the user taps the Filter button, **When** they select a currency or payment method, **Then** only matching orders are shown and the offer count updates.
 4. **Given** there are no matching orders for the active filter, **When** the filter is applied, **Then** a "No orders available" empty state is shown.
 5. **Given** the user applied filters, **When** they close the app completely and reopen it, **Then** the same filters are still applied and the Filter chip shows that the book is filtered and how many filters are on (#575).
@@ -126,7 +126,7 @@ A buyer (taker of a sell order) completes a trade. Without NWC, they manually en
 2. **Given** a buyer has taken a sell order and NWC IS configured, **When** the order is accepted, **Then** the invoice step is skipped entirely and the buyer proceeds to the active trade view.
 3. **Given** the trade is in "active" status, **When** the buyer views Trade Detail, **Then** they see: trade summary, payment method, order ID, instructions to contact the seller, a "Fiat Sent" primary CTA, a secondary row with outlined Cancel and Dispute buttons, and a persistent chat chip for Contact.
 4. **Given** the buyer has sent fiat payment, **When** they tap "Fiat Sent", **Then** the order status changes to "Fiat sent" and the seller sees instructions to verify and release.
-5. **Given** the seller releases sats, **When** the daemon settles the hold invoice, **Then** the seller is prompted to rate the buyer right away; the buyer sees the payout as pending and is prompted to rate the seller once the Lightning payment completes (#586).
+5. **Given** the seller releases sats, **When** the daemon settles the hold invoice, **Then** the seller is prompted to rate the buyer right away, on the last of their five timeline steps; the buyer sees the payout as pending and is prompted to rate the seller once the Lightning payment completes (#586). The buyer's timeline has six steps: while the payout is pending the release is done and "Mostro sends you your sats" is current, and it is done at `success`, when rating opens (#844).
 
 ---
 
@@ -264,6 +264,7 @@ The user receives in-app notifications for all trade lifecycle events: order tak
 5. **Given** the user opens Notifications, **When** the list renders, **Then** there are no filter tabs. Trade cards and notifications that belong to no trade share one list, newest first, and a dispute stays in its trade's card, marked in red.
 6. **Given** a trade's next step is the user's, as My Trades decides it from the trade's **current** state, **When** the list renders, **Then** that trade's card sits under a "Needs your action" header above a "Recent" header, and it carries the step (e.g. "Add invoice", "Release sats"). An old notification about a step already taken never pins its trade. With no such trade, neither header is shown.
 7. **Given** a trade card, **When** it renders, **Then** its header names the trade: the user's side, the fiat amount and currency, the sats when fixed, and the payment method with the short order id. When the trade row is gone, the header is the short order id.
+7a. **Given** a trade card whose trade row is gone — a maker's order canceled before anyone took it loses its row — **When** the trades have loaded, **Then** the card offers no "Go to trade": there is no trade left to open, and a card with no earlier events then has no footer. While the trades load, or if they fail, the link stays: no answer is not an absent row.
 8. **Given** a card in Notifications, **When** the user swipes it away, **Then** it disappears at once and a snack bar offers Undo. A trade card deletes all its notifications. They are deleted only once the snack bar closes without Undo; Undo brings the card back and deletes nothing. There is no per-notification menu.
 
 ---
@@ -346,7 +347,7 @@ Users manage their cryptographic identity from the Account screen: view their 12
 **Order Book**
 
 - **FR-014**: The system MUST display a public order book with two tabs (BUY BTC / SELL BTC) labeled from the taker's perspective.
-- **FR-015**: Each order card MUST display: fiat amount or range, currency code, country flag, price type, premium, payment methods, maker rating, total trade count, and days active.
+- **FR-015**: Each order card MUST display: fiat amount or range, currency code, country flag, price type, premium, payment methods, and the maker's reputation: average rating, ratings count and the month of their first trade, in the one format every screen uses (`.specify/DESIGN_SYSTEM.md` DS-L10N-5).
 - **FR-016**: The order book MUST support filtering by fiat currency (multi-select), payment method (multi-select), rating range (slider), and premium range (slider).
 - **FR-016a**: The order-book filters MUST persist across app restarts, as a device preference (a new identity keeps them). A stored value MUST be validated on load — ranges clamped to the slider bounds, an unreadable control reset to "no filter" on its own — and every selected value MUST stay visible in the Filters dialog even when the currency catalogue or the method list no longer offers it, so it can be deselected. While any filter is on, the Filter chip MUST say so and how many are on (#575).
 - **FR-017**: The system MUST display only orders with "pending" status in the public order book.
@@ -371,11 +372,12 @@ Users manage their cryptographic identity from the Account screen: view their 12
 
 - **FR-027**: When a buyer takes a sell order and NWC is NOT configured, the system MUST prompt them to manually enter a Lightning invoice or Lightning address.
 - **FR-028**: When NWC is configured, the system MUST automatically generate and submit a Lightning invoice on the buyer's behalf, bypassing the manual entry screen.
-- **FR-029**: When a seller takes a buy order and NWC is NOT configured, the system MUST display the hold invoice as a QR code with Copy, Share, and "Pay with Lightning wallet" actions. The "Pay with Lightning wallet" action MUST launch the bolt11 via the `lightning:<bolt11>` URI (using `url_launcher` with `LaunchMode.externalApplication`), and MUST surface a "no Lightning wallet found" SnackBar if no handler is available. Android builds MUST declare a `<queries>` intent for the `lightning` scheme so the launcher can resolve it on Android 11+.
+- **FR-029**: When a seller takes a buy order and NWC is NOT configured, the system MUST display the hold invoice as a QR code with Copy, Share, and "Pay with Lightning wallet" actions. The "Pay with Lightning wallet" action MUST launch the bolt11 via the `lightning:<bolt11>` URI (using `url_launcher` with `LaunchMode.externalApplication`), and MUST surface a "no Lightning wallet found" SnackBar if no handler is available. Android builds MUST declare a `<queries>` intent for the `lightning` scheme so the launcher can resolve it on Android 11+. The QR, like the anti-abuse bond's, MUST show the face of the order's node in its centre: its kind 0 picture, or its initial as the node selector shows it, and the active node's when the order does not know its node. A user who trades on more than one node can then tell which one they pay (#851). The code MUST still scan with the centre cleared: it is encoded at error-correction level Q, with the invoice upper-cased in alphanumeric mode, as BIP-173 allows for QR codes.
 - **FR-030**: When NWC is configured for a seller, the system MUST present a "Pay with Wallet" button that auto-pays the hold invoice. On NWC failure, the system MUST fall back to the manual QR flow defined in FR-029.
 - **FR-030a**: The pay-invoice screen MUST subscribe to the live order-status stream (`tradeStatusProvider`) and auto-navigate to Trade Detail on `Active` (or any later non-cancel status) regardless of the local wallet's success callback. This guarantees that the navigation is driven by mostrod's confirmation of the HTLC, not by the seller's wallet reporting a local send, so both QR and NWC paths converge on the same source of truth.
 - **FR-030b**: While the seller remains on the pay-invoice screen, terminal cancellation statuses (`canceled`, `cooperativelyCanceled`, `canceledByAdmin`, `expired`) MUST trigger navigation away from the dead invoice with a user-visible cancellation notice.
 - **FR-031**: The Trade Detail screen MUST display a role-appropriate primary CTA button, plus a secondary row of outlined destructive-style buttons (Cancel, Dispute, and — while disputed — Release) below it, based on the current order status and the user's role (buyer or seller). Contact is provided separately via a persistent chat chip, not a dedicated button.
+- **FR-031a**: The Trade Detail screen MUST read the user's role from the trade row. When the database answers that there is no row and the order book holds the user's own order, the role MUST be the order's maker side — its maker buys a buy order and sells a sell order — so the screen shows the order's state instead of loading for good. That is the case of a maker's order canceled before anyone took it: Rust wipes its row (`wipe_never_active_trade`) while the book keeps the order, with its `canceled`. The role is never guessed while the lookup is unresolved, nor for an order that is not the user's.
 - **FR-032**: The buyer MUST have a "Fiat Sent" primary CTA button available when the trade is in "active" status.
 - **FR-033**: The seller MUST have a "Release" primary CTA button available when the trade is in "fiat-sent" status, and again as a secondary-row button while the trade is disputed; tapping it MUST show a confirmation modal before executing.
 - **FR-034**: Both parties MUST have "Cancel" (cooperative) and "Dispute" actions available during active trades, presented as outlined destructive-style buttons in the secondary row below the primary CTA.
@@ -413,7 +415,7 @@ Users manage their cryptographic identity from the Account screen: view their 12
 - **FR-047**: Both parties MUST be prompted to rate each other after a trade completes: the seller when sats are released, the buyer when payment is confirmed received.
 - **FR-048**: The rating interface MUST display 5 tappable stars; the Submit button MUST remain disabled until at least 1 star is selected.
 - **FR-049**: Rating MUST be optional — users MUST be able to close the rating prompt without any penalty.
-- **FR-050**: Accumulated reputation (average rating, total reviews, days active) MUST be visible on order cards in the public order book.
+- **FR-050**: Accumulated reputation (average rating, total reviews, first trade) MUST be visible on order cards in the public order book, read as on every other screen (DS-L10N-5).
 - **FR-050a**: The Account screen MUST show the user's own reputation on the active node, as the node answers `user-info` (rating, ratings received, date of the first trade, and the node's name when it has one). The app MUST ask the node at startup, when the Account screen opens, when the user picks another node, and once the user has rated the counterpart of a trade (not when the trade reaches `success`: the counterpart has not rated them yet), and MUST keep the last answer per identity and node so the screen shows it before a new one arrives. Zero ratings MUST read as "no reputation yet", never as a `0.0` rating. In full privacy mode the app MUST NOT send `user-info` and the screen MUST say that no reputation is kept in that mode (#755).
 
 **NWC Integration**
@@ -432,7 +434,7 @@ Users manage their cryptographic identity from the Account screen: view their 12
 
 **Settings & Preferences**
 
-- **FR-058**: Users MUST be able to configure: app language (6 languages: EN, ES, IT, FR, DE, NL), default fiat currency, default Lightning address, relay list (add/toggle), push notification preferences, and Mostro node.
+- **FR-058**: Users MUST be able to configure: app language (7 languages: EN, ES, IT, FR, DE, NL, PT), default fiat currency, default Lightning address, relay list (add/toggle), push notification preferences, and Mostro node.
 - **FR-058a**: Lightning, NWC and the Cashu wallet MUST always be active in the app. Settings MUST always show the default Lightning address, the NWC wallet and the Cashu wallet, whatever the active node's `escrow_mode` (`lightning`, `cashu` or not advertised). Lightning flows MUST keep working as they always have. The active node's escrow mode selects only the settlement flow of a trade on that node (hold invoice or Cashu escrow); it MUST NOT hide or disable any payment method.
 
 ### Key Entities
@@ -458,7 +460,7 @@ Users manage their cryptographic identity from the Account screen: view their 12
 - **SC-005**: Account recovery via 12 secret words succeeds 100% of the time on a new device — users never permanently lose access to their identity.
 - **SC-006**: Chat messages are delivered to the counterparty within 5 seconds under normal network conditions.
 - **SC-007**: The order book loads and displays available orders within 3 seconds of opening the app on a standard mobile connection.
-- **SC-008**: The app is fully localized in all 6 supported languages (EN, ES, IT, FR, DE, NL) with no untranslated strings visible to users.
+- **SC-008**: The app is fully localized in all 7 supported languages (EN, ES, IT, FR, DE, NL, PT) with no untranslated strings visible to users.
 - **SC-009**: Dispute resolution is reachable within 2 taps from the Trade Detail screen for any active trade.
 - **SC-010**: When NWC is connected and responsive, the manual invoice steps are eliminated for 100% of trades.
 
@@ -469,7 +471,7 @@ Users manage their cryptographic identity from the Account screen: view their 12
 - The app supports dark mode (default on first launch) and light mode. Both themes must be fully implemented and switchable from Settings.
 - The Mostro protocol over Nostr is the sole backend transport; no centralized server or REST API is used.
 - Hold invoices are a protocol-level constraint for securing seller funds during a trade; the app cannot change this mechanism.
-- The original 5 languages (EN, ES, IT, FR, DE) are covered by the existing v1 localization files; new strings follow the same format. Dutch (NL) was added later.
+- The original 5 languages (EN, ES, IT, FR, DE) are covered by the existing v1 localization files; new strings follow the same format. Dutch (NL) and Brazilian Portuguese (PT) were added later.
 - "Days active" in reputation refers to days since the user's first recorded rating, not account creation date.
 - The app targets mobile (iOS and Android), web (PWA), and desktop (macOS, Windows, Linux) as per Constitution Principle V. Web is not optional — it must be a fully functional target from day one. Mobile is the primary design reference.
 - Push notifications use a background delivery mechanism; in-app notifications handle foreground delivery.

@@ -8,6 +8,11 @@ import 'package:mostro/core/automation/automation_ids.dart';
 import 'package:mostro/features/home/providers/home_order_providers.dart';
 import 'package:mostro/features/home/providers/order_reason_provider.dart';
 import 'package:mostro/l10n/app_localizations.dart';
+import 'package:mostro/shared/utils/abbreviated_figure.dart';
+import 'package:mostro/shared/utils/rating_format.dart';
+import 'package:mostro/shared/utils/reputation_age.dart';
+import 'package:mostro/shared/widgets/counterpart_reputation_row.dart'
+    show highlightFigures;
 
 const _cardRadius = BorderRadius.all(Radius.circular(18));
 
@@ -29,19 +34,21 @@ const double _premiumHighThreshold = 3;
 /// doing for the allocations it stops making, and the honest size of the win
 /// is small — the claim that construction dominates does not hold.
 class OrderCardFormats {
-  OrderCardFormats._(String locale)
-    : premium = NumberFormat('+0.0;-0.0', locale),
-      _unsignedPremium = NumberFormat('0.0', locale),
-      rating = NumberFormat('0.##', locale),
-      decimal = NumberFormat.decimalPattern(locale),
-      fiat = NumberFormat('#,##0.##', locale);
+  OrderCardFormats._(this._locale)
+    : premium = NumberFormat('+0.0;-0.0', _locale),
+      _unsignedPremium = NumberFormat('0.0', _locale),
+      rating = ratingFormat(_locale),
+      decimal = NumberFormat.decimalPattern(_locale),
+      fiat = NumberFormat('#,##0.##', _locale);
+
+  final String _locale;
 
   /// Premium, always signed: `+2.5` / `-2.5`.
   final NumberFormat premium;
 
   final NumberFormat _unsignedPremium;
 
-  /// Raw ratings (4.9, 4.78): up to 2 decimals, no trailing zeros.
+  /// Ratings as every screen shows them (DS-L10N-5): `4.97`, `4.9`, `5`.
   final NumberFormat rating;
 
   /// Grouped integers: sats, trade count, days active.
@@ -69,6 +76,18 @@ class OrderCardFormats {
     return '$text%';
   }
 
+  /// The price per BTC a fixed-sats order stands for, in its own currency,
+  /// abbreviated with the same k/M/B suffixes in every locale (`61.2k`,
+  /// `112M`, `10B`; `61,2k` in Spanish) because it spans tens of thousands of
+  /// EUR to billions of LBP. Exact: it comes from the order's two
+  /// figures, not from an exchange rate. Null for a market-price order.
+  String? fixedPricePerBtc(OrderItem order) {
+    final fiatAmount = order.fiatAmount;
+    if (!order.hasFixedSats || fiatAmount == null) return null;
+    final price = fiatAmount * 1e8 / order.amountSats!.toDouble();
+    return abbreviateFigure(price, _locale);
+  }
+
   /// `832 – 5,000` for a range, `25` for a single amount.
   String amount(OrderItem order) =>
       order.isRange
@@ -84,7 +103,8 @@ class OrderCardFormats {
 /// reputation strip. The premium is plain coloured text — pills are reserved
 /// for the highlight chips, which appear once per list — and its colour is
 /// read from the taker's side: green in their favour or at market, amber up
-/// to 3 points against them, orange beyond.
+/// to 3 points against them, orange beyond. A fixed-sats order has no
+/// premium, so it shows its price per BTC there instead, in a neutral colour.
 ///
 /// Nothing in the card has a fixed height, so it grows with the text scale.
 class OrderListItem extends StatelessWidget {
@@ -367,62 +387,95 @@ class _AmountRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final captionStyle = TextStyle(fontSize: 11, color: palette.textTertiary);
+    // A fixed-sats order has no premium: its right-hand figure is the price
+    // per BTC it stands for.
+    final String? figure;
+    final String caption;
+    final Color figureColor;
+    if (order.hasFixedSats) {
+      final price = formats.fixedPricePerBtc(order);
+      figure = price == null ? null : '$price ${order.fiatCode}/BTC';
+      caption = l10n.orderCardPriceCaption;
+      figureColor = palette.textBody;
+    } else {
+      figure = formats.premiumPercent(order.premium);
+      caption = l10n.orderCardPremiumCaption;
+      figureColor = _premiumColor;
+    }
 
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.end,
-      children: [
-        Expanded(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
+    return LayoutBuilder(
+      builder:
+          (context, constraints) => Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              // Never truncated: a long range wraps at the spaces around
-              // the dash instead.
-              Text(
-                formats.amount(order),
-                style: TextStyle(
-                  fontFamily: AppFonts.figures,
-                  fontSize: 25,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: -0.5,
-                  height: 1,
-                  color: palette.textPrimary,
+              Expanded(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Never truncated: a long range wraps at the spaces around
+                    // the dash instead.
+                    Text(
+                      formats.amount(order),
+                      style: TextStyle(
+                        fontFamily: AppFonts.figures,
+                        fontSize: 26,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: -0.5,
+                        height: 1,
+                        color: palette.textPrimary,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    if (order.hasFixedSats)
+                      _FixedSatsCaption(
+                        sats: formats.decimal.format(order.amountSats!.toInt()),
+                        style: captionStyle,
+                        palette: palette,
+                      )
+                    else
+                      Text(l10n.marketPriceCaption, style: captionStyle),
+                  ],
                 ),
               ),
-              const SizedBox(height: 4),
-              if (order.hasFixedSats)
-                _FixedSatsCaption(
-                  sats: formats.decimal.format(order.amountSats!.toInt()),
-                  style: captionStyle,
-                  palette: palette,
-                )
-              else
-                Text(l10n.marketPriceCaption, style: captionStyle),
+              if (figure != null) ...[
+                const SizedBox(width: 10),
+                // Capped at half the row: a premium never comes near it, but a
+                // price per BTC (`61,2k EUR/BTC`) at a large text scale wraps
+                // instead of pushing the row past the card.
+                ConstrainedBox(
+                  constraints: BoxConstraints(
+                    maxWidth: constraints.maxWidth / 2,
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(
+                        figure,
+                        textAlign: TextAlign.end,
+                        style: TextStyle(
+                          fontFamily: AppFonts.figures,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                          color: figureColor,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        caption,
+                        textAlign: TextAlign.end,
+                        style: TextStyle(
+                          fontSize: 10,
+                          color: palette.textFaint,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ],
           ),
-        ),
-        const SizedBox(width: 10),
-        Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            Text(
-              formats.premiumPercent(order.premium),
-              style: TextStyle(
-                fontFamily: AppFonts.figures,
-                fontSize: 15,
-                fontWeight: FontWeight.w700,
-                color: _premiumColor,
-              ),
-            ),
-            const SizedBox(height: 3),
-            Text(
-              l10n.orderCardPremiumCaption,
-              style: TextStyle(fontSize: 10, color: palette.textFaint),
-            ),
-          ],
-        ),
-      ],
     );
   }
 }
@@ -538,92 +591,90 @@ class _ReputationStrip extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final isNew = order.tradeCount == 0;
-    final days = order.makerDaysOnMostro;
     final separator = Text('|', style: TextStyle(color: palette.divider));
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 9),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
         color: palette.inset,
         borderRadius: BorderRadius.circular(12),
       ),
       child: DefaultTextStyle.merge(
         style: TextStyle(fontSize: 12, color: palette.textSecondary),
-        child: Wrap(
-          spacing: 10,
-          runSpacing: 4,
-          crossAxisAlignment: WrapCrossAlignment.center,
-          children: [
-            Icon(
-              Icons.star_rounded,
-              size: 14,
-              color: order.rating > 0 ? palette.yellow : palette.starEmpty,
-            ),
-            if (isNew)
-              Text(
-                l10n.reputationNew,
-                style: TextStyle(
-                  fontWeight: FontWeight.w600,
-                  color: palette.textNew,
-                ),
-              )
-            else
-              Text(
-                formats.rating.format(order.rating),
-                style: TextStyle(
-                  fontFamily: AppFonts.figures,
-                  fontWeight: FontWeight.w600,
-                  color: palette.textStrong,
-                ),
+        // Rating and count on the left, the age on the right; on a strip too
+        // narrow for both (`desde mar 2023` at 360 dp in Spanish) the age
+        // takes its own line instead of following a dangling separator.
+        child: SizedBox(
+          width: double.infinity,
+          child: Wrap(
+            alignment: WrapAlignment.spaceBetween,
+            spacing: 12,
+            runSpacing: 4,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              Wrap(
+                spacing: 10,
+                runSpacing: 4,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [
+                  Icon(
+                    Icons.star_rounded,
+                    size: 14,
+                    color:
+                        order.rating > 0 ? palette.yellow : palette.starEmpty,
+                  ),
+                  if (isNew)
+                    Text(
+                      l10n.reputationNew,
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        color: palette.textNew,
+                      ),
+                    )
+                  else
+                    Text(
+                      formats.rating.format(order.rating),
+                      style: TextStyle(
+                        fontFamily: AppFonts.figures,
+                        fontWeight: FontWeight.w600,
+                        color: palette.textStrong,
+                      ),
+                    ),
+                  separator,
+                  _Stat(
+                    text: l10n.reputationRatingsCount(order.tradeCount),
+                    palette: palette,
+                  ),
+                ],
               ),
-            separator,
-            if (isNew)
-              Text(l10n.reputationNoTrades)
-            else
               _Stat(
-                value: formats.decimal.format(order.tradeCount),
-                label: l10n.reputationTradesLabel(order.tradeCount),
+                text: reputationSinceText(l10n, order.makerFirstTrade),
                 palette: palette,
               ),
-            separator,
-            _Stat(
-              value: formats.decimal.format(days),
-              label: l10n.reputationDaysLabel(days),
-              palette: palette,
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
   }
 }
 
-/// Figure + unit ("16 trades") in the reputation strip.
+/// One reputation figure in the strip (`16 ratings`, `since Mar 2025`),
+/// its digits set apart as on every reputation row.
 class _Stat extends StatelessWidget {
-  const _Stat({
-    required this.value,
-    required this.label,
-    required this.palette,
-  });
+  const _Stat({required this.text, required this.palette});
 
-  final String value;
-  final String label;
+  final String text;
   final OrderBookPalette palette;
 
   @override
   Widget build(BuildContext context) {
     return Text.rich(
       TextSpan(
-        children: [
-          TextSpan(
-            text: value,
-            style: TextStyle(
-              color: palette.textBody,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          TextSpan(text: ' $label'),
-        ],
+        children: highlightFigures(
+          text,
+          TextStyle(color: palette.textBody, fontWeight: FontWeight.w500),
+        ),
       ),
     );
   }

@@ -39,11 +39,12 @@ void main() {
       expect((await stateWith('es-MX')).language, 'es');
       expect((await stateWith('es_MX')).language, 'es');
       expect((await stateWith('fr-CA')).language, 'fr');
+      expect((await stateWith('pt-BR')).language, 'pt');
     });
 
     test('unsupported code falls back to the device default', () async {
-      expect((await stateWith('pt')).language, 'en');
-      expect((await stateWith('pt-BR')).language, 'en');
+      expect((await stateWith('ja')).language, 'en');
+      expect((await stateWith('ja-JP')).language, 'en');
       expect((await stateWith('zz')).language, 'en');
     });
 
@@ -54,19 +55,19 @@ void main() {
 
     test('device default follows a supported device locale', () async {
       binding.platformDispatcher.localesTestValue = const [Locale('de')];
-      expect((await stateWith('pt')).language, 'de'); // unsupported -> device
+      expect((await stateWith('ja')).language, 'de'); // unsupported -> device
       expect((await stateWith(null)).language, 'de'); // first run -> device
       expect((await stateWith('es')).language, 'es'); // explicit supported wins
     });
 
     test('device default picks the first supported preferred locale', () async {
-      // Unsupported primary (pt-BR) but a supported secondary (es).
+      // Unsupported primary (ja-JP) but a supported secondary (es).
       binding.platformDispatcher.localesTestValue = const [
-        Locale('pt', 'BR'),
+        Locale('ja', 'JP'),
         Locale('es'),
       ];
       expect(
-        (await stateWith('pt')).language,
+        (await stateWith('ja')).language,
         'es',
       ); // unsupported stored -> secondary
       expect((await stateWith(null)).language, 'es'); // first run -> secondary
@@ -83,7 +84,7 @@ void main() {
       expect(notifier.state.language, 'es');
       expect(prefs.getString('settings.language'), 'es');
 
-      notifier.setLanguage('pt'); // unsupported -> device default (en)
+      notifier.setLanguage('ja'); // unsupported -> device default (en)
       expect(notifier.state.language, 'en');
       expect(prefs.getString('settings.language'), 'en');
 
@@ -125,8 +126,8 @@ void main() {
     test('region-qualified es-MX -> es for both', () async {
       await expectAgreement('es-MX', 'es');
     });
-    test('unsupported pt -> device default for both', () async {
-      await expectAgreement('pt', 'en');
+    test('unsupported ja -> device default for both', () async {
+      await expectAgreement('ja', 'en');
     });
   });
 
@@ -170,6 +171,37 @@ void main() {
       // Assert
       expect(notifier.state.defaultLightningAddress, 'alice@example.com');
       expect(prefs.getString('settings.lightningAddress'), 'alice@example.com');
+    });
+
+    // PR #824 review: the dialog saves through the core, so Settings never
+    // holds an address a take would not send.
+    test('the dialog saves only an address the core takes', () async {
+      // Arrange
+      SharedPreferences.setMockInitialValues({});
+      final prefs = await SharedPreferences.getInstance();
+      final notifier = SettingsNotifier(
+        prefs: prefs,
+        syncLightningAddress: (address) async {
+          if (address == 'a@b') throw Exception('InvalidLightningAddress');
+        },
+      );
+
+      // Act + Assert: refused, nothing saved on either side.
+      expect(await notifier.saveDefaultLightningAddress('a@b'), isFalse);
+      expect(notifier.state.defaultLightningAddress, isNull);
+      expect(prefs.getString('settings.lightningAddress'), isNull);
+
+      // Taken: saved here too.
+      expect(
+        await notifier.saveDefaultLightningAddress('alice@example.com'),
+        isTrue,
+      );
+      expect(notifier.state.defaultLightningAddress, 'alice@example.com');
+      expect(prefs.getString('settings.lightningAddress'), 'alice@example.com');
+
+      // Clearing always saves.
+      expect(await notifier.saveDefaultLightningAddress(null), isTrue);
+      expect(notifier.state.defaultLightningAddress, isNull);
     });
 
     test('the saved address is handed to the core at startup', () async {

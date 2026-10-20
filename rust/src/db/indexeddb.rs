@@ -189,20 +189,6 @@ impl IndexedDbStorage {
         Ok(())
     }
 
-    /// Removes every entry of `store_name`.
-    async fn clear_store(&self, store_name: &str) -> Result<()> {
-        let db = self.open_db().await?;
-        let tx = db
-            .transaction_on_one_with_mode(store_name, IdbTransactionMode::Readwrite)
-            .map_err(|e| js_err("tx open", e))?;
-        let store = tx
-            .object_store(store_name)
-            .map_err(|e| js_err("store open", e))?;
-        store.clear().map_err(|e| js_err("clear", e))?;
-        tx.await.into_result().map_err(|e| js_err("tx commit", e))?;
-        Ok(())
-    }
-
     /// Every stored trade as a JSON document, newest `started_at` first.
     /// A document that no longer parses is skipped with a warning, as the
     /// SQLite backend does, rather than hiding every other trade.
@@ -414,9 +400,6 @@ impl Storage for IndexedDbStorage {
             .map(|json| serde_json::from_str(&json))
             .transpose()?)
     }
-    async fn delete_identity(&self) -> Result<()> {
-        self.clear_store(IDENTITY_STORE).await
-    }
     async fn save_queued_message(&self, msg: &QueuedMessage) -> Result<()> {
         let _section = self.exclusive(OUTBOX_LOCK).await;
         self.put_queued_message(msg).await
@@ -498,10 +481,6 @@ impl Storage for IndexedDbStorage {
         self.delete_key(TRADE_KEYS_STORE, order_id).await
     }
 
-    async fn clear_trade_keys(&self) -> Result<()> {
-        self.clear_store(TRADE_KEYS_STORE).await
-    }
-
     async fn clear_identity_data(&self) -> Result<()> {
         let db = self.open_db().await?;
 
@@ -539,7 +518,9 @@ impl Storage for IndexedDbStorage {
         // from a later task — so awaiting between requests would make the
         // next one hit an inactive transaction (see `patch_serial`). That is
         // also why the keys are read in a transaction of their own.
-        const WIPED: [&str; 7] = [
+        const WIPED: [&str; 9] = [
+            IDENTITY_STORE,
+            TRADE_KEYS_STORE,
             TRADES_STORE,
             MESSAGES_STORE,
             BOND_CLAIMS_STORE,
@@ -616,6 +597,52 @@ impl Storage for IndexedDbStorage {
                 self.delete_key(TRADES_STORE, id).await?;
             }
         }
+        Ok(())
+    }
+
+    async fn replace_trades_for_order(&self, order_id: &str, trade: &TradeInfo) -> Result<()> {
+        // Serialised with the patches, like `delete_trade_by_order_id`. The
+        // documents are read first; the deletes and the put are then all
+        // issued on one read-write transaction with no await in between, so
+        // it stays active and commits them together — or none of them.
+        //
+        // The read cannot join that transaction (it would go inactive at the
+        // await, see `patch_serial`), so only the origin-wide lock keeps
+        // another context from scanning the same rows in between and leaving
+        // the order two replacements. Without it this refuses rather than
+        // degrading to the in-process mutex as the patches do: its one
+        // caller, the late-take reconcile, retries a failed store (#566).
+        let (_local, origin) = self.exclusive(TRADES_LOCK).await;
+        if origin.is_none() {
+            return Err(anyhow!(
+                "OriginLockUnavailable: no origin-wide lock to isolate the trade replacement"
+            ));
+        }
+        let json = serde_json::to_string(trade)?;
+        let stale: Vec<String> = self
+            .trade_documents()
+            .await?
+            .iter()
+            .filter(|doc| trade_json::order_id_of(doc) == Some(order_id))
+            .filter_map(|doc| doc.get("id").and_then(serde_json::Value::as_str))
+            .map(str::to_string)
+            .collect();
+        let db = self.open_db().await?;
+        let tx = db
+            .transaction_on_one_with_mode(TRADES_STORE, IdbTransactionMode::Readwrite)
+            .map_err(|e| js_err("tx open", e))?;
+        let store = tx
+            .object_store(TRADES_STORE)
+            .map_err(|e| js_err("store open", e))?;
+        for id in &stale {
+            store
+                .delete_owned(id.as_str())
+                .map_err(|e| js_err("delete", e))?;
+        }
+        store
+            .put_key_val_owned(trade.id.as_str(), &JsValue::from_str(&json))
+            .map_err(|e| js_err("put", e))?;
+        tx.await.into_result().map_err(|e| js_err("tx commit", e))?;
         Ok(())
     }
 
@@ -707,6 +734,22 @@ impl Storage for IndexedDbStorage {
             trade_json::set_cooperative_cancel_state(doc, &state)
         })
         .await
+    }
+
+    async fn forget_trade_node(&self, row_id: &str, node: &str) -> Result<bool> {
+        // The whole read-modify-write inside the trades' exclusive section,
+        // like every patch: no write can land between the check and the put.
+        let _section = self.exclusive(TRADES_LOCK).await;
+        let Some(json) = self.get_string(TRADES_STORE, row_id).await? else {
+            return Ok(false);
+        };
+        let mut doc: serde_json::Value = serde_json::from_str(&json)?;
+        if !trade_json::forget_node(&mut doc, node)? {
+            return Ok(false);
+        }
+        self.put_string(TRADES_STORE, row_id, &doc.to_string())
+            .await?;
+        Ok(true)
     }
 
     async fn update_trade_counterparty(

@@ -116,6 +116,24 @@ void main() {
       );
       expect(find.text('Market price'), findsNothing);
     });
+
+    testWidgets('fixed-sats orders show their price per BTC, not a premium', (
+      tester,
+    ) async {
+      await _pumpCard(
+        tester,
+        fakeOrder(
+          fiatAmount: 100,
+          fiatCode: 'EUR',
+          amountSats: BigInt.from(163400),
+        ),
+      );
+
+      expect(find.text('61.2k EUR/BTC'), findsOneWidget);
+      expect(find.text('price'), findsOneWidget);
+      expect(find.text('premium'), findsNothing);
+      expect(find.textContaining('%'), findsNothing);
+    });
   });
 
   group('OrderListItem rows', () {
@@ -134,7 +152,9 @@ void main() {
       expect(methods.overflow, TextOverflow.ellipsis);
     });
 
-    testWidgets('shows rating, trades and days for a maker with history', (
+    // DS-L10N-5: ratings counted as ratings, the age as the first trade's
+    // month, as on every other screen.
+    testWidgets('shows rating, ratings and first trade for a rated maker', (
       tester,
     ) async {
       await _pumpCard(
@@ -143,8 +163,9 @@ void main() {
       );
 
       expect(find.text('4.78'), findsOneWidget);
-      expect(find.text('16 trades', findRichText: true), findsOneWidget);
-      expect(find.text('219 days', findRichText: true), findsOneWidget);
+      expect(find.text('16 ratings', findRichText: true), findsOneWidget);
+      // 219 days before 2026-01-01.
+      expect(find.text('since May 2025', findRichText: true), findsOneWidget);
       expect(
         tester.widget<Icon>(find.byIcon(Icons.star_rounded)).color,
         _dark.yellow,
@@ -152,10 +173,10 @@ void main() {
     });
 
     testWidgets(
-      'counts the days from the maker\'s first trade, not the stale count',
+      'dates the maker\'s first trade from since, not the stale count',
       (tester) async {
         // The event's `days` (10) was frozen when the daemon published it;
-        // `since` puts the first trade 300 days before now.
+        // `since` puts the first trade in March 2025.
         await _pumpCard(
           tester,
           fakeOrder(
@@ -166,10 +187,16 @@ void main() {
           ),
         );
 
-        expect(find.text('300 days', findRichText: true), findsOneWidget);
-        expect(find.text('10 days', findRichText: true), findsNothing);
+        expect(find.text('since Mar 2025', findRichText: true), findsOneWidget);
+        expect(find.text('since Dec 2025', findRichText: true), findsNothing);
       },
     );
+
+    testWidgets('groups a large ratings count for the locale', (tester) async {
+      await _pumpCard(tester, fakeOrder(rating: 4.97, tradeCount: 1323));
+
+      expect(find.text('1,323 ratings', findRichText: true), findsOneWidget);
+    });
 
     testWidgets('marks a maker without trades as new', (tester) async {
       await _pumpCard(
@@ -178,7 +205,7 @@ void main() {
       );
 
       expect(_colorOf(tester, 'New'), _dark.textNew);
-      expect(find.text('no trades'), findsOneWidget);
+      expect(find.text('no ratings', findRichText: true), findsOneWidget);
       expect(
         tester.widget<Icon>(find.byIcon(Icons.star_rounded)).color,
         _dark.starEmpty,
@@ -250,4 +277,30 @@ void main() {
 
     expect(tester.takeException(), isNull);
   });
+
+  for (final (fiatCode, fiatAmount, sats) in [
+    ('EUR', 100.0, 163400),
+    ('ARS', 1000000.0, 892857),
+    ('LBP', 1000000.0, 10000),
+  ]) {
+    testWidgets('a fixed $fiatCode price per BTC does not overflow on a '
+        '320-wide phone with 2x text', (tester) async {
+      await _pumpCard(
+        tester,
+        fakeOrder(
+          fiatAmount: fiatAmount,
+          fiatCode: fiatCode,
+          amountSats: BigInt.from(sats),
+          paymentMethod: 'SPEI, Retiro Cajero BBVA, Transferencia Banorte',
+          rating: 4.78,
+          tradeCount: 1600,
+          daysActive: 2190,
+        ),
+        width: 320,
+        textScale: 2,
+      );
+
+      expect(tester.takeException(), isNull);
+    });
+  }
 }

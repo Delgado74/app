@@ -22,6 +22,7 @@ import 'api/order_link.dart';
 import 'api/orders.dart';
 import 'api/push.dart';
 import 'api/reputation.dart';
+import 'api/reputation_transfer.dart';
 import 'api/restore_progress.dart';
 import 'api/settings.dart';
 import 'api/trade_touch.dart';
@@ -746,7 +747,15 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   RelayInfo dco_decode_box_autoadd_relay_info(dynamic raw);
 
   @protected
+  ReputationAttestationInfo dco_decode_box_autoadd_reputation_attestation_info(
+    dynamic raw,
+  );
+
+  @protected
   RestoreProgress dco_decode_box_autoadd_restore_progress(dynamic raw);
+
+  @protected
+  TakePayout dco_decode_box_autoadd_take_payout(dynamic raw);
 
   @protected
   TradeOutcome dco_decode_box_autoadd_trade_outcome(dynamic raw);
@@ -870,6 +879,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   List<OrderInfo> dco_decode_list_order_info(dynamic raw);
+
+  @protected
+  List<PayoutDestination> dco_decode_list_payout_destination(dynamic raw);
 
   @protected
   List<int> dco_decode_list_prim_u_8_loose(dynamic raw);
@@ -997,7 +1009,14 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   RelayInfo? dco_decode_opt_box_autoadd_relay_info(dynamic raw);
 
   @protected
+  ReputationAttestationInfo?
+  dco_decode_opt_box_autoadd_reputation_attestation_info(dynamic raw);
+
+  @protected
   RestoreProgress? dco_decode_opt_box_autoadd_restore_progress(dynamic raw);
+
+  @protected
+  TakePayout? dco_decode_opt_box_autoadd_take_payout(dynamic raw);
 
   @protected
   TradeOutcome? dco_decode_opt_box_autoadd_trade_outcome(dynamic raw);
@@ -1059,6 +1078,15 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   PaymentResult dco_decode_payment_result(dynamic raw);
 
   @protected
+  PayoutDestination dco_decode_payout_destination(dynamic raw);
+
+  @protected
+  PayoutOutcome dco_decode_payout_outcome(dynamic raw);
+
+  @protected
+  PayoutSource dco_decode_payout_source(dynamic raw);
+
+  @protected
   PushPlatform dco_decode_push_platform(dynamic raw);
 
   @protected
@@ -1080,6 +1108,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   RelayStatus dco_decode_relay_status(dynamic raw);
 
   @protected
+  ReputationAttestationInfo dco_decode_reputation_attestation_info(dynamic raw);
+
+  @protected
+  ReputationSupportInfo dco_decode_reputation_support_info(dynamic raw);
+
+  @protected
   RestoreProgress dco_decode_restore_progress(dynamic raw);
 
   @protected
@@ -1093,6 +1127,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   SolverRole dco_decode_solver_role(dynamic raw);
+
+  @protected
+  TakePayout dco_decode_take_payout(dynamic raw);
 
   @protected
   ThemeMode dco_decode_theme_mode(dynamic raw);
@@ -1771,9 +1808,17 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   RelayInfo sse_decode_box_autoadd_relay_info(SseDeserializer deserializer);
 
   @protected
+  ReputationAttestationInfo sse_decode_box_autoadd_reputation_attestation_info(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   RestoreProgress sse_decode_box_autoadd_restore_progress(
     SseDeserializer deserializer,
   );
+
+  @protected
+  TakePayout sse_decode_box_autoadd_take_payout(SseDeserializer deserializer);
 
   @protected
   TradeOutcome sse_decode_box_autoadd_trade_outcome(
@@ -1917,6 +1962,11 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   List<OrderInfo> sse_decode_list_order_info(SseDeserializer deserializer);
+
+  @protected
+  List<PayoutDestination> sse_decode_list_payout_destination(
+    SseDeserializer deserializer,
+  );
 
   @protected
   List<int> sse_decode_list_prim_u_8_loose(SseDeserializer deserializer);
@@ -2082,7 +2132,18 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  ReputationAttestationInfo?
+  sse_decode_opt_box_autoadd_reputation_attestation_info(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   RestoreProgress? sse_decode_opt_box_autoadd_restore_progress(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  TakePayout? sse_decode_opt_box_autoadd_take_payout(
     SseDeserializer deserializer,
   );
 
@@ -2160,6 +2221,15 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   PaymentResult sse_decode_payment_result(SseDeserializer deserializer);
 
   @protected
+  PayoutDestination sse_decode_payout_destination(SseDeserializer deserializer);
+
+  @protected
+  PayoutOutcome sse_decode_payout_outcome(SseDeserializer deserializer);
+
+  @protected
+  PayoutSource sse_decode_payout_source(SseDeserializer deserializer);
+
+  @protected
   PushPlatform sse_decode_push_platform(SseDeserializer deserializer);
 
   @protected
@@ -2183,6 +2253,16 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   RelayStatus sse_decode_relay_status(SseDeserializer deserializer);
 
   @protected
+  ReputationAttestationInfo sse_decode_reputation_attestation_info(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  ReputationSupportInfo sse_decode_reputation_support_info(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   RestoreProgress sse_decode_restore_progress(SseDeserializer deserializer);
 
   @protected
@@ -2196,6 +2276,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   SolverRole sse_decode_solver_role(SseDeserializer deserializer);
+
+  @protected
+  TakePayout sse_decode_take_payout(SseDeserializer deserializer);
 
   @protected
   ThemeMode sse_decode_theme_mode(SseDeserializer deserializer);
@@ -3019,8 +3102,20 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  void sse_encode_box_autoadd_reputation_attestation_info(
+    ReputationAttestationInfo self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_box_autoadd_restore_progress(
     RestoreProgress self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_box_autoadd_take_payout(
+    TakePayout self,
     SseSerializer serializer,
   );
 
@@ -3222,6 +3317,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   @protected
   void sse_encode_list_order_info(
     List<OrderInfo> self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_list_payout_destination(
+    List<PayoutDestination> self,
     SseSerializer serializer,
   );
 
@@ -3439,8 +3540,20 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  void sse_encode_opt_box_autoadd_reputation_attestation_info(
+    ReputationAttestationInfo? self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_opt_box_autoadd_restore_progress(
     RestoreProgress? self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_opt_box_autoadd_take_payout(
+    TakePayout? self,
     SseSerializer serializer,
   );
 
@@ -3532,6 +3645,18 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   void sse_encode_payment_result(PaymentResult self, SseSerializer serializer);
 
   @protected
+  void sse_encode_payout_destination(
+    PayoutDestination self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_payout_outcome(PayoutOutcome self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_payout_source(PayoutSource self, SseSerializer serializer);
+
+  @protected
   void sse_encode_push_platform(PushPlatform self, SseSerializer serializer);
 
   @protected
@@ -3556,6 +3681,18 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   void sse_encode_relay_status(RelayStatus self, SseSerializer serializer);
 
   @protected
+  void sse_encode_reputation_attestation_info(
+    ReputationAttestationInfo self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_reputation_support_info(
+    ReputationSupportInfo self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_restore_progress(
     RestoreProgress self,
     SseSerializer serializer,
@@ -3572,6 +3709,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   void sse_encode_solver_role(SolverRole self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_take_payout(TakePayout self, SseSerializer serializer);
 
   @protected
   void sse_encode_theme_mode(ThemeMode self, SseSerializer serializer);

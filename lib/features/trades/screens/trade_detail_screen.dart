@@ -46,6 +46,7 @@ import 'package:mostro/features/order/models/invoice_rules.dart';
 import 'package:mostro/features/trades/widgets/bond_claim_banner.dart';
 import 'package:mostro/features/trades/widgets/bond_slashed_notice.dart';
 import 'package:mostro/features/trades/widgets/cancel_request_notice.dart';
+import 'package:mostro/features/trades/widgets/payout_destination_card.dart';
 import 'package:mostro/l10n/app_localizations.dart';
 import 'package:mostro/shared/mascot/mascot_cues.dart';
 import 'package:mostro/shared/utils/countdown.dart';
@@ -545,7 +546,16 @@ class _TradeDetailScreenState extends ConsumerState<TradeDetailScreen>
         '[TradeDetailScreen] trade role lookup failed: ${dbRole.error}',
       );
     }
-    return dbRole.valueOrNull;
+    final role = dbRole.valueOrNull;
+    if (role != null || !dbRole.hasValue) return role;
+    // No row at all. A maker's order canceled before anyone took it loses its
+    // row (Rust's `wipe_never_active_trade`) while the book keeps it as
+    // theirs, and then the order says the role: no guess, its maker buys a
+    // buy order. Without it the screen held `loading` for good, as opened
+    // from the order's "Trade canceled" notice.
+    final order = ref.watch(orderByIdProvider(widget.orderId));
+    if (order != null && order.isMine) return order.kind == 'buy';
+    return null;
   }
 
   /// [TradeStatus.loading] until the live status resolves, so the screen
@@ -865,12 +875,23 @@ class _TradeDetailScreenState extends ConsumerState<TradeDetailScreen>
                   // A pending cooperative-cancel request, this side's or the
                   // counterparty's (protocol `cancel.md`); nothing otherwise.
                   CancelRequestNotice(orderId: widget.orderId),
+                  // The order's reference under its step and its notices,
+                  // before the cards that only some trades have: at the end
+                  // of the scroll the buyer's payout card pushed it out of a
+                  // 1280 × 720 window, and the accessibility bridge only
+                  // exposes what is on screen, so `order.id` went missing.
+                  const SizedBox(height: 12),
+                  _idRow(l10n, book, order),
+                  // Where the buyer's sats go, or went, as this device sent
+                  // them (#823); nothing for the seller.
+                  if (role == true)
+                    PayoutDestinationCard(orderId: widget.orderId),
                   if (view.showsReputation && peerRating != null) ...[
                     const SizedBox(height: 12),
                     CounterpartReputationRow(
                       rating: peerRating,
                       reviews: trade!.peerReviews ?? 0,
-                      days: trade.peerDaysOnMostro,
+                      since: trade.peerFirstTrade,
                       counterpartIsBuyer: !isBuyer,
                     ),
                   ],
@@ -880,13 +901,11 @@ class _TradeDetailScreenState extends ConsumerState<TradeDetailScreen>
                       duration: const Duration(milliseconds: 200),
                       child: TradeTimeline(
                         key: ValueKey(view.step),
-                        steps: _steps(l10n, isBuyer),
+                        steps: _steps(l10n, isBuyer, view.step),
                         current: view.step,
                       ),
                     ),
                   ],
-                  const SizedBox(height: 12),
-                  _idRow(l10n, book, order),
                 ],
               ),
             ),
@@ -1041,8 +1060,11 @@ class _TradeDetailScreenState extends ConsumerState<TradeDetailScreen>
     return TradeStepBlock(
       summary: summary,
       stepLabel:
-          view.step >= 0 && view.step < kTradeStepCount
-              ? l10n.stepIndicator(view.step + 1, kTradeStepCount)
+          view.step >= 0 && view.step < tradeStepCount(isBuyer: isBuyer)
+              ? l10n.stepIndicator(
+                view.step + 1,
+                tradeStepCount(isBuyer: isBuyer),
+              )
               : null,
       chip: view.chip,
       chipLabel: _chipLabel(l10n, view.chip),
@@ -1052,7 +1074,10 @@ class _TradeDetailScreenState extends ConsumerState<TradeDetailScreen>
               ? TextSpan(text: l10n.tradeLoadError)
               : _body(l10n, status, isBuyer, order?.paymentMethod),
       warning: view.showsReleaseWarning ? l10n.tradeReleaseIrreversible : null,
-      countdown: view.showsTimer ? _countdown(l10n, view, status, kind) : null,
+      countdown:
+          view.showsTimer
+              ? _countdown(l10n, view, status, isBuyer, kind)
+              : null,
       statusReadout: status.machineName,
     );
   }
@@ -1177,6 +1202,7 @@ class _TradeDetailScreenState extends ConsumerState<TradeDetailScreen>
     AppLocalizations l10n,
     TradeView view,
     TradeStatus status,
+    bool isBuyer,
     OrderKind? kind,
   ) {
     final label = switch (view.timer) {
@@ -1257,7 +1283,9 @@ class _TradeDetailScreenState extends ConsumerState<TradeDetailScreen>
                           remaining == Duration.zero
                               ? (status == TradeStatus.fiatSent
                                   ? l10n.tradeTimerEscrowDisputing
-                                  : l10n.tradeTimerEscrowCancelling)
+                                  : isBuyer
+                                  ? l10n.tradeTimerEscrowCancellingBuyer
+                                  : l10n.tradeTimerEscrowCancellingSeller)
                               : note,
                     ),
       );
@@ -1303,19 +1331,23 @@ class _TradeDetailScreenState extends ConsumerState<TradeDetailScreen>
 
   // ── Timeline ─────────────────────────────────────────────────────────────
 
-  /// Steps written from the user's side.
-  List<String> _steps(AppLocalizations l10n, bool isBuyer) => [
-    l10n.tradeStepOrderTaken,
+  /// Steps written from the user's side, [tradeStepCount] of them. The first
+  /// is the take: while it is still [current] the order waits in the book,
+  /// and naming it "Order taken" there reads as a take that has not happened.
+  List<String> _steps(AppLocalizations l10n, bool isBuyer, int current) => [
+    current == 0 ? l10n.tradeStepWaitingTaker : l10n.tradeStepOrderTaken,
     isBuyer ? l10n.tradeStepInvoiceBuyer : l10n.tradeStepInvoiceSeller,
     isBuyer ? l10n.tradeStepFiatBuyer : l10n.tradeStepFiatSeller,
     isBuyer ? l10n.tradeStepReleaseBuyer : l10n.tradeStepReleaseSeller,
+    if (isBuyer) l10n.tradeStepPayoutBuyer,
     l10n.tradeStepRate,
   ];
 
   // ── ID and date ──────────────────────────────────────────────────────────
 
-  /// Last card of the scroll, the trade's ID row (DS-CMP-22); tapping
-  /// anywhere on it copies the id.
+  /// The trade's ID row (DS-CMP-22), under the step block and its notices
+  /// and before the payout card, the reputation row and the timeline;
+  /// tapping anywhere on it copies the id.
   Widget _idRow(
     AppLocalizations l10n,
     OrderBookPalette book,

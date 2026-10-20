@@ -26,13 +26,16 @@ import 'package:mostro/features/order/widgets/explanatory_note.dart';
 import 'package:mostro/features/order/widgets/hero_amount_card.dart';
 import 'package:mostro/features/order/widgets/order_detail_cards.dart';
 import 'package:mostro/features/order/widgets/range_amount_modal.dart';
+import 'package:mostro/features/order/widgets/take_payout_sheet.dart';
 import 'package:mostro/features/trades/providers/trades_providers.dart'
     show refreshTrades;
 import 'package:mostro/l10n/app_localizations.dart';
 import 'package:mostro/shared/mascot/mascot_cues.dart';
 import 'package:mostro/shared/utils/countdown.dart';
+import 'package:mostro/shared/utils/reputation_age.dart';
 import 'package:mostro/shared/widgets/countdown_urgency_announcer.dart';
-import 'package:mostro/src/rust/api/settings.dart' as settings_api;
+import 'package:mostro/shared/widgets/counterpart_reputation_row.dart'
+    show highlightFigures;
 import 'package:mostro/src/rust/api/types.dart';
 
 /// What the single button is doing.
@@ -85,6 +88,10 @@ class _TakeOrderScreenState extends ConsumerState<TakeOrderScreen> {
   /// unavailable in place once the relay drops it.
   OrderItem? _lastOrder;
   double? _selectedAmount;
+
+  /// Where a buyer's sats go for this trade (#823), when they changed it
+  /// from the default Lightning address; null keeps the default.
+  TakePayout? _payout;
 
   @override
   void initState() {
@@ -181,6 +188,21 @@ class _TakeOrderScreenState extends ConsumerState<TakeOrderScreen> {
       _selectedAmount = amount;
     }
 
+    // What the screen showed is what the take sends (PR #824 review): the
+    // default it named, by its address, or an invoice when it named none.
+    // The button waits for that answer, so it is here.
+    TakePayout? payout;
+    if (widget.isBuying) {
+      final shown = ref.read(takeDefaultAddressProvider);
+      if (shown.isLoading) return;
+      final address = shown.valueOrNull;
+      payout =
+          _payout ??
+          (address == null
+              ? const TakePayout.askForInvoice()
+              : TakePayout.address(address: address));
+    }
+
     setState(() => _cta = TakeOrderCta.loading);
     // `context.go` does not unmount this screen at once: it stays in the tree
     // while the next route animates in, long enough for the `finally` below
@@ -193,6 +215,7 @@ class _TakeOrderScreenState extends ConsumerState<TakeOrderScreen> {
         orderId: widget.orderId,
         role: widget.isBuying ? TradeRole.buyer : TradeRole.seller,
         fiatAmount: _selectedAmount,
+        payout: payout,
       );
       if (!mounted) return;
 
@@ -254,17 +277,14 @@ class _TakeOrderScreenState extends ConsumerState<TakeOrderScreen> {
         // whose errors mean no trade was created. The trade screen offers the
         // invoice step itself for a buyer waiting on it, so landing there is
         // right whichever way the setting would have read.
-        String? payTo;
-        var settingsRead = true;
-        try {
-          payTo = (await settings_api.getSettings()).defaultLightningAddress;
-        } catch (e, st) {
-          settingsRead = false;
-          debugPrint('[TakeOrderScreen] settings read failed: $e\n$st');
-        }
-        if (!mounted) return;
+        // The take named its destination: an address is paid directly, and
+        // without one the invoice step comes next.
+        final payTo = switch (payout) {
+          TakePayout_Address(:final address) => address,
+          _ => null,
+        };
         context.go(AppRoute.tradeDetailPath(widget.orderId));
-        if (settingsRead && payTo == null) {
+        if (payTo == null) {
           context.push(AppRoute.addInvoicePath(widget.orderId));
         }
       } else {
@@ -301,9 +321,10 @@ class _TakeOrderScreenState extends ConsumerState<TakeOrderScreen> {
       showOrderDetailSnackBar(context, l10n.orderAlreadyTaken);
       return;
     }
-    if (msg.contains('InvalidOrderStatus')) {
+    if (msg.contains('InvalidOrderStatus') || msg.contains('CantDo:NotFound')) {
       // The daemon says the order is no longer pending (taken, canceled or
-      // expired before the book caught up): it cannot be taken again.
+      // expired before the book caught up), or holds no such order (a pending
+      // revision that outlived it on the relays): it cannot be taken.
       setState(() => _cta = TakeOrderCta.unavailable);
       showOrderDetailSnackBar(context, l10n.orderNoLongerActive);
       return;
@@ -351,6 +372,36 @@ class _TakeOrderScreenState extends ConsumerState<TakeOrderScreen> {
     return l10n.takeOrderBondNoticeEstimate(formats.decimal.format(estimate));
   }
 
+  /// Where the buyer's sats go, in the words of the payout row (#823).
+  String _payoutTarget(AppLocalizations l10n, String defaultAddress) =>
+      switch (_payout) {
+        TakePayout_Address(:final address) => address,
+        TakePayout_AskForInvoice() => l10n.takeOrderPayoutInvoice,
+        _ => defaultAddress,
+      };
+
+  /// The sentence the note adds about where the sats go (#823).
+  String _payoutNote(AppLocalizations l10n, String defaultAddress) =>
+      switch (_payout) {
+        TakePayout_Address(:final address) => l10n.takeOrderPayoutNoteAddress(
+          address,
+        ),
+        TakePayout_AskForInvoice() => l10n.takeOrderPayoutNoteInvoice,
+        _ => l10n.takeOrderPayoutNoteDefault(defaultAddress),
+      };
+
+  Future<void> _changePayout(String defaultAddress) async {
+    final chosen = await showTakePayoutSheet(
+      context,
+      defaultAddress: defaultAddress,
+      current: _payout,
+    );
+    if (chosen == null || !mounted) return;
+    setState(
+      () => _payout = chosen is TakePayout_DefaultAddress ? null : chosen,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final live = ref.watch(orderByIdProvider(widget.orderId));
@@ -396,6 +447,13 @@ class _TakeOrderScreenState extends ConsumerState<TakeOrderScreen> {
     }
 
     final privacyMode = ref.watch(privacyModeProvider);
+    // A buyer with a default Lightning address sees where the sats go and can
+    // change it for this trade (#823): the take sends it without asking.
+    // While it loads the row cannot say where the sats go, so Take waits.
+    final shownAddress =
+        widget.isBuying ? ref.watch(takeDefaultAddressProvider) : null;
+    final defaultAddress = shownAddress?.valueOrNull;
+    final payoutKnown = shownAddress == null || !shownAddress.isLoading;
     // Not while a take is in flight: the user's own take moves the order out
     // of `pending` before it settles (Rust updates the book entry as soon as
     // the daemon confirms, then persists the trade and subscribes, and only
@@ -453,6 +511,12 @@ class _TakeOrderScreenState extends ConsumerState<TakeOrderScreen> {
                       isClosed: isUnavailable,
                     ),
               ),
+              if (defaultAddress != null)
+                _PayoutRow(
+                  target: _payoutTarget(l10n, defaultAddress),
+                  enabled: cta == TakeOrderCta.idle,
+                  onTap: () => _changePayout(defaultAddress),
+                ),
               OrderIdRow(orderId: order.id),
             ],
           ),
@@ -462,6 +526,7 @@ class _TakeOrderScreenState extends ConsumerState<TakeOrderScreen> {
               widget.isBuying
                   ? l10n.takeOrderNoteBuyer
                   : l10n.takeOrderNoteSeller,
+              if (defaultAddress != null) _payoutNote(l10n, defaultAddress),
               _bondNotice(l10n, order),
             ].nonNulls.join(' '),
           ),
@@ -473,10 +538,57 @@ class _TakeOrderScreenState extends ConsumerState<TakeOrderScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [_TakeButton(state: cta, onPressed: _onTakeOrder)],
+          children: [
+            _TakeButton(
+              state: cta,
+              onPressed: payoutKnown ? _onTakeOrder : null,
+            ),
+          ],
         ),
       ),
     );
+  }
+}
+
+// ── Payout row ────────────────────────────────────────────────────────────────
+
+/// `Your sats go to · alice@example.com ›` (#823): where the take sends the
+/// buyer's sats, a row that opens the choice for this trade (DS-CMP-27: a
+/// neutral value and a trailing chevron). Dead while a take is in flight or
+/// the order is gone.
+class _PayoutRow extends StatelessWidget {
+  const _PayoutRow({
+    required this.target,
+    required this.enabled,
+    required this.onTap,
+  });
+
+  final String target;
+  final bool enabled;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final book = OrderBookPalette.of(context);
+    final l10n = AppLocalizations.of(context);
+    return Semantics(
+      hint: enabled ? l10n.takeOrderPayoutChangeHint : null,
+      child: OrderDataRow(
+        icon: Icons.bolt_rounded,
+        label: l10n.takeOrderPayoutLabel,
+        value: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Flexible(child: OrderDataValue(target)),
+            if (enabled) ...[
+              const SizedBox(width: 4),
+              Icon(Icons.chevron_right, size: 16, color: book.textTertiary),
+            ],
+          ],
+        ),
+        onTap: enabled ? onTap : null,
+      ),
+    ).withAutomationId(AutomationIds.orderTakePayout);
   }
 }
 
@@ -698,9 +810,6 @@ class _CounterpartyCard extends StatelessWidget {
     );
     final isNew = order.tradeCount == 0;
     final figure = TextStyle(color: book.textBody, fontWeight: FontWeight.w500);
-    final trades = formats.decimal.format(order.tradeCount);
-    final daysOnMostro = order.makerDaysOnMostro;
-    final days = formats.decimal.format(daysOnMostro);
 
     return OrderDetailCard(
       padding: const EdgeInsets.all(14),
@@ -709,6 +818,7 @@ class _CounterpartyCard extends StatelessWidget {
           Container(
             width: 34,
             height: 34,
+            padding: const EdgeInsets.all(2),
             alignment: Alignment.center,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
@@ -717,25 +827,30 @@ class _CounterpartyCard extends StatelessWidget {
                 color: isNew ? pal.avatarNewBorder : pal.avatarBorder,
               ),
             ),
-            child:
-                isNew
-                    ? Text(
-                      l10n.reputationNew,
-                      style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w600,
-                        color: book.textNew,
+            // The grade shrinks to the circle at large text rather than
+            // spill out of it (DS-TYP-7).
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child:
+                  isNew
+                      ? Text(
+                        l10n.reputationNew,
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
+                          color: book.textNew,
+                        ),
+                      )
+                      : Text(
+                        formats.rating.format(order.rating),
+                        style: TextStyle(
+                          fontFamily: AppFonts.figures,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: book.limeInk,
+                        ),
                       ),
-                    )
-                    : Text(
-                      formats.rating.format(order.rating),
-                      style: TextStyle(
-                        fontFamily: AppFonts.figures,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w700,
-                        color: book.limeInk,
-                      ),
-                    ),
+            ),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -766,18 +881,13 @@ class _CounterpartyCard extends StatelessWidget {
                 Text.rich(
                   TextSpan(
                     children: [
-                      if (isNew)
-                        TextSpan(text: l10n.reputationNoTrades)
-                      else
-                        ...figureSpans(
-                          l10n.counterpartyTrades(order.tradeCount),
-                          trades,
-                          figure,
-                        ),
+                      ...highlightFigures(
+                        l10n.reputationRatingsCount(order.tradeCount),
+                        figure,
+                      ),
                       const TextSpan(text: ' · '),
-                      ...figureSpans(
-                        l10n.counterpartyDaysOnMostro(daysOnMostro),
-                        days,
+                      ...highlightFigures(
+                        reputationSinceText(l10n, order.makerFirstTrade),
                         figure,
                       ),
                     ],
@@ -801,7 +911,9 @@ class _TakeButton extends StatelessWidget {
   const _TakeButton({required this.state, required this.onPressed});
 
   final TakeOrderCta state;
-  final VoidCallback onPressed;
+
+  /// Null while where the sats go is still being read.
+  final VoidCallback? onPressed;
 
   @override
   Widget build(BuildContext context) {
