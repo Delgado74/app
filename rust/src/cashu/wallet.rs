@@ -1389,6 +1389,76 @@ mod tests {
         }
     }
 
+    #[tokio::test]
+    async fn a_confirm_error_reads_pending_while_the_melt_is_still_recorded() {
+        use cdk::wallet::types::{
+            MeltOperationData, MeltSagaState, OperationData, WalletSaga, WalletSagaState,
+        };
+
+        // Arrange — a melt sent to the mint, its saga in `MeltRequested`: what
+        // cdk leaves when the mint said pending or unknown, or could not be
+        // asked, after a confirm error. A rolled-back melt has no saga.
+        let path = temp_db_path();
+        let store = WalletSqliteDatabase::new(path.to_str().unwrap())
+            .await
+            .unwrap();
+        let in_flight = Uuid::new_v4();
+        store
+            .add_saga(WalletSaga::new(
+                in_flight,
+                WalletSagaState::Melt(MeltSagaState::MeltRequested),
+                Amount::from(1_000),
+                MintUrl::from_str("https://mint.example.com").unwrap(),
+                CurrencyUnit::Sat,
+                OperationData::Melt(MeltOperationData {
+                    quote_id: "quote".to_string(),
+                    amount: Amount::from(1_000),
+                    fee_reserve: Amount::from(10),
+                    counter_start: None,
+                    counter_end: None,
+                    change_amount: None,
+                    metadata: HashMap::new(),
+                    final_proof_ys: None,
+                    change_blinded_messages: None,
+                }),
+            ))
+            .await
+            .unwrap();
+        let rolled_back = Uuid::new_v4();
+        let outcome = |operation_id: Uuid, e: cdk::Error| {
+            let store = &store;
+            async move { after_confirm_error(store, operation_id, e).await }
+        };
+
+        // Act / Assert — still recorded, the payment may yet settle: pending,
+        // never "failed" or "nothing was paid", whatever the error said. A
+        // timeout is the usual one: a connection lost after the request left.
+        for e in [cdk::Error::Timeout, cdk::Error::ExpiredQuote(0, 0)] {
+            let label = e.to_string();
+            assert_eq!(
+                outcome(in_flight, e).await.unwrap(),
+                MeltOutcomeInfo::Pending,
+                "{label}"
+            );
+        }
+
+        // Rolled back, the proofs are back: the error stands.
+        assert_eq!(
+            marker_of(outcome(rolled_back, cdk::Error::Timeout).await.unwrap_err()),
+            "CashuMeltFailed"
+        );
+        assert_eq!(
+            marker_of(
+                outcome(rolled_back, cdk::Error::ExpiredQuote(0, 0))
+                    .await
+                    .unwrap_err()
+            ),
+            "CashuMeltQuoteExpired"
+        );
+
+        let _ = std::fs::remove_file(&path);
+    }
+
     #[test]
     fn a_melt_quote_is_paid_only_at_the_mint_that_issued_it() {
         let ours = MintUrl::from_str("https://mint.example.com").unwrap();
