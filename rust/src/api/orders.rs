@@ -14065,6 +14065,45 @@ mod tests {
         assert_eq!(row.order.status, OrderStatus::FiatSent);
     }
 
+    /// #813: a row that does not know its node (written before #809) takes
+    /// the node of the restore that names it — same order, same trade index —
+    /// even when its status does not move. Another trade index is another
+    /// trade: that row keeps no node.
+    #[tokio::test]
+    async fn a_restore_adopts_the_row_without_a_node_it_names() {
+        use mostro_core::order::{Kind, Status};
+        let db = bond_test_db().await;
+        let own = nostr_sdk::prelude::Keys::generate().public_key().to_hex();
+        let peer = nostr_sdk::prelude::Keys::generate().public_key().to_hex();
+        let legacy_row = |order: &mostro_core::order::SmallOrder| {
+            let mut row = restored_trade_row(order, &own, 11, RESTORED_NODE).expect("row");
+            row.order.node_pubkey = String::new();
+            row
+        };
+        let named = own_order(Kind::Sell, Status::Active, Some(&peer), Some(&own));
+        let other_index = own_order(Kind::Sell, Status::Active, Some(&peer), Some(&own));
+        for order in [&named, &other_index] {
+            db.save_trade(&legacy_row(order)).await.unwrap();
+        }
+
+        persist_restored_trade_row(db, &named, &own, 11, 2000, RESTORED_NODE).await;
+        persist_restored_trade_row(db, &other_index, &own, 12, 2000, RESTORED_NODE).await;
+
+        let node_of = |order: &mostro_core::order::SmallOrder| {
+            let order_id = order.id.unwrap().to_string();
+            async move {
+                db.get_trade_by_order_id(&order_id)
+                    .await
+                    .unwrap()
+                    .expect("row")
+                    .order
+                    .node_pubkey
+            }
+        };
+        assert_eq!(node_of(&named).await, RESTORED_NODE);
+        assert_eq!(node_of(&other_index).await, "");
+    }
+
     #[tokio::test]
     async fn a_restore_announces_its_rows_as_replayed_not_as_steps() {
         use mostro_core::order::{Kind, Status};

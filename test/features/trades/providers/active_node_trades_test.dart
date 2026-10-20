@@ -155,6 +155,35 @@ void main() {
       expect(c.read(chatCountProvider), 6);
     });
 
+    test('the room of a row without a node stays out once the row is '
+        'gone', () async {
+      // A wiped legacy row: its room was hidden with it, and must not turn
+      // into a room whose trade is gone.
+      final trades = [
+        _needsAction('own', defaultMostroPubkey),
+        _needsAction('legacy', ''),
+      ];
+      final c = tradeRowsContainer(trades);
+      c.read(chatRoomsNotifierProvider.notifier)
+        ..upsertRoom(_room('order-own'))
+        ..upsertRoom(_room('order-legacy', unread: 3));
+      c.listen(activeNodeChatRoomsProvider, (_, _) {});
+      await loadTradeRows(c);
+      expect(c.read(activeNodeChatRoomsProvider).map((r) => r.orderId), [
+        'order-own',
+      ]);
+
+      trades.removeWhere((t) => t.order.id == 'order-legacy');
+      c.invalidate(rawTradesProvider);
+      await c.read(rawTradesProvider.future);
+      await pumpEventQueue();
+
+      expect(c.read(activeNodeChatRoomsProvider).map((r) => r.orderId), [
+        'order-own',
+      ]);
+      expect(c.read(chatCountProvider), 0);
+    });
+
     test('no room shows before the trades load', () {
       final c = tradeRowsContainer([_needsAction('other', _otherNode)]);
       c
