@@ -67,9 +67,15 @@ Future<String> cashuCreateToken({required BigInt amountSats}) =>
 /// forgotten, melts still in flight are settled as the mint reports them, and
 /// the new balance is broadcast.
 ///
-/// The melts are settled here as well as at connect because a bound wallet is
-/// reused, not reconnected: without this, a melt that answered `Pending`
-/// would keep its proofs reserved until the next app start.
+/// The melts are settled here because a bound wallet is reused, not
+/// reconnected: without this, a melt that answered `Pending` would keep its
+/// proofs reserved until the next app start. Only them: the full recovery
+/// connect runs would roll back a send or escrow lock still in progress (see
+/// `CashuWallet::recover`).
+///
+/// Both steps run whatever the other did, and the balance is broadcast after
+/// them even when one fails: either may have moved proofs. The first error is
+/// returned.
 ///
 /// **Returns nothing on purpose.** It reclaims neither an unredeemed token of
 /// ours nor the proofs of a half-finished send — cdk's state check cannot see
@@ -89,7 +95,9 @@ Future<void> cashuSweepSpentProofs() =>
 /// **Errors**: `CashuNotConnected`, `CashuInvalidInvoice`,
 /// `CashuInvoiceNoAmount` (open-amount invoices are not supported),
 /// `CashuInvoiceExpired`, `CashuMeltUnsupported`, `CashuMeltAmountOutOfRange`,
-/// `CashuMeltQuoteFailed`, `CashuMeltInsufficientFunds`, `CashuMeltFailed`.
+/// `CashuMeltQuoteFailed` (also when the quote could not be priced or
+/// released), `CashuMeltInsufficientFunds`, `CashuMeltQuoteExpired`,
+/// `CashuMeltFailed`.
 Future<CashuMeltQuote> cashuMeltQuote({required String invoice}) =>
     RustLib.instance.api.crateApiCashuCashuMeltQuote(invoice: invoice);
 

@@ -557,15 +557,27 @@ mints is inconsistent), no general wallet features.
   `bolt11` / `sat` under NUT-05 and NUT-05 is not `disabled`, with its min/max limits
   kept. It is **not** part of `is_usable()`: a mint without it still trades; the UI
   hides "to Lightning" instead of refusing the mint.
-- **Recovery.** `CashuWallet::connect` runs `recover_incomplete_sagas()` and then
-  `finalize_pending_melts()` once the mint has proven usable. Best effort: a failure
+- **Recovery.** `CashuWallet::connect` runs `recover_incomplete_sagas()` once the
+  mint has proven usable; it resumes melts in flight as well. Best effort: a failure
   is logged, never fails the connect. Safe for escrow and exported tokens — cdk
   compensates only a send still in `ProofsReserved` (no token exists yet) and never
   revokes one in `TokenCreated` (`wallet/send/saga/resume.rs`, cdk 0.18.1). It also
-  covers the token sends of C2, which until now nothing recovered. Because a bound
-  wallet is reused rather than reconnected, `cashu_sweep_spent_proofs` (the wallet
-  screen's sync) runs `finalize_pending_melts()` too, so a pending melt resolves
-  without a restart.
+  covers the token sends of C2, which until now nothing recovered.
+  - **Only at connect.** cdk documents it as crash recovery ("Call on startup",
+    `wallet/recovery.rs`) and rolls back a send or melt in `ProofsReserved` without
+    checking that it is still running — the state of an escrow lock, a token send or
+    a melt being prepared. At connect the wallet is not installed yet, so nothing
+    runs on it. Not covered: an operation still running on an earlier wallet for the
+    same mint, after switching mints and back mid-operation; closing it needs an
+    operations lock that recovery takes exclusively (a later PR).
+  - Because a bound wallet is reused rather than reconnected,
+    `cashu_sweep_spent_proofs` (the wallet screen's sync) runs
+    `finalize_pending_melts()` — melts in `MeltRequested` / `PaymentPending` only,
+    each claimed before it is changed — so a pending melt resolves without a
+    restart. Both steps run even if one fails, and the balance is broadcast after
+    them.
+  - A quote whose release fails is not offered (`CashuMeltQuoteFailed`): its saga
+    still holds the quote, so paying it would fail. The next connect releases it.
 - **Rust** (`cashu/wallet.rs`, `api/cashu.rs`). cdk's prepared melt borrows the
   wallet and can only be confirmed or cancelled through that handle
   (`confirm_prepared_melt` / `cancel_prepared_melt` are `#[doc(hidden)]`), so it is

@@ -191,7 +191,18 @@ impl CashuWallet {
     /// Safe for escrow and exported tokens: cdk compensates only a send still
     /// in `ProofsReserved` — no token exists yet — and never revokes one in
     /// `TokenCreated` (`wallet/send/saga/resume.rs`, cdk 0.18.1). That
-    /// reclaim stays C10's.
+    /// reclaim stays C10's. Melts in flight are resumed here too, so connect
+    /// does not call [`Self::finalize_pending_melts`] on top.
+    ///
+    /// **Only at connect, never on Sync.** cdk documents it as crash recovery
+    /// ("Call on startup", `wallet/recovery.rs`) and rolls back a send or melt
+    /// in `ProofsReserved` with no check that it is still running
+    /// (`wallet/send/saga/resume.rs`) — the state of an escrow lock, a token
+    /// send or a melt being prepared. Here the wallet is not installed yet, so
+    /// nothing runs on it. Not covered: an operation still running on an
+    /// earlier wallet for the same mint, left by switching mints and back in
+    /// the middle of it. Closing that needs operations to hold a lock that
+    /// recovery takes exclusively.
     ///
     /// **Best effort.** The mint has just proven usable, so a failure here is a
     /// round trip that did not come back: it is logged and the connect goes
@@ -208,9 +219,6 @@ impl CashuWallet {
                 report.failed
             ),
             Err(e) => log::warn!("[cashu] recovering interrupted operations failed: {e}"),
-        }
-        if let Err(e) = self.finalize_pending_melts().await {
-            log::warn!("[cashu] {e}");
         }
     }
 
@@ -545,8 +553,9 @@ impl CashuWallet {
     /// **Errors** (stable markers): those of [`melt_invoice`],
     /// `CashuMeltUnsupported` when the mint does not melt to `bolt11`,
     /// `CashuMeltAmountOutOfRange` outside the mint's limits,
-    /// `CashuMeltQuoteFailed` when the mint does not quote,
-    /// `CashuMeltInsufficientFunds`, `CashuMeltFailed`.
+    /// `CashuMeltQuoteFailed` when the mint does not quote or the wallet
+    /// cannot price or release the quote, `CashuMeltInsufficientFunds`,
+    /// `CashuMeltQuoteExpired`, `CashuMeltFailed` (amount overflow).
     pub async fn melt_quote(&self, invoice: &str) -> Result<MeltQuoteInfo> {
         let (invoice, amount_sats) = melt_invoice(invoice, unix_now())?;
         melt_gate(&self.capabilities, amount_sats)?;
@@ -567,13 +576,22 @@ impl CashuWallet {
             .inner
             .prepare_melt(&quote.id, HashMap::new())
             .await
-            .map_err(prepare_melt_error)?;
+            // Nothing is being paid yet: not "the payment did not go through".
+            .map_err(|e| match e {
+                cdk::Error::InsufficientFunds | cdk::Error::ExpiredQuote(..) => {
+                    prepare_melt_error(e)
+                }
+                other => anyhow!("CashuMeltQuoteFailed: {other}"),
+            })?;
         let info = quote_info(&prepared);
-        if let Err(e) = prepared.cancel().await {
-            // The proofs stay reserved under a saga in `ProofsReserved`, which
-            // the next connect's recovery rolls back.
-            log::warn!("[cashu] releasing the quoted melt failed: {e}");
-        }
+        // A quote not released is not offered: its saga still holds the quote
+        // (`reserve_melt_quote`, `wallet/melt/saga/mod.rs`) as well as the
+        // proofs, so paying it would fail. Both stay reserved until the next
+        // connect's recovery rolls the saga back.
+        prepared
+            .cancel()
+            .await
+            .map_err(|e| anyhow!("CashuMeltQuoteFailed: releasing the quote failed: {e}"))?;
         let info = info?;
         log::info!(
             "[cashu] melt quoted: {} sat, up to {} sat in total",

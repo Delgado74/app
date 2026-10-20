@@ -596,9 +596,15 @@ pub async fn cashu_create_token(amount_sats: u64) -> Result<String> {
 /// forgotten, melts still in flight are settled as the mint reports them, and
 /// the new balance is broadcast.
 ///
-/// The melts are settled here as well as at connect because a bound wallet is
-/// reused, not reconnected: without this, a melt that answered `Pending`
-/// would keep its proofs reserved until the next app start.
+/// The melts are settled here because a bound wallet is reused, not
+/// reconnected: without this, a melt that answered `Pending` would keep its
+/// proofs reserved until the next app start. Only them: the full recovery
+/// connect runs would roll back a send or escrow lock still in progress (see
+/// `CashuWallet::recover`).
+///
+/// Both steps run whatever the other did, and the balance is broadcast after
+/// them even when one fails: either may have moved proofs. The first error is
+/// returned.
 ///
 /// **Returns nothing on purpose.** It reclaims neither an unredeemed token of
 /// ours nor the proofs of a half-finished send — cdk's state check cannot see
@@ -609,10 +615,10 @@ pub async fn cashu_create_token(amount_sats: u64) -> Result<String> {
 /// **Errors**: `CashuNotConnected`, `CashuStateCheckFailed`.
 pub async fn cashu_sweep_spent_proofs() -> Result<()> {
     let wallet = active_wallet().await?;
-    wallet.sweep_spent_proofs().await?;
-    wallet.finalize_pending_melts().await?;
+    let swept = wallet.sweep_spent_proofs().await;
+    let settled = wallet.finalize_pending_melts().await;
     notify().await;
-    Ok(())
+    swept.and(settled)
 }
 
 /// Quote paying the BOLT11 `invoice` from the wallet — phase C3b-1.
@@ -623,7 +629,9 @@ pub async fn cashu_sweep_spent_proofs() -> Result<()> {
 /// **Errors**: `CashuNotConnected`, `CashuInvalidInvoice`,
 /// `CashuInvoiceNoAmount` (open-amount invoices are not supported),
 /// `CashuInvoiceExpired`, `CashuMeltUnsupported`, `CashuMeltAmountOutOfRange`,
-/// `CashuMeltQuoteFailed`, `CashuMeltInsufficientFunds`, `CashuMeltFailed`.
+/// `CashuMeltQuoteFailed` (also when the quote could not be priced or
+/// released), `CashuMeltInsufficientFunds`, `CashuMeltQuoteExpired`,
+/// `CashuMeltFailed`.
 pub async fn cashu_melt_quote(invoice: String) -> Result<CashuMeltQuote> {
     let quote = active_wallet().await?.melt_quote(&invoice).await?;
     Ok(CashuMeltQuote {
