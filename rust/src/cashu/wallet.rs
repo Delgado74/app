@@ -7,6 +7,7 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use anyhow::{anyhow, bail, Result};
 use cdk::amount::SplitTarget;
+use cdk::cdk_database::{self, WalletDatabase};
 use cdk::nuts::nut10::SpendingConditions;
 use cdk::mint_url::MintUrl;
 use cdk::nuts::MeltQuoteState;
@@ -16,6 +17,7 @@ use cdk::wallet::{MeltOutcome, PreparedMelt, ReceiveOptions, SendMemo, SendOptio
 use cdk::Amount;
 use cdk_sqlite::WalletSqliteDatabase;
 use std::str::FromStr;
+use uuid::Uuid;
 
 /// Everything the escrow flow needs a mint to support.
 ///
@@ -629,6 +631,8 @@ impl CashuWallet {
         // Read before `confirm` consumes the handle: cdk's `fee_paid` counts
         // the melt's inputs only, and the swap that made them was paid too.
         let swap_fee = u64::from(prepared.swap_fee());
+        let operation_id = prepared.operation_id();
+        let localstore = self.inner.localstore.as_ref();
 
         let finalized = match prepared.confirm_prefer_async().await {
             Ok(MeltOutcome::Paid(finalized)) => finalized,
@@ -643,16 +647,14 @@ impl CashuWallet {
             Ok(MeltOutcome::Pending(pending)) => {
                 match tokio::time::timeout(MELT_WAIT, pending.into_future()).await {
                     Ok(Ok(finalized)) => finalized,
-                    Ok(Err(cdk::Error::ExpiredQuote(..))) => bail!("CashuMeltQuoteExpired"),
-                    Ok(Err(e)) => bail!("CashuMeltFailed: {e}"),
+                    Ok(Err(e)) => return after_confirm_error(localstore, operation_id, e).await,
                     Err(_) => {
                         log::info!("[cashu] melt still pending after {}s", MELT_WAIT.as_secs());
                         return Ok(MeltOutcomeInfo::Pending);
                     }
                 }
             }
-            Err(cdk::Error::ExpiredQuote(..)) => bail!("CashuMeltQuoteExpired"),
-            Err(e) => bail!("CashuMeltFailed: {e}"),
+            Err(e) => return after_confirm_error(localstore, operation_id, e).await,
         };
 
         let outcome = melt_outcome(
@@ -677,6 +679,38 @@ impl CashuWallet {
 /// payment, which settles in seconds; short enough that a held one (a hold
 /// invoice, a stuck route) does not keep the confirmation spinning.
 const MELT_WAIT: Duration = Duration::from_secs(30);
+
+/// What an error from confirming the melt `operation_id` means, read against
+/// the proof store.
+///
+/// By then cdk has run `recover_failed_melt_confirm` (`wallet/melt/mod.rs`,
+/// cdk 0.18.1), which returns the original error whether it rolled the melt
+/// back or left it unresolved. Whether the melt's saga is still on record
+/// tells the two apart; see [`confirm_error_outcome`]. A store that cannot be
+/// read proves nothing, so it counts as still recorded.
+async fn after_confirm_error(
+    localstore: &(dyn WalletDatabase<cdk_database::Error> + Send + Sync),
+    operation_id: Uuid,
+    e: cdk::Error,
+) -> Result<MeltOutcomeInfo> {
+    let still_recorded = localstore
+        .get_saga(&operation_id)
+        .await
+        .map_or(true, |saga| saga.is_some());
+    confirm_error_outcome(still_recorded, e)
+}
+
+/// What an error from confirming a melt means for the user, given whether its
+/// saga is `still_recorded` once cdk's recovery has run.
+///
+/// **Errors**: `CashuMeltQuoteExpired` when the mint refused the quote as
+/// expired, `CashuMeltFailed` otherwise.
+fn confirm_error_outcome(_still_recorded: bool, e: cdk::Error) -> Result<MeltOutcomeInfo> {
+    match e {
+        cdk::Error::ExpiredQuote(..) => bail!("CashuMeltQuoteExpired"),
+        e => bail!("CashuMeltFailed: {e}"),
+    }
+}
 
 /// What a finalized melt means for the user. `fee_paid` is cdk's, which counts
 /// the melt's inputs only; `swap_fee` is the swap that made them, paid too.
