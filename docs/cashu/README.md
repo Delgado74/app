@@ -586,8 +586,9 @@ mints is inconsistent), no general wallet features.
     asks the mint for a bolt11 melt quote, then `prepare_melt` (the only place cdk
     computes the input fee: keyset `fee_ppk`, plus a swap when the proofs do not
     fit) and cancels it at once. Returns the quote id, the amount, the fee reserve,
-    the input fee, their total and the quote's expiry. No proof stays reserved while
-    the user reads the confirmation.
+    the input fee and their total. No proof stays reserved while the user reads
+    the confirmation. The quote's expiry stays in Rust: `cashu_melt` refuses an
+    expired quote itself, and the screen then asks for a fresh one.
   - `cashu_melt(quote_id, max_total_sats) -> CashuMeltResult` — prepares again,
     refuses a quote taken at another mint (`CashuMeltFailed`; cdk does not check),
     an expired quote (`CashuMeltQuoteExpired`) or a total above what the user
@@ -623,9 +624,10 @@ mints is inconsistent), no general wallet features.
   reason. A mint that ignores `respond-async` holds the request open, and nothing
   in cdk times it out, so the dialog stops waiting after 40 s — above `MELT_WAIT`,
   so a real answer is never cut short — and shows *in progress*. The payment is
-  not cancelled; its late answer is dropped, and the balance follows. An expired quote or a changed fee goes back to a fresh quote, never pays
-  stale. l10n in all locales;
-  `DESIGN_SYSTEM.md`.
+  not cancelled; its late answer is dropped, and the balance follows. An expired
+  quote or a changed fee goes back to a fresh quote, never pays stale. l10n in all
+  locales; the layout follows `DESIGN_SYSTEM.md` (DS-CMP-1, -2, -6, -26; DS-TYP-3;
+  DS-A11Y-2, through `MostroDialog`'s `liveRegion`).
 - **Out of scope:** Lightning addresses / LNURL (who resolves the LNURL, and from
   which network address, is not yet checked), amountless invoices, warnings about
   trades that need the balance.

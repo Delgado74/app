@@ -659,16 +659,12 @@ class CashuMeltQuote {
   /// and input fees. "Up to", not exact: unspent reserve is returned.
   final BigInt maxTotalSats;
 
-  /// When the mint stops honouring the quote, unix seconds.
-  final PlatformInt64 expiryUnix;
-
   const CashuMeltQuote({
     required this.quoteId,
     required this.amountSats,
     required this.feeReserveSats,
     required this.inputFeeSats,
     required this.maxTotalSats,
-    required this.expiryUnix,
   });
 
   @override
@@ -677,8 +673,7 @@ class CashuMeltQuote {
       amountSats.hashCode ^
       feeReserveSats.hashCode ^
       inputFeeSats.hashCode ^
-      maxTotalSats.hashCode ^
-      expiryUnix.hashCode;
+      maxTotalSats.hashCode;
 
   @override
   bool operator ==(Object other) =>
@@ -689,8 +684,7 @@ class CashuMeltQuote {
           amountSats == other.amountSats &&
           feeReserveSats == other.feeReserveSats &&
           inputFeeSats == other.inputFeeSats &&
-          maxTotalSats == other.maxTotalSats &&
-          expiryUnix == other.expiryUnix;
+          maxTotalSats == other.maxTotalSats;
 }
 
 @freezed

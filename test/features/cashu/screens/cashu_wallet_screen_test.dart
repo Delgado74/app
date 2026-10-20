@@ -103,7 +103,6 @@ CashuMeltQuote _quote(String id, {int reserve = 2, int input = 1}) =>
       feeReserveSats: BigInt.from(reserve),
       inputFeeSats: BigInt.from(input),
       maxTotalSats: BigInt.from(100 + reserve + input),
-      expiryUnix: 4102444800,
     );
 
 const _invoice = 'lnbc1000n1pinvoice';

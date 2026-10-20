@@ -640,7 +640,6 @@ pub async fn cashu_melt_quote(invoice: String) -> Result<CashuMeltQuote> {
         fee_reserve_sats: quote.fee_reserve_sats,
         input_fee_sats: quote.input_fee_sats,
         max_total_sats: quote.max_total_sats,
-        expiry_unix: i64::try_from(quote.expiry_unix).unwrap_or(i64::MAX),
     })
 }
 

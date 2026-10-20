@@ -65,7 +65,6 @@ pub struct MeltQuoteInfo {
     pub fee_reserve_sats: u64,
     pub input_fee_sats: u64,
     pub max_total_sats: u64,
-    pub expiry_unix: u64,
 }
 
 /// See the native [`wallet::MeltOutcomeInfo`].

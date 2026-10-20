@@ -9144,14 +9144,12 @@ impl SseDecode for crate::api::types::CashuMeltQuote {
         let mut var_feeReserveSats = <u64>::sse_decode(deserializer);
         let mut var_inputFeeSats = <u64>::sse_decode(deserializer);
         let mut var_maxTotalSats = <u64>::sse_decode(deserializer);
-        let mut var_expiryUnix = <i64>::sse_decode(deserializer);
         return crate::api::types::CashuMeltQuote {
             quote_id: var_quoteId,
             amount_sats: var_amountSats,
             fee_reserve_sats: var_feeReserveSats,
             input_fee_sats: var_inputFeeSats,
             max_total_sats: var_maxTotalSats,
-            expiry_unix: var_expiryUnix,
         };
     }
 }
@@ -12589,7 +12587,6 @@ impl flutter_rust_bridge::IntoDart for crate::api::types::CashuMeltQuote {
             self.fee_reserve_sats.into_into_dart().into_dart(),
             self.input_fee_sats.into_into_dart().into_dart(),
             self.max_total_sats.into_into_dart().into_dart(),
-            self.expiry_unix.into_into_dart().into_dart(),
         ]
         .into_dart()
     }
@@ -14978,7 +14975,6 @@ impl SseEncode for crate::api::types::CashuMeltQuote {
         <u64>::sse_encode(self.fee_reserve_sats, serializer);
         <u64>::sse_encode(self.input_fee_sats, serializer);
         <u64>::sse_encode(self.max_total_sats, serializer);
-        <i64>::sse_encode(self.expiry_unix, serializer);
     }
 }
 

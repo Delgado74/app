@@ -93,8 +93,6 @@ pub struct MeltQuoteInfo {
     /// The most the payment can take from the balance:
     /// [`melt_max_total`] of the three above.
     pub max_total_sats: u64,
-    /// When the mint stops honouring the quote, unix seconds.
-    pub expiry_unix: u64,
 }
 
 /// How a melt the user confirmed ended.
@@ -798,7 +796,6 @@ fn quote_info(prepared: &PreparedMelt<'_>) -> Result<MeltQuoteInfo> {
         fee_reserve_sats,
         input_fee_sats,
         max_total_sats,
-        expiry_unix: quote.expiry,
     })
 }
 

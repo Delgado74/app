@@ -1362,8 +1362,6 @@ pub struct CashuMeltQuote {
     /// The most the payment can take from the balance: amount, fee reserve
     /// and input fees. "Up to", not exact: unspent reserve is returned.
     pub max_total_sats: u64,
-    /// When the mint stops honouring the quote, unix seconds.
-    pub expiry_unix: i64,
 }
 
 /// How a confirmed payment to a Lightning invoice ended — phase C3b-1.

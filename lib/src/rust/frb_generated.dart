@@ -8740,15 +8740,14 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   CashuMeltQuote dco_decode_cashu_melt_quote(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     final arr = raw as List<dynamic>;
-    if (arr.length != 6)
-      throw Exception('unexpected arr length: expect 6 but see ${arr.length}');
+    if (arr.length != 5)
+      throw Exception('unexpected arr length: expect 5 but see ${arr.length}');
     return CashuMeltQuote(
       quoteId: dco_decode_String(arr[0]),
       amountSats: dco_decode_u_64(arr[1]),
       feeReserveSats: dco_decode_u_64(arr[2]),
       inputFeeSats: dco_decode_u_64(arr[3]),
       maxTotalSats: dco_decode_u_64(arr[4]),
-      expiryUnix: dco_decode_i_64(arr[5]),
     );
   }
 
@@ -11478,14 +11477,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     var var_feeReserveSats = sse_decode_u_64(deserializer);
     var var_inputFeeSats = sse_decode_u_64(deserializer);
     var var_maxTotalSats = sse_decode_u_64(deserializer);
-    var var_expiryUnix = sse_decode_i_64(deserializer);
     return CashuMeltQuote(
       quoteId: var_quoteId,
       amountSats: var_amountSats,
       feeReserveSats: var_feeReserveSats,
       inputFeeSats: var_inputFeeSats,
       maxTotalSats: var_maxTotalSats,
-      expiryUnix: var_expiryUnix,
     );
   }
 
@@ -14814,7 +14811,6 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     sse_encode_u_64(self.feeReserveSats, serializer);
     sse_encode_u_64(self.inputFeeSats, serializer);
     sse_encode_u_64(self.maxTotalSats, serializer);
-    sse_encode_i_64(self.expiryUnix, serializer);
   }
 
   @protected
