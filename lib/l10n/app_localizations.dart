@@ -7206,10 +7206,10 @@ abstract class AppLocalizations {
   /// **'Payment in progress'**
   String get cashuMeltPendingTitle;
 
-  /// Cashu wallet — payment dialog result: when the balance catches up with a payment still in flight
+  /// Cashu wallet — payment dialog result when the outcome is unknown (still routing, or the mint did not answer); names the “Sync with mint” button (cashuSyncButton), which must match it in every locale
   ///
   /// In en, this message translates to:
-  /// **'Your balance will update when the wallet syncs with the mint.'**
+  /// **'The outcome isn\'t confirmed yet. Those sats stay on hold; tap “Sync with mint” later to settle them.'**
   String get cashuMeltPendingBody;
 
   /// Cashu wallet — payment dialog result: the payment did not go through; the reason follows
@@ -7272,10 +7272,10 @@ abstract class AppLocalizations {
   /// **'You do not have enough in the wallet to pay this invoice and its fees.'**
   String get cashuErrorMeltInsufficientFunds;
 
-  /// Cashu error — the melt failed; held proofs are returned now or settled at the next sync
+  /// Cashu error — the melt was rolled back: nothing was paid and the proofs are already back in the balance
   ///
   /// In en, this message translates to:
-  /// **'The payment did not go through. Any sats it held come back when the wallet syncs with the mint.'**
+  /// **'The payment did not go through. Nothing was paid; the sats are back in your balance.'**
   String get cashuErrorMeltFailed;
 
   /// Title of the seller's Cashu escrow funding screen

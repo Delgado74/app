@@ -4350,7 +4350,7 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get cashuMeltPendingBody =>
-      'Il saldo si aggiornerà quando il portafoglio si sincronizza con la mint.';
+      'L\'esito non è ancora confermato. Questi sats restano bloccati; tocca «Sincronizza con la mint» più tardi per risolverlo.';
 
   @override
   String get cashuMeltFailedTitle => 'Pagamento non riuscito';
@@ -4393,7 +4393,7 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get cashuErrorMeltFailed =>
-      'Il pagamento non è andato a buon fine. I sats trattenuti tornano quando il portafoglio si sincronizza con la mint.';
+      'Il pagamento non è andato a buon fine. Non è stato pagato nulla; i sats sono tornati nel tuo saldo.';
 
   @override
   String get lockEscrowTitle => 'Blocca la custodia';

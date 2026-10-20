@@ -4339,7 +4339,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get cashuMeltPendingBody =>
-      'Tu saldo se actualizará cuando la billetera se sincronice con el mint.';
+      'El resultado aún no está confirmado. Esos sats quedan retenidos; toca «Sincronizar con el mint» más tarde para resolverlo.';
 
   @override
   String get cashuMeltFailedTitle => 'El pago falló';
@@ -4381,7 +4381,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get cashuErrorMeltFailed =>
-      'El pago no se completó. Los sats que retuvo vuelven cuando la billetera se sincronice con el mint.';
+      'El pago no se completó. No se pagó nada; los sats volvieron a tu saldo.';
 
   @override
   String get lockEscrowTitle => 'Bloquear la custodia';

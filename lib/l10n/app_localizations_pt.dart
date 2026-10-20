@@ -4369,7 +4369,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get cashuMeltPendingBody =>
-      'Seu saldo será atualizado quando a carteira sincronizar com o mint.';
+      'O resultado ainda não foi confirmado. Esses sats ficam retidos; toque em “Sincronizar com o mint” mais tarde para resolver.';
 
   @override
   String get cashuMeltFailedTitle => 'Falha no pagamento';
@@ -4411,7 +4411,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get cashuErrorMeltFailed =>
-      'O pagamento não foi concluído. Os sats retidos voltam quando a carteira sincronizar com o mint.';
+      'O pagamento não foi concluído. Nada foi pago; os sats voltaram ao seu saldo.';
 
   @override
   String get lockEscrowTitle => 'Bloquear a custódia';

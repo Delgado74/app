@@ -4362,7 +4362,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get cashuMeltPendingBody =>
-      'Dein Guthaben wird aktualisiert, sobald die Wallet mit der Mint synchronisiert.';
+      'Das Ergebnis ist noch nicht bestätigt. Diese Sats bleiben reserviert; tippe später auf „Mit der Mint synchronisieren“, um es zu klären.';
 
   @override
   String get cashuMeltFailedTitle => 'Zahlung fehlgeschlagen';
@@ -4405,7 +4405,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get cashuErrorMeltFailed =>
-      'Die Zahlung ist nicht durchgegangen. Zurückgehaltene Sats kommen zurück, sobald die Wallet mit der Mint synchronisiert.';
+      'Die Zahlung ist nicht durchgegangen. Es wurde nichts bezahlt; die Sats sind wieder in deinem Guthaben.';
 
   @override
   String get lockEscrowTitle => 'Treuhand sperren';

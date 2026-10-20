@@ -4310,7 +4310,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get cashuMeltPendingBody =>
-      'Your balance will update when the wallet syncs with the mint.';
+      'The outcome isn\'t confirmed yet. Those sats stay on hold; tap “Sync with mint” later to settle them.';
 
   @override
   String get cashuMeltFailedTitle => 'Payment failed';
@@ -4353,7 +4353,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get cashuErrorMeltFailed =>
-      'The payment did not go through. Any sats it held come back when the wallet syncs with the mint.';
+      'The payment did not go through. Nothing was paid; the sats are back in your balance.';
 
   @override
   String get lockEscrowTitle => 'Lock the escrow';

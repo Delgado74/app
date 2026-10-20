@@ -4371,7 +4371,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get cashuMeltPendingBody =>
-      'Votre solde sera mis à jour lors de la synchronisation du portefeuille avec le mint.';
+      'Le résultat n\'est pas encore confirmé. Ces sats restent bloqués ; touchez « Synchroniser avec le mint » plus tard pour le régler.';
 
   @override
   String get cashuMeltFailedTitle => 'Le paiement a échoué';
@@ -4414,7 +4414,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get cashuErrorMeltFailed =>
-      'Le paiement n\'a pas abouti. Les sats qu\'il retenait reviennent lors de la synchronisation du portefeuille avec le mint.';
+      'Le paiement n\'a pas abouti. Rien n\'a été payé ; les sats sont de retour dans votre solde.';
 
   @override
   String get lockEscrowTitle => 'Bloquer le séquestre';

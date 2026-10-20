@@ -1360,7 +1360,7 @@ void main() {
       expect(controller.melts, hasLength(1));
     });
 
-    testWidgets('a payment still in flight says the balance follows', (
+    testWidgets('a payment not yet settled says how to settle it', (
       tester,
     ) async {
       final controller = _FakeController(
@@ -1372,13 +1372,27 @@ void main() {
       await pay(tester);
 
       expect(find.text('Payment in progress'), findsOneWidget);
+      // Not "still routing": a mint that did not answer reads as pending
+      // too. And nothing syncs on its own, so it names the button that does.
       expect(
         find.text(
-          'Your balance will update when the wallet syncs with the mint.',
+          "The outcome isn't confirmed yet. Those sats stay on hold; tap "
+          '“Sync with mint” later to settle them.',
         ),
         findsOneWidget,
       );
       expect(find.byIcon(Icons.schedule_rounded), findsOneWidget);
+    });
+
+    test('the pending note names the Sync button as each locale labels it', () {
+      for (final locale in AppLocalizations.supportedLocales) {
+        final l10n = lookupAppLocalizations(locale);
+        expect(
+          l10n.cashuMeltPendingBody,
+          contains(l10n.cashuSyncButton),
+          reason: '$locale',
+        );
+      }
     });
 
     testWidgets('a failed payment says so in the dialog, with the reason', (
@@ -1397,8 +1411,8 @@ void main() {
       expect(find.text('Payment failed'), findsOneWidget);
       expect(
         find.text(
-          'The payment did not go through. Any sats it held come back when '
-          'the wallet syncs with the mint.',
+          'The payment did not go through. Nothing was paid; the sats are '
+          'back in your balance.',
         ),
         findsOneWidget,
       );

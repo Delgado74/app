@@ -4349,7 +4349,7 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get cashuMeltPendingBody =>
-      'Je saldo wordt bijgewerkt zodra de wallet synchroniseert met de mint.';
+      'De uitkomst is nog niet bevestigd. Die sats blijven vastgehouden; tik later op ‘Synchroniseren met mint’ om het af te ronden.';
 
   @override
   String get cashuMeltFailedTitle => 'Betaling mislukt';
@@ -4392,7 +4392,7 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get cashuErrorMeltFailed =>
-      'De betaling is niet gelukt. Vastgehouden sats komen terug zodra de wallet synchroniseert met de mint.';
+      'De betaling is niet gelukt. Er is niets betaald; de sats staan weer in je saldo.';
 
   @override
   String get lockEscrowTitle => 'De escrow vergrendelen';
