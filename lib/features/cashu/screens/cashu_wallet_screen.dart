@@ -914,7 +914,10 @@ class _SendKindRow extends StatelessWidget {
     return ListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 4),
       leading: Icon(icon, color: book.limeIcon),
-      title: Text(label, style: TextStyle(color: book.textPrimary)),
+      title: Text(
+        label,
+        style: TextStyle(fontWeight: FontWeight.w500, color: book.textPrimary),
+      ),
       onTap: () => Navigator.of(context).pop(kind),
     );
   }
@@ -1139,6 +1142,9 @@ class _MeltConfirmDialogState extends State<_MeltConfirmDialog> {
     onPressed: () => Navigator.of(context).pop(),
   );
 
+  // The outcome replaces the confirmation in place, with no route change to
+  // announce it, and how the payment ended is the one thing a screen-reader
+  // user must hear: each outcome is a live region (DS-A11Y-2).
   Widget _outcome(BuildContext context, CashuMeltResult result) {
     final l10n = AppLocalizations.of(context);
     final locale = Localizations.localeOf(context).toString();
@@ -1149,12 +1155,14 @@ class _MeltConfirmDialogState extends State<_MeltConfirmDialog> {
           title: l10n.cashuMeltPaidTitle(_fmtSats(amountSats, locale)),
           body: l10n.cashuMeltPaidFee(_fmtSats(feePaidSats, locale)),
           primary: _close(l10n),
+          liveRegion: true,
         ),
       CashuMeltResult_Pending() => MostroDialog(
         icon: Icons.schedule_rounded,
         title: l10n.cashuMeltPendingTitle,
         body: l10n.cashuMeltPendingBody,
         primary: _close(l10n),
+        liveRegion: true,
       ),
     };
   }
@@ -1167,6 +1175,7 @@ class _MeltConfirmDialogState extends State<_MeltConfirmDialog> {
       title: l10n.cashuMeltFailedTitle,
       body: cashuErrorMessage(failure, l10n),
       primary: _close(l10n),
+      liveRegion: true,
     );
   }
 
@@ -1186,7 +1195,11 @@ class _MeltConfirmDialogState extends State<_MeltConfirmDialog> {
           if (widget.refreshed) ...[
             Text(
               l10n.cashuMeltQuoteRefreshed,
-              style: TextStyle(fontSize: 13, color: book.textBody),
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+                color: book.textBody,
+              ),
             ),
             const SizedBox(height: 12),
           ],
@@ -1204,7 +1217,11 @@ class _MeltConfirmDialogState extends State<_MeltConfirmDialog> {
           const SizedBox(height: 12),
           Text(
             l10n.cashuMeltFeesNote,
-            style: TextStyle(fontSize: 12, color: book.textMuted),
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+              color: book.textMuted,
+            ),
           ),
         ],
       ),
@@ -1237,7 +1254,7 @@ class _MeltRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final book = OrderBookPalette.of(context);
-    final weight = emphasise ? FontWeight.w600 : FontWeight.w400;
+    final weight = emphasise ? FontWeight.w600 : FontWeight.w500;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Wrap(

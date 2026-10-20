@@ -1384,6 +1384,46 @@ void main() {
       expect(find.byIcon(Icons.schedule_rounded), findsOneWidget);
     });
 
+    testWidgets('how the payment ended is announced to a screen reader', (
+      tester,
+    ) async {
+      final semantics = tester.ensureSemantics();
+      try {
+        for (final (outcome, title) in [
+          (
+            CashuMeltResult.paid(
+              amountSats: BigInt.from(100),
+              feePaidSats: BigInt.one,
+            ),
+            'Paid 100 sats',
+          ),
+          (const CashuMeltResult.pending(), 'Payment in progress'),
+          (
+            AnyhowException('CashuMeltFailed: payment Failed'),
+            'Payment failed',
+          ),
+        ]) {
+          final controller = _FakeController(
+            quotes: [_quote('q1')],
+            meltOutcomes: [outcome],
+          );
+          await openConfirmation(tester, controller);
+
+          await pay(tester);
+
+          // It replaces the confirmation in place: no route change says it.
+          // Title and body are read as one message.
+          final node = tester.getSemantics(find.text(title));
+          expect(node, isSemantics(isLiveRegion: true), reason: title);
+          expect(node.label, contains('\n'), reason: title);
+          await tester.tap(find.text('Close'));
+          await tester.pumpAndSettle();
+        }
+      } finally {
+        semantics.dispose();
+      }
+    });
+
     test('the pending note names the Sync button as each locale labels it', () {
       for (final locale in AppLocalizations.supportedLocales) {
         final l10n = lookupAppLocalizations(locale);
