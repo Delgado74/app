@@ -19,6 +19,8 @@ use cdk_sqlite::WalletSqliteDatabase;
 use std::str::FromStr;
 use uuid::Uuid;
 
+use super::in_flight;
+
 /// Everything the escrow flow needs a mint to support.
 ///
 /// Checked once at connect rather than at the first failing operation: a seller
@@ -207,6 +209,12 @@ impl CashuWallet {
     /// on. Whatever was not settled is still recorded as a saga and is tried
     /// again at the next connect.
     async fn recover(&self) {
+        if in_flight::melt_in_flight(&self.inner.mint_url) {
+            log::info!(
+                "[cashu] a melt is in flight at this mint: recovery waits for the next connect"
+            );
+            return;
+        }
         match self.inner.recover_incomplete_sagas().await {
             Ok(report) if report.is_empty() => {}
             Ok(report) => log::info!(
@@ -529,6 +537,12 @@ impl CashuWallet {
     /// cannot be read. A single melt the mint does not answer for is logged by
     /// cdk and skipped, not an error.
     pub async fn finalize_pending_melts(&self) -> Result<()> {
+        if in_flight::melt_in_flight(&self.inner.mint_url) {
+            log::info!(
+                "[cashu] a melt is in flight at this mint: pending melts wait for the next sync"
+            );
+            return Ok(());
+        }
         let finalized = self
             .inner
             .finalize_pending_melts()
@@ -555,6 +569,10 @@ impl CashuWallet {
     /// cannot price or release the quote, `CashuMeltInsufficientFunds`,
     /// `CashuMeltQuoteExpired`, `CashuMeltFailed` (amount overflow).
     pub async fn melt_quote(&self, invoice: &str) -> Result<MeltQuoteInfo> {
+        // Taken first, and held while the quote is priced: pricing reserves
+        // proofs for a moment, and a connect's recovery would roll that back.
+        // A second payment is refused before its invoice is even read.
+        let _in_flight = in_flight::try_begin_melt(&self.inner.mint_url)?;
         let (invoice, amount_sats) = melt_invoice(invoice, unix_now())?;
         melt_gate(&self.capabilities, amount_sats)?;
 
@@ -613,6 +631,10 @@ impl CashuWallet {
     /// not be asked about — after an error is `Pending`, not an error: see
     /// [`confirm_error_outcome`].
     pub async fn melt(&self, quote_id: &str, max_total_sats: u64) -> Result<MeltOutcomeInfo> {
+        // Held to the last line, even past the point the caller stops
+        // waiting: until this returns the request may still be on its way to
+        // the mint, and the mint may still pay it.
+        let _in_flight = in_flight::try_begin_melt(&self.inner.mint_url)?;
         let prepared = self
             .inner
             .prepare_melt(quote_id, HashMap::new())
