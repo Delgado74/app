@@ -9472,6 +9472,15 @@ async fn wipe_unadopted_rows(db: &impl Storage, now: i64) -> usize {
             );
             continue;
         }
+        // The chat cursors too: one left behind makes a rebuilt row resume
+        // its chat after the history just deleted.
+        if let Err(e) = crate::api::messages::forget_order_cursors(db, &order_id).await {
+            crate::api::logging::blog_warn(
+                "orders",
+                format!("sweep: chat cursors of unadopted order={order_id} not deleted: {e}"),
+            );
+            continue;
+        }
         if let Err(e) = wipe_trade_row(db, &order_id, now, row.trade_key_index).await {
             crate::api::logging::blog_warn(
                 "orders",
