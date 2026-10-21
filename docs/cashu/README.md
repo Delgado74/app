@@ -567,9 +567,10 @@ mints is inconsistent), no general wallet features.
     `wallet/recovery.rs`) and rolls back a send or melt in `ProofsReserved` without
     checking that it is still running — the state of an escrow lock, a token send or
     a melt being prepared. At connect the wallet is not installed yet, so nothing
-    runs on it. Not covered: an operation still running on an earlier wallet for the
-    same mint, after switching mints and back mid-operation; closing it needs an
-    operations lock that recovery takes exclusively (a later PR).
+    runs on it. An earlier wallet for the same mint, left by switching mints and
+    back, may still be melting, though: see *A melt in flight* below. A send or
+    escrow lock still running there is not covered; closing that needs those
+    operations to hold a mark too (a later PR).
   - Because a bound wallet is reused rather than reconnected,
     `cashu_sweep_spent_proofs` (the wallet screen's sync) runs
     `finalize_pending_melts()` — melts in `MeltRequested` / `PaymentPending` only,
@@ -578,6 +579,39 @@ mints is inconsistent), no general wallet features.
     them.
   - A quote whose release fails is not offered (`CashuMeltQuoteFailed`): its saga
     still holds the quote, so paying it would fail. The next connect releases it.
+  - **A melt in flight is left alone (#864).** The payment dialog stops waiting
+    after 40 s, but `cashu_melt` runs to its end, and its saga sits in
+    `MeltRequested` the whole time. cdk resumes such a saga at Sync and at connect
+    with no check that it is still running. A mint that has not processed the
+    request yet calls the quote `Unpaid`, and cdk rolls the melt back: the proofs
+    return to the balance, then the mint pays with them. So `melt_quote` and
+    `melt` hold a mark on their mint for the whole call (`cashu/in_flight.rs`).
+    The mark is process-wide and keyed by the normalized mint URL, because a mint
+    switch and back binds a new wallet. While it is held:
+    - a second quote or payment there is refused with `CashuMeltInFlight` ("…wait
+      for it to finish, or restart the app");
+    - Sync still sweeps and broadcasts the balance, but leaves the melts for the
+      next sync;
+    - connect skips recovery entirely (`recover_incomplete_sagas` is all or
+      nothing) and leaves it for the next connect.
+
+    **Known limits.** cdk bounds the request only at a mint that lists the melt
+    under NUT-19, to that cache's TTL. cdk-mintd 0.18.1 always lists it, at 60 s by
+    default; cdk assumes 300 s when a mint states no TTL. When that timeout fires,
+    `execute_async` asks the mint itself and rolls back on `Unpaid`. That happens
+    inside the melt, under its mark, so the same race remains for a request still
+    in transit after the TTL. Without NUT-19 nothing bounds the request, and the
+    mark holds until the app restarts. After a restart, connect resumes the saga.
+    cdk asks the mint first and rolls back only on `Unpaid` with no payment proof.
+    `Pending` or `Paid` are left or finalized, so only a request still in transit
+    is at risk.
+  - **A quote no longer unpaid is refused (#864).** cdk's `initialize_melt` checks
+    only the expiry, and a quote that finalized as paid has its reservation
+    released, so it prepares again. Should the mint then refuse the melt with
+    anything other than `RequestAlreadyPaid`, cdk reads the quote paid and marks
+    the *new* proofs spent. cdk-mintd answers `RequestAlreadyPaid`; other mints
+    are unverified. `cashu_melt` refuses any local state other than `Unpaid` with
+    `CashuMeltFailed` (nothing was sent), after cancelling.
 - **Rust** (`cashu/wallet.rs`, `api/cashu.rs`). cdk's prepared melt borrows the
   wallet and can only be confirmed or cancelled through that handle
   (`confirm_prepared_melt` / `cancel_prepared_melt` are `#[doc(hidden)]`), so it is
@@ -633,8 +667,11 @@ mints is inconsistent), no general wallet features.
   trades that need the balance.
 - **Tests:** unit — invoice validation, marker mapping, the capability gate (hidden,
   not refused), the confirmed total, the quote's mint; widget — the send choice, the
-  confirmation staying busy while it pays, the refresh of a stale quote. **Tests
-  against a mint are deferred:** the paths that need one — the balance dropping by
+  confirmation staying busy while it pays, the refresh of a stale quote. The two
+  rules of #864 run against a wallet seeded in its store, whose mint is a local
+  listener that counts connections and answers `UNPAID`. That listener stands in
+  for HTTP only, not for the mint's cryptography. **Tests against a mint are
+  deferred:** the paths that need one — the balance dropping by
   at most the confirmed total, a quote leaving no proof reserved, a melt left
   prepared or in flight settled at the next connect or sync — are checked by hand
   against a `cdk-mintd` on a regtest Lightning node, until automated mint-backed
