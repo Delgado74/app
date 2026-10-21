@@ -72,6 +72,7 @@ TradeRow _row() => TradeRow(
   paymentMethod: 'Bank transfer',
   startedAt: 0,
   peerHandle: null,
+  node: _nodeA,
 );
 
 void main() {

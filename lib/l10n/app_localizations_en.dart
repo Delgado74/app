@@ -4255,6 +4255,107 @@ class AppLocalizationsEn extends AppLocalizations {
       'The send failed and the wallet could not confirm the funds are back. Sync with the mint before trying again.';
 
   @override
+  String get cashuSendEcashOption => 'Ecash';
+
+  @override
+  String get cashuSendLightningOption => 'Lightning';
+
+  @override
+  String get cashuInvoiceDialogTitle => 'Pay a Lightning invoice';
+
+  @override
+  String get cashuInvoiceFieldLabel => 'Lightning invoice';
+
+  @override
+  String get cashuPasteInvoiceHint => 'Paste a Lightning invoice';
+
+  @override
+  String get cashuInvoiceScanHint => 'Paste or scan a Lightning invoice';
+
+  @override
+  String get cashuMeltConfirmTitle => 'Confirm payment';
+
+  @override
+  String get cashuMeltAmount => 'Amount';
+
+  @override
+  String get cashuMeltFees => 'Fees, up to';
+
+  @override
+  String get cashuMeltTotal => 'Total, up to';
+
+  @override
+  String get cashuMeltFeesNote =>
+      'Fees the mint does not use come back to your wallet.';
+
+  @override
+  String get cashuMeltQuoteRefreshed =>
+      'The price changed. Check the new total before paying.';
+
+  @override
+  String get cashuPayButton => 'Pay';
+
+  @override
+  String cashuMeltPaidTitle(String sats) {
+    return 'Paid $sats sats';
+  }
+
+  @override
+  String cashuMeltPaidFee(String fee) {
+    return 'Fee: $fee sats';
+  }
+
+  @override
+  String get cashuMeltPendingTitle => 'Payment in progress';
+
+  @override
+  String get cashuMeltPendingBody =>
+      'The outcome isn\'t confirmed yet. Those sats stay on hold; tap “Sync with mint” later to settle them.';
+
+  @override
+  String get cashuMeltFailedTitle => 'Payment failed';
+
+  @override
+  String get cashuErrorInvalidInvoice =>
+      'That is not a Lightning invoice this wallet can pay.';
+
+  @override
+  String get cashuErrorInvoiceNoAmount =>
+      'This invoice has no amount. Ask for one that states how much to pay.';
+
+  @override
+  String get cashuErrorInvoiceExpired =>
+      'This invoice has expired. Ask for a new one.';
+
+  @override
+  String get cashuErrorMeltUnsupported =>
+      'This mint cannot pay Lightning invoices.';
+
+  @override
+  String get cashuErrorMeltAmountOutOfRange =>
+      'This mint does not pay invoices of that amount.';
+
+  @override
+  String get cashuErrorMeltQuoteFailed =>
+      'The mint could not quote this payment. Try again later.';
+
+  @override
+  String get cashuErrorMeltQuoteExpired =>
+      'The payment quote expired. Nothing was paid; start again.';
+
+  @override
+  String get cashuErrorMeltFeeChanged =>
+      'The fees went up since you confirmed. Nothing was paid; start again.';
+
+  @override
+  String get cashuErrorMeltInsufficientFunds =>
+      'You do not have enough in the wallet to pay this invoice and its fees.';
+
+  @override
+  String get cashuErrorMeltFailed =>
+      'The payment did not go through. Nothing was paid; the sats are back in your balance.';
+
+  @override
   String get lockEscrowTitle => 'Lock the escrow';
 
   @override
