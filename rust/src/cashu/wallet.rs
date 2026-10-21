@@ -818,7 +818,9 @@ fn melt_refusal(
     // cdk 0.18.1): a quote taken at another mint would have this mint's
     // proofs sent to pay it.
     if !quote_is_for(quote.mint_url.as_ref(), wallet_mint) {
-        return Some(anyhow!("CashuMeltFailed: the quote belongs to another mint"));
+        return Some(anyhow!(
+            "CashuMeltFailed: the quote belongs to another mint"
+        ));
     }
     // cdk checks only the expiry (`initialize_melt`), and a quote that
     // finalized as paid has had its reservation released, so it prepares
@@ -1872,7 +1874,12 @@ mod tests {
         let mint = MintUrl::from_str(mint_url).unwrap();
         let keys = Keys::new(
             (0..8)
-                .map(|bit| (Amount::from(1u64 << bit), SecretKey::generate().public_key()))
+                .map(|bit| {
+                    (
+                        Amount::from(1u64 << bit),
+                        SecretKey::generate().public_key(),
+                    )
+                })
                 .collect::<BTreeMap<_, _>>(),
         );
         let id = Id::v1_from_keys(&keys);
@@ -1934,11 +1941,7 @@ mod tests {
     }
 
     /// A melt quote for all of [`SEEDED_SATS`], valid for an hour.
-    fn melt_quote_for(
-        id: &str,
-        mint: &MintUrl,
-        state: MeltQuoteState,
-    ) -> cdk::wallet::MeltQuote {
+    fn melt_quote_for(id: &str, mint: &MintUrl, state: MeltQuoteState) -> cdk::wallet::MeltQuote {
         cdk::wallet::MeltQuote {
             id: id.to_string(),
             mint_url: Some(mint.clone()),
@@ -2074,9 +2077,14 @@ mod tests {
         );
         let mut expired = unpaid.clone();
         expired.expiry = now;
-        assert_eq!(refusal(&expired, 0).as_deref(), Some("CashuMeltQuoteExpired"));
         assert_eq!(
-            refusal(&unpaid, 1).map(|e| marker_of(anyhow!(e))).as_deref(),
+            refusal(&expired, 0).as_deref(),
+            Some("CashuMeltQuoteExpired")
+        );
+        assert_eq!(
+            refusal(&unpaid, 1)
+                .map(|e| marker_of(anyhow!(e)))
+                .as_deref(),
             Some("CashuMeltFeeChanged")
         );
     }
@@ -2099,7 +2107,12 @@ mod tests {
         );
         assert_eq!(mint.connections(), 0, "nothing may reach the mint");
         assert_eq!(unspent_sats(&wallet).await, SEEDED_SATS);
-        let stored = wallet.inner.localstore.get_melt_quote("paid").await.unwrap();
+        let stored = wallet
+            .inner
+            .localstore
+            .get_melt_quote("paid")
+            .await
+            .unwrap();
         assert_eq!(stored.unwrap().used_by_operation, None);
     }
 
@@ -2136,7 +2149,10 @@ mod tests {
         // Assert — not rolled back: the proof stays out of the balance, where
         // the mint may yet spend it.
         let recorded = wallet.inner.localstore.get_saga(&saga).await.unwrap();
-        assert!(recorded.is_some(), "the melt was rolled back while in flight");
+        assert!(
+            recorded.is_some(),
+            "the melt was rolled back while in flight"
+        );
         assert_eq!(unspent_sats(&wallet).await, 0);
         assert_eq!(mint.connections(), 0, "the mint was asked about it");
     }
@@ -2155,7 +2171,10 @@ mod tests {
 
         // Assert
         let recorded = wallet.inner.localstore.get_saga(&saga).await.unwrap();
-        assert!(recorded.is_some(), "the melt was rolled back while in flight");
+        assert!(
+            recorded.is_some(),
+            "the melt was rolled back while in flight"
+        );
         assert_eq!(unspent_sats(&wallet).await, 0);
         assert_eq!(mint.connections(), 0, "the mint was asked about it");
     }

@@ -109,7 +109,9 @@ mod tests {
         // Act / Assert — the mint is marked, and a second melt there is refused
         // with the marker Dart maps.
         assert!(melt_in_flight(&mint));
-        let refused = try_begin_melt(&mint).err().expect("a second melt must be refused");
+        let refused = try_begin_melt(&mint)
+            .err()
+            .expect("a second melt must be refused");
         assert_eq!(refused.to_string(), "CashuMeltInFlight");
 
         // Another mint is not held up by it.
