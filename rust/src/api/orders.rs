@@ -9842,10 +9842,36 @@ async fn refetch_active_node_orders() {
             return;
         }
     };
+    let Some(events) = fetch_book_events(
+        &pool.client(),
+        &mostro_pubkey,
+        std::time::Duration::from_secs(10),
+    )
+    .await
+    else {
+        return;
+    };
+    for event in events {
+        ingest_order_event_with(&event, Publish::WhenBatchEnds).await;
+    }
+    // One emission for the batch. Publishing per event made a refetch
+    // O(N²): each upsert cloned the whole book and sent it across the
+    // bridge, so N orders cost N clones of an N-element vector. This
+    // path runs on cold start, on every node switch, and on every
+    // pull-to-refresh.
+    order_book().publish().await;
+}
+
+/// What the relays hold of `mostro_pubkey`'s book: the two scopes of
+/// [`order_book_filters`], each fetched within `timeout`, keeping only the
+/// node's own events. `None` when both fetches failed.
+async fn fetch_book_events(
+    client: &nostr_sdk::prelude::Client,
+    mostro_pubkey: &nostr_sdk::prelude::PublicKey,
+    timeout: std::time::Duration,
+) -> Option<Vec<nostr_sdk::prelude::Event>> {
     // Same two filters as the live subscription (see `order_book_filters`).
-    let (pending_filter, recent_filter) = order_book_filters(&mostro_pubkey);
-    let client = pool.client();
-    let timeout = std::time::Duration::from_secs(10);
+    let (pending_filter, recent_filter) = order_book_filters(mostro_pubkey);
     // Fetched independently on purpose: the two scopes fail independently, and
     // losing the recent-changes pass must not throw away a pending book that
     // arrived fine (that would leave the UI empty on a transient relay error).
@@ -9859,7 +9885,7 @@ async fn refetch_active_node_orders() {
     }
     if pending.is_err() && recent.is_err() {
         // Both scopes failed: nothing to ingest, and the warnings above say why.
-        return;
+        return None;
     }
     let mut events: Vec<nostr_sdk::prelude::Event> = Vec::new();
     for batch in [pending, recent].into_iter().flatten() {
@@ -9873,18 +9899,8 @@ async fn refetch_active_node_orders() {
     // honour the author must not move a trade of ours — a `canceled` wipes a
     // never-active one (`wipe_on_public_cancel`). The live subscription checks
     // the same before ingesting.
-    for event in events
-        .into_iter()
-        .filter(|event| event.pubkey == mostro_pubkey)
-    {
-        ingest_order_event_with(&event, Publish::WhenBatchEnds).await;
-    }
-    // One emission for the batch. Publishing per event made a refetch
-    // O(N²): each upsert cloned the whole book and sent it across the
-    // bridge, so N orders cost N clones of an N-element vector. This
-    // path runs on cold start, on every node switch, and on every
-    // pull-to-refresh.
-    order_book().publish().await;
+    events.retain(|event| event.pubkey == *mostro_pubkey);
+    Some(events)
 }
 
 /// Stable subscription ID for the Kind 38383 pending order-book feed.
