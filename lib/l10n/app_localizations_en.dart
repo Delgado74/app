@@ -4348,6 +4348,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'The fees went up since you confirmed. Nothing was paid; start again.';
 
   @override
+  String get cashuErrorMeltInFlight =>
+      'A Lightning payment from this wallet is still in progress. Wait for it to finish, then try again.';
+
+  @override
   String get cashuErrorMeltInsufficientFunds =>
       'You do not have enough in the wallet to pay this invoice and its fees.';
 

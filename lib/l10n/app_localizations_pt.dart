@@ -4400,6 +4400,10 @@ class AppLocalizationsPt extends AppLocalizations {
       'As taxas subiram desde que você confirmou. Nada foi pago; comece de novo.';
 
   @override
+  String get cashuErrorMeltInFlight =>
+      'Ainda há um pagamento Lightning desta carteira em andamento. Aguarde até terminar e tente de novo.';
+
+  @override
   String get cashuErrorMeltInsufficientFunds =>
       'Você não tem saldo suficiente na carteira para pagar esta fatura e suas taxas.';
 

@@ -21,6 +21,8 @@
 #[cfg(not(target_arch = "wasm32"))]
 pub mod escrow;
 #[cfg(not(target_arch = "wasm32"))]
+mod in_flight;
+#[cfg(not(target_arch = "wasm32"))]
 mod wallet;
 
 #[cfg(not(target_arch = "wasm32"))]

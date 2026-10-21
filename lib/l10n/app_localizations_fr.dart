@@ -4410,6 +4410,10 @@ class AppLocalizationsFr extends AppLocalizations {
       'Les frais ont augmenté depuis votre confirmation. Rien n\'a été payé ; recommencez.';
 
   @override
+  String get cashuErrorMeltInFlight =>
+      'Un paiement Lightning de ce portefeuille est toujours en cours. Attendez qu\'il se termine, puis réessayez.';
+
+  @override
   String get cashuErrorMeltInsufficientFunds =>
       'Vous n\'avez pas assez dans le portefeuille pour payer cette facture et ses frais.';
 

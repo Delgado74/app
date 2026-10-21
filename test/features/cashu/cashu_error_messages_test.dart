@@ -64,6 +64,7 @@ void main() {
       'CashuMeltQuoteFailed': l10n.cashuErrorMeltQuoteFailed,
       'CashuMeltQuoteExpired': l10n.cashuErrorMeltQuoteExpired,
       'CashuMeltFeeChanged': l10n.cashuErrorMeltFeeChanged,
+      'CashuMeltInFlight': l10n.cashuErrorMeltInFlight,
       'CashuMeltInsufficientFunds': l10n.cashuErrorMeltInsufficientFunds,
       'CashuMeltFailed': l10n.cashuErrorMeltFailed,
     };

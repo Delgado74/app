@@ -4501,6 +4501,8 @@
   "@cashuErrorMeltQuoteExpired": {"description": "Cashu error — the melt quote expired before paying; nothing was spent"},
   "cashuErrorMeltFeeChanged": "The fees went up since you confirmed. Nothing was paid; start again.",
   "@cashuErrorMeltFeeChanged": {"description": "Cashu error — the melt now costs more than the confirmed total; nothing was spent"},
+  "cashuErrorMeltInFlight": "A Lightning payment from this wallet is still in progress. Wait for it to finish, then try again.",
+  "@cashuErrorMeltInFlight": {"description": "Cashu error — another Lightning payment from the wallet is still waiting for the mint; nothing was started"},
   "cashuErrorMeltInsufficientFunds": "You do not have enough in the wallet to pay this invoice and its fees.",
   "@cashuErrorMeltInsufficientFunds": {"description": "Cashu error — the balance does not cover the invoice plus fees"},
   "cashuErrorMeltFailed": "The payment did not go through. Nothing was paid; the sats are back in your balance.",

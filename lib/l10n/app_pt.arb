@@ -1182,6 +1182,7 @@
   "cashuErrorMeltQuoteFailed": "O mint não conseguiu cotar este pagamento. Tente novamente mais tarde.",
   "cashuErrorMeltQuoteExpired": "A cotação do pagamento expirou. Nada foi pago; comece de novo.",
   "cashuErrorMeltFeeChanged": "As taxas subiram desde que você confirmou. Nada foi pago; comece de novo.",
+  "cashuErrorMeltInFlight": "Ainda há um pagamento Lightning desta carteira em andamento. Aguarde até terminar e tente de novo.",
   "cashuErrorMeltInsufficientFunds": "Você não tem saldo suficiente na carteira para pagar esta fatura e suas taxas.",
   "cashuErrorMeltFailed": "O pagamento não foi concluído. Nada foi pago; os sats voltaram ao seu saldo.",
   "lockEscrowTitle": "Bloquear a custódia",
