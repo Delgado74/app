@@ -1847,8 +1847,8 @@ pub(crate) async fn forget_identity_chats() {
 
 /// Delete the `since` cursors of both chat channels of `order_id` in `db`,
 /// so a trade rebuilt after a wipe without a node (#813) fetches its chat
-/// again from the relays. The wipe calls it before the row goes and keeps
-/// the row when it fails.
+/// again from the relays. The wipe calls it once the chat has stopped and
+/// before the messages and the row go, and keeps the row when it fails.
 pub(crate) async fn forget_order_cursors(
     db: &impl crate::db::Storage,
     order_id: &str,
@@ -1860,9 +1860,9 @@ pub(crate) async fn forget_order_cursors(
 }
 
 /// Forget the chat of `order_id` once its trade row was wiped without a node
-/// (#813): its cursors again, for one a live chat subscription wrote before
-/// the wipe released it, and what the process holds of it. Its messages in
-/// `db` are the caller's to delete. Best effort.
+/// (#813): its cursors again, in case one was written after the wipe
+/// deleted them, and what the process holds of it. Its messages in `db` are
+/// the caller's to delete. Best effort.
 pub(crate) async fn forget_order_chat(db: &impl crate::db::Storage, order_id: &str) {
     if let Err(e) = forget_order_cursors(db, order_id).await {
         log::warn!("[messages] cursor not forgotten order={order_id}: {e}");

@@ -9404,19 +9404,6 @@ enum SweepRun {
     Later,
 }
 
-/// Wipe the trade rows without a node that no restore or daemon message
-/// adopted (#813), once [`UNADOPTED_ROW_WAIT_SECS`] have passed since the
-/// sweep first ran on this version (`UNADOPTED_ROWS_SINCE`, written on that
-/// first run, when nothing is wiped). Only rows started before then: those
-/// of the releases this is for; a row that loses its node later is a bug to
-/// see, not a row to wipe. And only finished ones: a live one may be a trade
-/// running on a node other than the active one, which nothing adopts while
-/// the user stays put, and waits hidden until its node names it (PR #865
-/// review). Its chat cursors, the chat the process holds and its session go
-/// with it, so a rebuild fetches the chat again from the relays. Each goes with its chat
-/// messages, and silently: no update, so no notice about an order the user
-/// has not seen since #813 hid it. A later restore that names one rebuilds
-/// it and lifts its tombstone. Returns how many it wiped.
 /// Whether the sweep may wipe `trade` ([`wipe_unadopted_rows`]): no node,
 /// started before the wait began at `since`, and over.
 fn unadopted_and_over(trade: &crate::api::types::TradeInfo, since: i64) -> bool {
@@ -9425,6 +9412,19 @@ fn unadopted_and_over(trade: &crate::api::types::TradeInfo, since: i64) -> bool 
         && is_hard_terminal(&trade.order.status)
 }
 
+/// Wipe the trade rows without a node that no restore or daemon message
+/// adopted (#813), once [`UNADOPTED_ROW_WAIT_SECS`] have passed since the
+/// sweep first ran on this version (`UNADOPTED_ROWS_SINCE`, written on that
+/// first run, when nothing is wiped). Only rows started before then: those
+/// of the releases this is for; a row that loses its node later is a bug to
+/// see, not a row to wipe. And only finished ones: a live one may be a trade
+/// running on a node other than the active one, which nothing adopts while
+/// the user stays put, and waits hidden until its node names it (PR #865
+/// review). Its chat stops, and its chat cursors, chat messages, the chat
+/// the process holds and its session go with it, so a rebuild fetches the
+/// chat again from the relays. Silently: no update, so no notice about an
+/// order the user has not seen since #813 hid it. A later restore that
+/// names one rebuilds it and lifts its tombstone. Returns how many it wiped.
 async fn wipe_unadopted_rows(db: &impl Storage, now: i64) -> usize {
     let key = crate::db::settings_keys::UNADOPTED_ROWS_SINCE;
     let since = match db.get_setting(key).await {
@@ -9463,21 +9463,26 @@ async fn wipe_unadopted_rows(db: &impl Storage, now: i64) -> usize {
             Ok(Some(row)) if unadopted_and_over(&row, since) => row,
             _ => continue,
         };
-        // The messages first: once the row is gone no sweep comes back for
+        // The chat first, here under the order's lock: the wipe releases it
+        // only once the lock is gone, and a task still running could write
+        // a cursor after the ones below are deleted (PR #865 review).
+        crate::api::messages::stop_chat_subscriptions(&order_id).await;
+        // Then the chat cursors: one left behind makes a rebuilt row resume
+        // its chat after the history deleted below. Before the messages, so
+        // a row kept by a failed delete still has its history.
+        if let Err(e) = crate::api::messages::forget_order_cursors(db, &order_id).await {
+            crate::api::logging::blog_warn(
+                "orders",
+                format!("sweep: chat cursors of unadopted order={order_id} not deleted: {e}"),
+            );
+            continue;
+        }
+        // Then the messages: once the row is gone no sweep comes back for
         // them, so a failed delete keeps the row for the next sweep to retry.
         if let Err(e) = db.delete_messages_for_order(&order_id).await {
             crate::api::logging::blog_warn(
                 "orders",
                 format!("sweep: messages of unadopted order={order_id} not deleted: {e}"),
-            );
-            continue;
-        }
-        // The chat cursors too: one left behind makes a rebuilt row resume
-        // its chat after the history just deleted.
-        if let Err(e) = crate::api::messages::forget_order_cursors(db, &order_id).await {
-            crate::api::logging::blog_warn(
-                "orders",
-                format!("sweep: chat cursors of unadopted order={order_id} not deleted: {e}"),
             );
             continue;
         }

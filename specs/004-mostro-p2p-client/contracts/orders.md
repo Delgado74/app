@@ -79,11 +79,14 @@ applies the first two before recording the event, and
   first comes 60 s in, while the replay may still be adopting), wipes the
   others that are finished and started before it first ran on this rule
   (`unadopted_rows_since`, identity-scoped, written once), 72 h after it:
-  their chat messages and chat cursors first
-  (`Storage::delete_messages_for_order`, `messages::forget_order_cursors`:
-  a failed delete keeps the row for the next sweep), then the row, without
-  a trade update, so no notice; then, best effort, the cursors again, the
-  chat the process holds and the session (`messages::forget_order_chat`).
+  their chat stops first (`messages::stop_chat_subscriptions`, under the
+  order's lock, so no task writes a cursor afterwards), then their chat
+  cursors and their chat messages go (`messages::forget_order_cursors`,
+  `Storage::delete_messages_for_order`: a failed delete keeps the row for
+  the next sweep, and a row kept that way still has its messages), then
+  the row, without a trade update, so no notice; then, best effort, the
+  cursors again, the chat the process holds and the session
+  (`messages::forget_order_chat`).
   The chat-room notifier drops their room. A live one is never wiped by the
   clock: it may run on a node other than the active one, and waits hidden
   until its node names it. A later restore that names a wiped one rebuilds
