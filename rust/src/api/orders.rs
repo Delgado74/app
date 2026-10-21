@@ -13928,6 +13928,24 @@ mod tests {
         assert!(gate < wipe);
     }
 
+    /// #865 review: a chat cursor left behind makes a rebuilt row resume its
+    /// chat after the history the wipe deleted. The cursors go before the
+    /// row, and a failed delete keeps the row for the next sweep, as the
+    /// messages do.
+    #[test]
+    fn the_wipe_keeps_the_row_when_its_chat_cursors_are_not_forgotten() {
+        let wipe = fn_body("async fn wipe_unadopted_rows(");
+        let cursors = wipe
+            .find("forget_order_cursors(")
+            .expect("forgets the chat cursors");
+        let row = wipe.find("wipe_trade_row(").expect("wipes the row");
+        assert!(cursors < row, "the cursors go before the row");
+        assert!(
+            wipe[cursors..row].contains("continue;"),
+            "a failed delete keeps the row"
+        );
+    }
+
     /// PR #841 review: a taker's side comes from the order the restored node
     /// published. The book holds the active node's orders and the node may
     /// have changed during the restore, so neither the book nor the relay
