@@ -62,9 +62,10 @@ pub mod settings_keys {
     /// the next identity.
     pub const PENDING_REPUTATION_ATTESTATION: &str = "pending_reputation_attestation";
 
-    /// When the stale sweep first ran on a version that wipes the trade rows
-    /// without a node no restore adopted (#813), unix seconds. They are
-    /// wiped 72 h after it, not after their own start: they are weeks old.
+    /// When a stale sweep that may wipe first ran on a version that wipes the
+    /// finished trade rows without a node that no restore or daemon message
+    /// adopted (#813), unix seconds. They are wiped 72 h after it, not after
+    /// their own start: they are weeks old, and only those started before it.
     /// Written once. Identity-scoped: the rows are that identity's.
     pub const UNADOPTED_ROWS_SINCE: &str = "unadopted_rows_since";
 

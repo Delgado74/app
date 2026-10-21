@@ -3835,9 +3835,13 @@ async fn dispatch_mostro_message(
     // naming the order to the row's own trade key is the evidence a restore
     // gives, and it needs no restore, so privacy mode gets it too (#813, PR
     // #865 review). The history replayed at start adopts a finished row as
-    // well, which comes back as history instead of being wiped.
+    // well, which comes back as history instead of being wiped. Not a
+    // refusal: mostrod echoes the id of the request it refuses, known to it
+    // or not, so a CantDo from the active node to an action on another
+    // node's trade would bind the row to the wrong node for good.
     if let (RowState::Exists(trade), Some(order_id)) = (&row_state, &kind.id) {
         if speaker == crate::mostro::trade_node::Speaker::ActiveNode
+            && kind.action != Action::CantDo
             && crate::mostro::trade_node::trade_node(trade).is_none()
             && trade.trade_key_index == trade_index
         {
@@ -9255,9 +9259,10 @@ fn spawn_stale_sweep() {
             SWEEP_INITIAL_DELAY_SECS,
         ))
         .await;
+        run_stale_sweep_once(SweepRun::FirstOfProcess).await;
         loop {
-            run_stale_sweep_once().await;
             crate::rt::time::sleep(crate::rt::time::Duration::from_secs(SWEEP_INTERVAL_SECS)).await;
+            run_stale_sweep_once(SweepRun::Later).await;
         }
     });
 }
@@ -9384,20 +9389,42 @@ fn newest_book_revision(
         .map(|(created_at, order)| (created_at.as_secs() as i64, order))
 }
 
-/// How long a trade row without a node waits for a restore to adopt it
-/// before the sweep wipes it (#813): time to restore on each node, where an
-/// order lives about 48 h.
+/// How long a finished trade row without a node waits for its node to adopt
+/// it, through a restore or a daemon message, before the sweep wipes it
+/// (#813): the history replayed at each start adopts most of them, and 72 h
+/// leaves time for a restore on each node, where an order lives about 48 h.
 const UNADOPTED_ROW_WAIT_SECS: i64 = 72 * 3600;
+
+/// Which run of the stale sweep of a process this is.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+enum SweepRun {
+    /// 60 s after start: the history replay may still be adopting rows.
+    FirstOfProcess,
+    /// Every one after, one `SWEEP_INTERVAL_SECS` apart.
+    Later,
+}
 
 /// Wipe the trade rows without a node that no restore or daemon message
 /// adopted (#813), once [`UNADOPTED_ROW_WAIT_SECS`] have passed since the
 /// sweep first ran on this version (`UNADOPTED_ROWS_SINCE`, written on that
 /// first run, when nothing is wiped). Only rows started before then: those
-/// of the releases this is for. A row that loses its node later is a bug to
-/// see, not a row to wipe (PR #865 review). Each goes with its chat
+/// of the releases this is for; a row that loses its node later is a bug to
+/// see, not a row to wipe. And only finished ones: a live one may be a trade
+/// running on a node other than the active one, which nothing adopts while
+/// the user stays put, and waits hidden until its node names it (PR #865
+/// review). Its chat cursors, the chat the process holds and its session go
+/// with it, so a rebuild fetches the chat again from the relays. Each goes with its chat
 /// messages, and silently: no update, so no notice about an order the user
 /// has not seen since #813 hid it. A later restore that names one rebuilds
 /// it and lifts its tombstone. Returns how many it wiped.
+/// Whether the sweep may wipe `trade` ([`wipe_unadopted_rows`]): no node,
+/// started before the wait began at `since`, and over.
+fn unadopted_and_over(trade: &crate::api::types::TradeInfo, since: i64) -> bool {
+    crate::mostro::trade_node::trade_node(trade).is_none()
+        && trade.started_at < since
+        && is_hard_terminal(&trade.order.status)
+}
+
 async fn wipe_unadopted_rows(db: &impl Storage, now: i64) -> usize {
     let key = crate::db::settings_keys::UNADOPTED_ROWS_SINCE;
     let since = match db.get_setting(key).await {
@@ -9420,7 +9447,7 @@ async fn wipe_unadopted_rows(db: &impl Storage, now: i64) -> usize {
     let candidates: Vec<String> = match db.list_trades().await {
         Ok(trades) => trades
             .into_iter()
-            .filter(|t| crate::mostro::trade_node::trade_node(t).is_none() && t.started_at < since)
+            .filter(|t| unadopted_and_over(t, since))
             .map(|t| t.order.id)
             .collect(),
         Err(e) => {
@@ -9433,7 +9460,7 @@ async fn wipe_unadopted_rows(db: &impl Storage, now: i64) -> usize {
         // On the row as it is now: a restore may have adopted it since.
         let _guard = lock_order(&order_id).await;
         let row = match db.get_trade_by_order_id(&order_id).await {
-            Ok(Some(row)) if crate::mostro::trade_node::trade_node(&row).is_none() => row,
+            Ok(Some(row)) if unadopted_and_over(&row, since) => row,
             _ => continue,
         };
         // The messages first: once the row is gone no sweep comes back for
@@ -9460,6 +9487,10 @@ async fn wipe_unadopted_rows(db: &impl Storage, now: i64) -> usize {
                 format!("sweep: late messages of unadopted order={order_id} not deleted: {e}"),
             );
         }
+        crate::api::messages::forget_order_chat(db, &order_id).await;
+        crate::mostro::session::session_manager()
+            .remove_session(&order_id)
+            .await;
         crate::api::logging::blog_info(
             "orders",
             format!(
@@ -9483,15 +9514,21 @@ async fn wipe_unadopted_rows(db: &impl Storage, now: i64) -> usize {
 /// (see [`sweep_action`]); the daemon stays the authority on order state.
 /// One exception, decided by the clock alone: the rows without a node that
 /// no restore or daemon message adopted ([`wipe_unadopted_rows`], #813).
-async fn run_stale_sweep_once() {
+async fn run_stale_sweep_once(run: SweepRun) {
     // History a restore replayed and a pass has not settled yet. The orders
     // it just looked up are not looked up again below (PR #524 review).
     let looked_up = reconcile_restored_history().await;
     let Some(db) = crate::db::app_db::db() else {
         return;
     };
-    // Before the rows are listed: what it wipes is not examined below.
-    let unadopted = wipe_unadopted_rows(db, crate::rt::unix_now()).await;
+    // Before the rows are listed: what it wipes is not examined below. Not on
+    // the first sweep of a process: 60 s in, the replayed history that adopts
+    // rows may still be arriving (PR #865 review).
+    let unadopted = if run == SweepRun::Later {
+        wipe_unadopted_rows(db, crate::rt::unix_now()).await
+    } else {
+        0
+    };
     let trades = match db.list_trades().await {
         Ok(trades) => trades,
         Err(e) => {
@@ -20401,7 +20438,7 @@ mod tests {
         order_book().upsert_order(order_info).await;
 
         // Act
-        run_stale_sweep_once().await;
+        run_stale_sweep_once(SweepRun::Later).await;
 
         // Assert
         assert_eq!(
@@ -22907,7 +22944,7 @@ mod tests {
         seed_stale_book(&row).await;
 
         // Act
-        run_stale_sweep_once().await;
+        run_stale_sweep_once(SweepRun::Later).await;
 
         // Assert
         let row = crate::db::app_db::db()
@@ -22942,7 +22979,7 @@ mod tests {
         seed_stale_book(&row).await;
 
         // Act
-        run_stale_sweep_once().await;
+        run_stale_sweep_once(SweepRun::Later).await;
 
         // Assert
         assert!(

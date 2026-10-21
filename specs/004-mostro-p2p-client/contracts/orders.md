@@ -73,14 +73,20 @@ applies the first two before recording the event, and
 - A row without a node is adopted by the restore that names it
   ([identity](identity.md)), from the reply alone, and by a message from
   the active node to its trade key that names the order (the history
-  replayed at start included), which privacy mode gets too; a finished one
-  comes back as history. The stale sweep wipes the others that started
-  before it first ran on this rule (`unadopted_rows_since`, identity-scoped,
-  written once), 72 h after it: their chat messages first
-  (`Storage::delete_messages_for_order`, so a failed delete keeps the row
-  for the next sweep), then the row, without a trade update, so no notice;
-  the chat-room notifier drops their room. A later restore that names one
-  rebuilds it and lifts its tombstone (#813).
+  replayed at start included), which privacy mode gets too; never by a
+  `CantDo`, which echoes the id of whatever it refuses. A finished one comes
+  back as history. The stale sweep, from its second run in a process (the
+  first comes 60 s in, while the replay may still be adopting), wipes the
+  others that are finished and started before it first ran on this rule
+  (`unadopted_rows_since`, identity-scoped, written once), 72 h after it:
+  their chat messages first (`Storage::delete_messages_for_order`, so a
+  failed delete keeps the row for the next sweep), then the row, without a
+  trade update, so no notice; then their chat cursors, the chat the process
+  holds and the session (`messages::forget_order_chat`). The chat-room
+  notifier drops their room. A live one is never wiped by the clock: it may
+  run on a node other than the active one, and waits hidden until its node
+  names it. A later restore that names a wiped one rebuilds it, lifts its
+  tombstone and fetches its chat again (#813).
 - A trade's chat stays on its node: see [messages](messages.md) and
   [disputes](disputes.md).
 

@@ -535,6 +535,28 @@ impl MessageStore {
         let _ = self.unread_tx.send(0);
     }
 
+    /// Drop what the store holds of `trade_id` — its messages, their
+    /// non-durable ids, the reactions held for it and its hydration mark —
+    /// and publish the unread count without them. The database copy is the
+    /// caller's to delete.
+    async fn forget_trade(&self, trade_id: &str) {
+        let dropped = self
+            .messages
+            .write()
+            .await
+            .remove(trade_id)
+            .unwrap_or_default();
+        {
+            let mut non_durable = self.non_durable.write().await;
+            for msg in &dropped {
+                non_durable.remove(&msg.id);
+            }
+        }
+        self.held_reactions.write().await.remove(trade_id);
+        self.hydrated.write().await.remove(trade_id);
+        let _ = self.unread_tx.send(self.unread_count_inner().await);
+    }
+
     async fn unread_count_inner(&self) -> u32 {
         let store = self.messages.read().await;
         store
@@ -1821,6 +1843,20 @@ pub(crate) async fn forget_identity_chats() {
         }
     }
     message_store().clear().await;
+}
+
+/// Forget the chat of `order_id` once its trade row was wiped without a node
+/// (#813): the `since` cursors of both channels in `db`, so a rebuilt trade
+/// fetches its chat again from the relays, and what the process holds of
+/// it. Its messages in `db` are the caller's to delete. Best effort.
+pub(crate) async fn forget_order_chat(db: &impl crate::db::Storage, order_id: &str) {
+    for channel in [ChatChannel::Peer, ChatChannel::Dispute] {
+        let key = channel.cursor_key(order_id);
+        if let Err(e) = db.delete_setting(&key).await {
+            log::warn!("[messages] cursor not forgotten order={order_id}: {e}");
+        }
+    }
+    message_store().forget_trade(order_id).await;
 }
 
 /// Bounded insert-only id set with FIFO eviction (outer-id LRU, step 5).
