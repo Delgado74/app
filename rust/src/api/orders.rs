@@ -9875,8 +9875,14 @@ async fn fetch_book_events(
     // Fetched independently on purpose: the two scopes fail independently, and
     // losing the recent-changes pass must not throw away a pending book that
     // arrived fine (that would leave the UI empty on a transient relay error).
-    let pending = client.fetch_events(pending_filter).timeout(timeout).await;
-    let recent = client.fetch_events(recent_filter).timeout(timeout).await;
+    // Asked at the same time: each waits for the slowest relay's EOSE, and in
+    // turn a relay that never sends one held a node switch twice (#842).
+    use std::future::IntoFuture as _;
+    let (pending, recent) = futures_util::future::join(
+        client.fetch_events(pending_filter).timeout(timeout).into_future(),
+        client.fetch_events(recent_filter).timeout(timeout).into_future(),
+    )
+    .await;
     if let Err(e) = &pending {
         log::warn!("[orders] refetch: pending-book fetch failed: {e}");
     }
