@@ -199,10 +199,11 @@ impl CashuWallet {
     /// in `ProofsReserved` with no check that it is still running
     /// (`wallet/send/saga/resume.rs`) — the state of an escrow lock, a token
     /// send or a melt being prepared. Here the wallet is not installed yet, so
-    /// nothing runs on it. Not covered: an operation still running on an
-    /// earlier wallet for the same mint, left by switching mints and back in
-    /// the middle of it. Closing that needs operations to hold a lock that
-    /// recovery takes exclusively.
+    /// nothing runs on it — but an earlier wallet for the same mint, left by
+    /// switching mints and back, may still be melting. So recovery waits for
+    /// the next connect while a melt holds the mint ([`in_flight`]). A send
+    /// or escrow lock still running there is not covered: closing that needs
+    /// those operations to hold a mark too.
     ///
     /// **Best effort.** The mint has just proven usable, so a failure here is a
     /// round trip that did not come back: it is logged and the connect goes
@@ -533,6 +534,10 @@ impl CashuWallet {
     /// returns its proofs to the balance. One the mint still calls pending is
     /// left as it is, for the next call.
     ///
+    /// Skipped while a melt holds the mint ([`in_flight`]), quoting
+    /// included: cdk would resume that melt's saga too, and roll it back on a
+    /// mint that has not processed its request yet. The next sync settles it.
+    ///
     /// **Errors** (stable markers): `CashuStateCheckFailed` when the store
     /// cannot be read. A single melt the mint does not answer for is logged by
     /// cdk and skipped, not an error.
@@ -562,7 +567,8 @@ impl CashuWallet {
     /// borrows the wallet and cannot outlive this call, and the user reading
     /// the confirmation must not hold any of the balance hostage.
     ///
-    /// **Errors** (stable markers): those of [`melt_invoice`],
+    /// **Errors** (stable markers): `CashuMeltInFlight` while another melt or
+    /// quote holds this mint, those of [`melt_invoice`],
     /// `CashuMeltUnsupported` when the mint does not melt to `bolt11`,
     /// `CashuMeltAmountOutOfRange` outside the mint's limits,
     /// `CashuMeltQuoteFailed` when the mint does not quote or the wallet
@@ -624,10 +630,13 @@ impl CashuWallet {
     /// are re-read from the proofs the wallet holds now, and a quote that
     /// expired or now costs more is cancelled before anything leaves.
     ///
-    /// **Errors** (stable markers): `CashuMeltQuoteExpired`,
-    /// `CashuMeltFeeChanged` (both refused before paying, nothing spent),
-    /// `CashuMeltInsufficientFunds`, `CashuMeltFailed` (nothing was paid and
-    /// the proofs are back). A payment the mint has not settled — or could
+    /// Refused, too, while another melt or quote holds this mint
+    /// ([`in_flight`]); this one holds it until it returns.
+    ///
+    /// **Errors** (stable markers): `CashuMeltInFlight`,
+    /// `CashuMeltQuoteExpired`, `CashuMeltFeeChanged` (both refused before
+    /// paying, nothing spent), `CashuMeltInsufficientFunds`, `CashuMeltFailed`
+    /// (nothing was paid and the proofs are back). A payment the mint has not settled — or could
     /// not be asked about — after an error is `Pending`, not an error: see
     /// [`confirm_error_outcome`].
     pub async fn melt(&self, quote_id: &str, max_total_sats: u64) -> Result<MeltOutcomeInfo> {

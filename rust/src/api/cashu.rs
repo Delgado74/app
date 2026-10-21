@@ -602,6 +602,10 @@ pub async fn cashu_create_token(amount_sats: u64) -> Result<String> {
 /// connect runs would roll back a send or escrow lock still in progress (see
 /// `CashuWallet::recover`).
 ///
+/// The melts wait while one is still paying at this mint, or being quoted:
+/// its saga is on record as in flight, and settling it now would roll back a
+/// payment the mint may still make (#864). The next sync settles them.
+///
 /// Both steps run whatever the other did, and the balance is broadcast after
 /// them even when one fails: either may have moved proofs. The first error is
 /// returned.
@@ -626,7 +630,8 @@ pub async fn cashu_sweep_spent_proofs() -> Result<()> {
 /// Reserves nothing: the quote is priced against the wallet's proofs and
 /// released at once, so the balance is untouched while the user decides.
 ///
-/// **Errors**: `CashuNotConnected`, `CashuInvalidInvoice`,
+/// **Errors**: `CashuNotConnected`, `CashuMeltInFlight` (another payment or
+/// quote is still in progress at this mint), `CashuInvalidInvoice`,
 /// `CashuInvoiceNoAmount` (open-amount invoices are not supported),
 /// `CashuInvoiceExpired`, `CashuMeltUnsupported`, `CashuMeltAmountOutOfRange`,
 /// `CashuMeltQuoteFailed` (also when the quote could not be priced or
@@ -653,7 +658,8 @@ pub async fn cashu_melt_quote(invoice: String) -> Result<CashuMeltQuote> {
 /// or interrupted after the request left with the mint not answering. Its
 /// ecash stays reserved until the mint says how it ended.
 ///
-/// **Errors**: `CashuNotConnected`, `CashuMeltQuoteExpired` and
+/// **Errors**: `CashuNotConnected`, `CashuMeltInFlight` (another payment is
+/// still in progress at this mint), `CashuMeltQuoteExpired` and
 /// `CashuMeltFeeChanged` (refused before paying — ask for a new quote),
 /// `CashuMeltInsufficientFunds`, `CashuMeltFailed` (nothing was paid).
 pub async fn cashu_melt(quote_id: String, max_total_sats: u64) -> Result<CashuMeltResult> {
