@@ -636,7 +636,8 @@ impl CashuWallet {
     /// **Errors** (stable markers): `CashuMeltInFlight`,
     /// `CashuMeltQuoteExpired`, `CashuMeltFeeChanged` (both refused before
     /// paying, nothing spent), `CashuMeltInsufficientFunds`, `CashuMeltFailed`
-    /// (nothing was paid and the proofs are back). A payment the mint has not settled — or could
+    /// (nothing was paid and the proofs are back — a quote no longer unpaid
+    /// is refused so as well, before anything is sent). A payment the mint has not settled — or could
     /// not be asked about — after an error is `Pending`, not an error: see
     /// [`confirm_error_outcome`].
     pub async fn melt(&self, quote_id: &str, max_total_sats: u64) -> Result<MeltOutcomeInfo> {
@@ -802,8 +803,9 @@ fn quote_is_for(quote_mint: Option<&MintUrl>, wallet_mint: &MintUrl) -> bool {
 /// [`PreparedMelt`] borrows the wallet and only a mint's quote makes one.
 ///
 /// **Errors** returned (stable markers): `CashuMeltFailed` for a quote taken
-/// at another mint, `CashuMeltQuoteExpired`, `CashuMeltFeeChanged`, and
-/// `CashuMeltFailed` again when the total overflows.
+/// at another mint or no longer unpaid, `CashuMeltQuoteExpired`,
+/// `CashuMeltFeeChanged`, and `CashuMeltFailed` again when the total
+/// overflows.
 fn melt_refusal(
     quote: &cdk::wallet::MeltQuote,
     input_fee_sats: u64,
@@ -817,6 +819,14 @@ fn melt_refusal(
     // proofs sent to pay it.
     if !quote_is_for(quote.mint_url.as_ref(), wallet_mint) {
         return Some(anyhow!("CashuMeltFailed: the quote belongs to another mint"));
+    }
+    // cdk checks only the expiry (`initialize_melt`), and a quote that
+    // finalized as paid has had its reservation released, so it prepares
+    // again. If the mint then refuses the melt with anything but
+    // `RequestAlreadyPaid`, cdk reads the quote paid and marks the *new*
+    // proofs spent (`execute_async`, `wallet/melt/saga/mod.rs`, cdk 0.18.1).
+    if quote.state != MeltQuoteState::Unpaid {
+        return Some(anyhow!("CashuMeltFailed: the quote is no longer unpaid"));
     }
     if quote.expiry <= now_secs {
         return Some(anyhow!("CashuMeltQuoteExpired"));
