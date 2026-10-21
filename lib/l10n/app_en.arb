@@ -951,9 +951,9 @@
   "@drawerTagline": {
     "description": "Subtitle under the Mostro wordmark in the drawer header (rendered uppercase)"
   },
-  "drawerStageBadge": "Alpha",
+  "drawerStageBadge": "Beta",
   "@drawerStageBadge": {
-    "description": "Release-stage chip in the drawer header (rendered uppercase). Single source for the stage label — change it here when the app leaves alpha"
+    "description": "Release-stage chip in the drawer header (rendered uppercase). Single source for the stage label — change it here when the app leaves beta"
   },
   "drawerVersion": "Version {version}",
   "@drawerVersion": {

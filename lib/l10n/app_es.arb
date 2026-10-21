@@ -211,7 +211,7 @@
   "footerTagline": "Código abierto. Sin custodia. Privado.",
   "drawerTitle": "Mostro",
   "drawerTagline": "Exchange P2P",
-  "drawerStageBadge": "Alfa",
+  "drawerStageBadge": "Beta",
   "drawerVersion": "Versión {version}",
   "drawerAccountMenuItem": "Cuenta",
   "drawerSettingsMenuItem": "Configuración",
