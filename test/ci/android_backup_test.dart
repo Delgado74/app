@@ -17,8 +17,19 @@ void main() {
   const manifestPath = 'android/app/src/main/AndroidManifest.xml';
   const resXml = 'android/app/src/main/res/xml';
 
-  /// Every domain Android's backup rules can name: all must be excluded.
-  const domains = {'root', 'file', 'database', 'sharedpref', 'external'};
+  /// Every domain Android's backup rules can name, the device-protected
+  /// storage ones included: all must be excluded.
+  const domains = {
+    'root',
+    'file',
+    'database',
+    'sharedpref',
+    'external',
+    'device_root',
+    'device_file',
+    'device_database',
+    'device_sharedpref',
+  };
 
   String manifest() => File(manifestPath).readAsStringSync();
 
@@ -43,7 +54,7 @@ void main() {
 
   Set<String> excludedDomains(String section) {
     final excludes = RegExp(
-      r'<exclude\s+domain="([a-z]+)"',
+      r'<exclude\s+domain="([a-z_]+)"',
     ).allMatches(section);
     return excludes.map((m) => m.group(1)!).toSet();
   }
