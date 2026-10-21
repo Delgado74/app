@@ -12670,6 +12670,70 @@ mod tests {
         }
     }
 
+    /// A relay that completes the websocket handshake and then never answers:
+    /// connected, but no EOSE ever comes back — what a stuck relay looks like.
+    async fn silent_relay() -> String {
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let url = format!("ws://{}", listener.local_addr().unwrap());
+        tokio::spawn(async move {
+            while let Ok((stream, _)) = listener.accept().await {
+                tokio::spawn(async move {
+                    if let Ok(mut ws) = tokio_tungstenite::accept_async(stream).await {
+                        use futures_util::StreamExt;
+                        while ws.next().await.is_some() {}
+                    }
+                });
+            }
+        });
+        url
+    }
+
+    /// `fetch_events` waits for every relay's EOSE, so a relay that never
+    /// sends one holds each scope for the whole timeout. Asked one after the
+    /// other, the two scopes held a node switch for twice that (#842).
+    #[tokio::test]
+    async fn the_book_fetch_asks_both_scopes_at_once() {
+        use nostr_sdk::local_relay::MockRelay;
+        use nostr_sdk::prelude::{Client, Keys};
+
+        // Arrange: one relay holds a pending order of the node, another
+        // never answers.
+        let node = Keys::generate();
+        let order = book_event_by(&uuid::Uuid::new_v4().to_string(), "pending", &node);
+        let healthy = MockRelay::run().await.expect("mock relay");
+        let healthy_url = healthy.url().await.to_string();
+        let silent_url = silent_relay().await;
+        let client = Client::new();
+        for url in [&healthy_url, &silent_url] {
+            client.add_relay(url).await.expect("add relay");
+            client
+                .try_connect_relay(url, std::time::Duration::from_secs(3))
+                .await
+                .expect("connect");
+        }
+        client
+            .send_event_to([&healthy_url], &order)
+            .await
+            .expect("publish");
+        let timeout = std::time::Duration::from_secs(1);
+
+        // Act
+        let started = std::time::Instant::now();
+        let events = fetch_book_events(&client, &node.public_key(), timeout).await;
+        let elapsed = started.elapsed();
+
+        // Assert
+        let events = events.expect("the healthy relay answered");
+        assert!(
+            events.iter().any(|event| event.id == order.id),
+            "the healthy relay's order is in the book"
+        );
+        assert!(
+            elapsed < timeout + timeout / 2,
+            "both scopes waited for the silent relay in turn: {elapsed:?}"
+        );
+    }
+
     /// The SDK reports a subscribe that failed on every relay as an `Ok`
     /// output, and drops the failed REQ from each relay's registry, so a
     /// reconnect never brings it back. That used to be an error here, which
@@ -23114,6 +23178,35 @@ mod tests {
 
         // Assert: a claim arriving during any await must find the fetch pending.
         assert!(announced.expect("announces the fetch") < first_await.expect("awaits something"));
+    }
+
+    /// The book refetch waits for the slowest relay; the capability fetch,
+    /// which reads one replaceable event, must not wait behind it (#842).
+    /// A source check: no test here may drive a real node switch
+    /// (`settings::tests::no_test_here_switches_the_active_node`).
+    #[test]
+    fn a_node_switch_fetches_capabilities_alongside_the_book() {
+        // Arrange
+        let source = include_str!("orders.rs");
+        let start = source
+            .find("pub(crate) async fn refresh_subscriptions_for_active_node()")
+            .expect("the node switch exists");
+        let body = &source[start..];
+        let body = &body[..body.find("\n}\n").expect("the node switch ends")];
+
+        // Act
+        let joined = body.find("join(");
+        let refetch = body.find("refetch_active_node_orders()");
+        let capabilities = body.find("fetch_and_set_node_capabilities()");
+
+        // Assert
+        let joined = joined.expect("the two fetches run together");
+        assert!(joined < refetch.expect("refetches the book"));
+        assert!(joined < capabilities.expect("fetches the capabilities"));
+        assert!(
+            !body.contains("refetch_active_node_orders().await"),
+            "the capability fetch must not wait for the book refetch"
+        );
     }
 
     #[test]
