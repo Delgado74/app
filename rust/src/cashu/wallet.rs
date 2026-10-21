@@ -619,26 +619,13 @@ impl CashuWallet {
             .await
             .map_err(prepare_melt_error)?;
 
-        // cdk loads the quote by id from a store shared by every mint and
-        // does not check whose it is (`initialize_melt` in
-        // `wallet/melt/saga/mod.rs`, cdk 0.18.1): a quote taken at another
-        // mint would have this mint's proofs sent to pay it.
-        let quote_mint = prepared.quote().mint_url.as_ref();
-        let refusal = if !quote_is_for(quote_mint, &self.inner.mint_url) {
-            Some(anyhow!("CashuMeltFailed: the quote belongs to another mint"))
-        } else if prepared.quote().expiry <= unix_now().as_secs() {
-            Some(anyhow!("CashuMeltQuoteExpired"))
-        } else {
-            match quote_info(&prepared) {
-                Ok(info) if info.max_total_sats > max_total_sats => Some(anyhow!(
-                    "CashuMeltFeeChanged: {} sat over {max_total_sats} sat confirmed",
-                    info.max_total_sats
-                )),
-                Ok(_) => None,
-                Err(e) => Some(e),
-            }
-        };
-        if let Some(refusal) = refusal {
+        if let Some(refusal) = melt_refusal(
+            prepared.quote(),
+            u64::from(prepared.total_fee()),
+            &self.inner.mint_url,
+            unix_now().as_secs(),
+            max_total_sats,
+        ) {
             if let Err(e) = prepared.cancel().await {
                 log::warn!("[cashu] releasing the refused melt failed: {e}");
             }
@@ -776,6 +763,43 @@ fn quote_is_for(quote_mint: Option<&MintUrl>, wallet_mint: &MintUrl) -> bool {
     quote_mint.is_none_or(|mint| mint == wallet_mint)
 }
 
+/// Why [`CashuWallet::melt`] must not pay the prepared `quote`, if it must
+/// not: `None` pays it. `input_fee_sats` is the prepared melt's
+/// [`PreparedMelt::total_fee`], `max_total_sats` the total the user confirmed.
+///
+/// A function of plain values so it can be checked without a mint: a
+/// [`PreparedMelt`] borrows the wallet and only a mint's quote makes one.
+///
+/// **Errors** returned (stable markers): `CashuMeltFailed` for a quote taken
+/// at another mint, `CashuMeltQuoteExpired`, `CashuMeltFeeChanged`, and
+/// `CashuMeltFailed` again when the total overflows.
+fn melt_refusal(
+    quote: &cdk::wallet::MeltQuote,
+    input_fee_sats: u64,
+    wallet_mint: &MintUrl,
+    now_secs: u64,
+    max_total_sats: u64,
+) -> Option<anyhow::Error> {
+    // cdk loads the quote by id from a store shared by every mint and does
+    // not check whose it is (`initialize_melt` in `wallet/melt/saga/mod.rs`,
+    // cdk 0.18.1): a quote taken at another mint would have this mint's
+    // proofs sent to pay it.
+    if !quote_is_for(quote.mint_url.as_ref(), wallet_mint) {
+        return Some(anyhow!("CashuMeltFailed: the quote belongs to another mint"));
+    }
+    if quote.expiry <= now_secs {
+        return Some(anyhow!("CashuMeltQuoteExpired"));
+    }
+    match quote_info_of(quote, input_fee_sats) {
+        Ok(info) if info.max_total_sats > max_total_sats => Some(anyhow!(
+            "CashuMeltFeeChanged: {} sat over {max_total_sats} sat confirmed",
+            info.max_total_sats
+        )),
+        Ok(_) => None,
+        Err(e) => Some(e),
+    }
+}
+
 /// [`MeltQuoteInfo`] of a prepared melt.
 ///
 /// cdk 0.18.1 (`wallet/melt/saga/mod.rs`): the proofs are chosen to cover
@@ -784,10 +808,13 @@ fn quote_is_for(quote_mint: Option<&MintUrl>, wallet_mint: &MintUrl) -> bool {
 /// [`PreparedMelt::amount`] is not what its name may suggest: it is the
 /// quote's amount, not what the proofs add up to.
 fn quote_info(prepared: &PreparedMelt<'_>) -> Result<MeltQuoteInfo> {
-    let quote = prepared.quote();
+    quote_info_of(prepared.quote(), u64::from(prepared.total_fee()))
+}
+
+/// [`quote_info`] from the quote and the prepared melt's input fee.
+fn quote_info_of(quote: &cdk::wallet::MeltQuote, input_fee_sats: u64) -> Result<MeltQuoteInfo> {
     let amount_sats = u64::from(quote.amount);
     let fee_reserve_sats = u64::from(quote.fee_reserve);
-    let input_fee_sats = u64::from(prepared.total_fee());
     let max_total_sats = melt_max_total(amount_sats, fee_reserve_sats, input_fee_sats)
         .ok_or_else(|| anyhow!("CashuMeltFailed: amount overflow"))?;
     Ok(MeltQuoteInfo {
