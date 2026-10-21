@@ -4377,7 +4377,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get cashuErrorMeltInFlight =>
-      'Todavía hay un pago Lightning de esta billetera en curso. Espera a que termine, o reinicia la app, y vuelve a intentarlo.';
+      'Todavía hay un pago Lightning de esta billetera en curso. Espera a que termine y vuelve a intentarlo.';
 
   @override
   String get cashuErrorMeltInsufficientFunds =>

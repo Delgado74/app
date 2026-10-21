@@ -1182,7 +1182,7 @@
   "cashuErrorMeltQuoteFailed": "De mint kon geen offerte voor deze betaling geven. Probeer het later opnieuw.",
   "cashuErrorMeltQuoteExpired": "De offerte voor de betaling is verlopen. Er is niets betaald; begin opnieuw.",
   "cashuErrorMeltFeeChanged": "De kosten zijn gestegen sinds je bevestigde. Er is niets betaald; begin opnieuw.",
-  "cashuErrorMeltInFlight": "Er loopt nog een Lightning-betaling vanuit deze wallet. Wacht tot die klaar is, of herstart de app, en probeer het dan opnieuw.",
+  "cashuErrorMeltInFlight": "Er loopt nog een Lightning-betaling vanuit deze wallet. Wacht tot die klaar is en probeer het dan opnieuw.",
   "cashuErrorMeltInsufficientFunds": "Je hebt niet genoeg in de wallet om deze factuur en de kosten te betalen.",
   "cashuErrorMeltFailed": "De betaling is niet gelukt. Er is niets betaald; de sats staan weer in je saldo.",
   "lockEscrowTitle": "De escrow vergrendelen",

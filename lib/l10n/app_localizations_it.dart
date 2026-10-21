@@ -4390,7 +4390,7 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get cashuErrorMeltInFlight =>
-      'Un pagamento Lightning da questo portafoglio è ancora in corso. Attendi che finisca, o riavvia l\'app, poi riprova.';
+      'Un pagamento Lightning da questo portafoglio è ancora in corso. Attendi che finisca, poi riprova.';
 
   @override
   String get cashuErrorMeltInsufficientFunds =>

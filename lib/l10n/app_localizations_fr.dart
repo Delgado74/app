@@ -4411,7 +4411,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get cashuErrorMeltInFlight =>
-      'Un paiement Lightning de ce portefeuille est toujours en cours. Attendez qu\'il se termine, ou redémarrez l\'application, puis réessayez.';
+      'Un paiement Lightning de ce portefeuille est toujours en cours. Attendez qu\'il se termine, puis réessayez.';
 
   @override
   String get cashuErrorMeltInsufficientFunds =>

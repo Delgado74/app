@@ -4349,7 +4349,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get cashuErrorMeltInFlight =>
-      'A Lightning payment from this wallet is still in progress. Wait for it to finish, or restart the app, then try again.';
+      'A Lightning payment from this wallet is still in progress. Wait for it to finish, then try again.';
 
   @override
   String get cashuErrorMeltInsufficientFunds =>

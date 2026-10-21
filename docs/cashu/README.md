@@ -589,7 +589,9 @@ mints is inconsistent), no general wallet features.
     The mark is process-wide and keyed by the normalized mint URL, because a mint
     switch and back binds a new wallet. While it is held:
     - a second quote or payment there is refused with `CashuMeltInFlight` ("…wait
-      for it to finish, or restart the app");
+      for it to finish, then try again"). The message does not suggest a restart:
+      that clears the mark, and recovery could then roll back a request still in
+      transit. A restart stays the way out of a request that hangs;
     - Sync still sweeps and broadcasts the balance, but leaves the melts for the
       next sync;
     - connect skips recovery entirely (`recover_incomplete_sagas` is all or
@@ -657,8 +659,9 @@ mints is inconsistent), no general wallet features.
   - Markers: `CashuInvalidInvoice`, `CashuInvoiceNoAmount` (amountless invoices are
     out of scope), `CashuInvoiceExpired`, `CashuMeltUnsupported`,
     `CashuMeltAmountOutOfRange`, `CashuMeltQuoteFailed`, `CashuMeltQuoteExpired`,
-    `CashuMeltFeeChanged`, `CashuMeltInsufficientFunds`, `CashuMeltFailed`. The
-    wasm stub fails both calls with `CashuUnsupportedOnWeb`.
+    `CashuMeltFeeChanged`, `CashuMeltInsufficientFunds`, `CashuMeltFailed`,
+    `CashuMeltInFlight` (another melt or quote holds the mint, #864). The wasm
+    stub fails both calls with `CashuUnsupportedOnWeb`.
   - `on_cashu_wallet_changed` fires after every melt attempt, so the balance updates.
 - **Dart** (`lib/features/cashu/`): Send → *Ecash* / *Lightning* (the second hidden
   without `nut05_bolt11`); paste or scan a bolt11 (`mobile_scanner`); a confirmation

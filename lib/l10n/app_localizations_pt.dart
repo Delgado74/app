@@ -4401,7 +4401,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get cashuErrorMeltInFlight =>
-      'Ainda há um pagamento Lightning desta carteira em andamento. Aguarde até terminar, ou reinicie o app, e tente de novo.';
+      'Ainda há um pagamento Lightning desta carteira em andamento. Aguarde até terminar e tente de novo.';
 
   @override
   String get cashuErrorMeltInsufficientFunds =>

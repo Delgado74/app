@@ -1182,7 +1182,7 @@
   "cashuErrorMeltQuoteFailed": "El mint no pudo cotizar este pago. Inténtalo más tarde.",
   "cashuErrorMeltQuoteExpired": "La cotización del pago venció. No se pagó nada; empieza de nuevo.",
   "cashuErrorMeltFeeChanged": "Las comisiones subieron desde que confirmaste. No se pagó nada; empieza de nuevo.",
-  "cashuErrorMeltInFlight": "Todavía hay un pago Lightning de esta billetera en curso. Espera a que termine, o reinicia la app, y vuelve a intentarlo.",
+  "cashuErrorMeltInFlight": "Todavía hay un pago Lightning de esta billetera en curso. Espera a que termine y vuelve a intentarlo.",
   "cashuErrorMeltInsufficientFunds": "No tienes suficiente en la billetera para pagar esta factura y sus comisiones.",
   "cashuErrorMeltFailed": "El pago no se completó. No se pagó nada; los sats volvieron a tu saldo.",
   "lockEscrowTitle": "Bloquear la custodia",

@@ -4402,7 +4402,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get cashuErrorMeltInFlight =>
-      'Eine Lightning-Zahlung aus dieser Wallet läuft noch. Warte, bis sie abgeschlossen ist, oder starte die App neu und versuche es dann erneut.';
+      'Eine Lightning-Zahlung aus dieser Wallet läuft noch. Warte, bis sie abgeschlossen ist, und versuche es dann erneut.';
 
   @override
   String get cashuErrorMeltInsufficientFunds =>
