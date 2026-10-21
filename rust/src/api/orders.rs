@@ -10216,11 +10216,14 @@ pub(crate) async fn refresh_subscriptions_for_active_node() {
 
     // Repopulate the cleared book with the new node's current orders (the live
     // stream won't redeliver already-seen events — see refetch_active_node_orders).
-    refetch_active_node_orders().await;
-
-    // Outgoing messages must use the new node's PoW difficulty, and the
-    // escrow mode must reflect the node we just switched to.
-    crate::api::nostr::fetch_and_set_node_capabilities().await;
+    // Alongside it, the new node's capabilities: outgoing messages must use its
+    // PoW difficulty, and the escrow mode must reflect it. The refetch waits
+    // for the slowest relay, and they must not wait behind it (#842).
+    futures_util::future::join(
+        refetch_active_node_orders(),
+        crate::api::nostr::fetch_and_set_node_capabilities(),
+    )
+    .await;
 
     crate::api::logging::blog_info(
         "orders",
