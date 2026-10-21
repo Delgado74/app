@@ -595,6 +595,17 @@ mints is inconsistent), no general wallet features.
     - connect skips recovery entirely (`recover_incomplete_sagas` is all or
       nothing) and leaves it for the next connect.
 
+    **Which path actually breaks.** On native, cdk 0.18.1 reaches a mint through
+    `bitreq` 0.3, one connection per host for each wallet, one request at a time.
+    A Sync status check from the same wallet waits behind the melt's own request
+    and reaches the mint after it, so today Sync cannot roll a melt back. A wallet
+    bound afresh, after a mint switch and back, has a connection of its own: its
+    recovery asks at once, gets `Unpaid` and rolls back. That is the case
+    reproduced by hand against `main` (a slow proxy holding the melt request;
+    the proofs came back, the mint then paid, and after a restart the balance
+    kept the spent amount). The Sync guard stays, against a change of transport
+    in cdk.
+
     **Known limits.** cdk bounds the request only at a mint that lists the melt
     under NUT-19, to that cache's TTL. cdk-mintd 0.18.1 always lists it, at 60 s by
     default; cdk assumes 300 s when a mint states no TTL. When that timeout fires,

@@ -14,6 +14,16 @@
 //! not scoped to the identity either: a new identity at the same mint waits
 //! for the old melt to end, which only delays.
 //!
+//! **Which path actually breaks.** On native, cdk 0.18.1 talks to a mint
+//! through `bitreq` 0.3, which keeps one connection per host for each wallet
+//! and sends one request at a time on it (`bitreq` `client.rs`,
+//! `connection.rs`). A status check from the *same* wallet therefore waits
+//! behind the melt's own request and reaches the mint after it: Sync, today,
+//! cannot roll back a melt in flight. A wallet bound afresh — a mint switch
+//! and back — has a connection of its own, asks at once and gets `Unpaid`:
+//! that is the rollback reproduced by hand against `main`. The mark covers
+//! both; the Sync half guards against a transport change in cdk.
+//!
 //! **What it does not cover:**
 //!
 //! * A melt's own timeout. cdk bounds the request only at a mint that lists
