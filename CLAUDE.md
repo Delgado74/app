@@ -382,6 +382,13 @@ bridged by flutter_rust_bridge.
   `rawTradesProvider` and `tradeRowsProvider` keep every node's trades, because Notifications needs
   another node's row for its header, pinning and "Go to trade". Filtering them breaks those cards.
   A row without a node is shown on no node (`isOnActiveNode`), unlike for actions (`isOnOtherNode`).
+  A restore that names its order with its trade index gives it that node — among the orders or the
+  disputes, which mostrod lists apart — and so does a message from the active node to the row's trade
+  key naming the order (the history replayed at start included), never a `CantDo`, which echoes
+  whatever id it refuses. The stale sweep wipes the rest that are finished and started before
+  `unadopted_rows_since`, never on the first sweep of a process, 72 h after it: messages, chat
+  cursors, cached chat and session go too, and the chat-room notifier drops their room. A live one
+  waits, hidden, for its node to name it.
 - **Trade screens are pushed, not polled — so every trade write must ring.** Rust's
   `api::trade_touch::touch_trade(order_id)` is the doorbell behind `tradeStatusProvider`, the
   invoice providers (`trade_state_provider.dart`) and the trade list (`rawTradesProvider`, which
