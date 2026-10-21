@@ -1182,6 +1182,7 @@
   "cashuErrorMeltQuoteFailed": "La mint non ha potuto quotare questo pagamento. Riprova più tardi.",
   "cashuErrorMeltQuoteExpired": "La quotazione del pagamento è scaduta. Non è stato pagato nulla; ricomincia.",
   "cashuErrorMeltFeeChanged": "Le commissioni sono aumentate da quando hai confermato. Non è stato pagato nulla; ricomincia.",
+  "cashuErrorMeltInFlight": "Un pagamento Lightning da questo portafoglio è ancora in corso. Attendi che finisca, o riavvia l'app, poi riprova.",
   "cashuErrorMeltInsufficientFunds": "Non hai abbastanza nel portafoglio per pagare questa fattura e le sue commissioni.",
   "cashuErrorMeltFailed": "Il pagamento non è andato a buon fine. Non è stato pagato nulla; i sats sono tornati nel tuo saldo.",
   "lockEscrowTitle": "Blocca la custodia",

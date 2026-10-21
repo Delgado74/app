@@ -4401,6 +4401,10 @@ class AppLocalizationsDe extends AppLocalizations {
       'Die Gebühren sind seit deiner Bestätigung gestiegen. Es wurde nichts bezahlt; fang neu an.';
 
   @override
+  String get cashuErrorMeltInFlight =>
+      'Eine Lightning-Zahlung aus dieser Wallet läuft noch. Warte, bis sie abgeschlossen ist, oder starte die App neu und versuche es dann erneut.';
+
+  @override
   String get cashuErrorMeltInsufficientFunds =>
       'Du hast nicht genug in der Wallet, um diese Rechnung und ihre Gebühren zu bezahlen.';
 

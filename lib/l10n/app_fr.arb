@@ -1182,6 +1182,7 @@
   "cashuErrorMeltQuoteFailed": "Le mint n'a pas pu chiffrer ce paiement. Réessayez plus tard.",
   "cashuErrorMeltQuoteExpired": "Le devis du paiement a expiré. Rien n'a été payé ; recommencez.",
   "cashuErrorMeltFeeChanged": "Les frais ont augmenté depuis votre confirmation. Rien n'a été payé ; recommencez.",
+  "cashuErrorMeltInFlight": "Un paiement Lightning de ce portefeuille est toujours en cours. Attendez qu'il se termine, ou redémarrez l'application, puis réessayez.",
   "cashuErrorMeltInsufficientFunds": "Vous n'avez pas assez dans le portefeuille pour payer cette facture et ses frais.",
   "cashuErrorMeltFailed": "Le paiement n'a pas abouti. Rien n'a été payé ; les sats sont de retour dans votre solde.",
   "lockEscrowTitle": "Bloquer le séquestre",

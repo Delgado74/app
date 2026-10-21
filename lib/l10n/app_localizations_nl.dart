@@ -4387,6 +4387,10 @@ class AppLocalizationsNl extends AppLocalizations {
       'De kosten zijn gestegen sinds je bevestigde. Er is niets betaald; begin opnieuw.';
 
   @override
+  String get cashuErrorMeltInFlight =>
+      'Er loopt nog een Lightning-betaling vanuit deze wallet. Wacht tot die klaar is, of herstart de app, en probeer het dan opnieuw.';
+
+  @override
   String get cashuErrorMeltInsufficientFunds =>
       'Je hebt niet genoeg in de wallet om deze factuur en de kosten te betalen.';
 

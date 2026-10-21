@@ -53,6 +53,8 @@ final Map<String, String Function(AppLocalizations)> _messages = {
   'CashuMeltQuoteFailed': (l) => l.cashuErrorMeltQuoteFailed,
   // Refused before paying: nothing left the wallet, which is what to say.
   'CashuMeltFeeChanged': (l) => l.cashuErrorMeltFeeChanged,
+  // Refused before starting: another payment is still waiting for the mint.
+  'CashuMeltInFlight': (l) => l.cashuErrorMeltInFlight,
   // Not `CashuInsufficientFunds` (escrow) — neither contains the other.
   'CashuMeltInsufficientFunds': (l) => l.cashuErrorMeltInsufficientFunds,
   'CashuMeltFailed': (l) => l.cashuErrorMeltFailed,

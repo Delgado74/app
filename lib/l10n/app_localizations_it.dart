@@ -4389,6 +4389,10 @@ class AppLocalizationsIt extends AppLocalizations {
       'Le commissioni sono aumentate da quando hai confermato. Non è stato pagato nulla; ricomincia.';
 
   @override
+  String get cashuErrorMeltInFlight =>
+      'Un pagamento Lightning da questo portafoglio è ancora in corso. Attendi che finisca, o riavvia l\'app, poi riprova.';
+
+  @override
   String get cashuErrorMeltInsufficientFunds =>
       'Non hai abbastanza nel portafoglio per pagare questa fattura e le sue commissioni.';
 

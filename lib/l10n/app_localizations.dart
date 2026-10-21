@@ -7194,6 +7194,12 @@ abstract class AppLocalizations {
   /// **'The fees went up since you confirmed. Nothing was paid; start again.'**
   String get cashuErrorMeltFeeChanged;
 
+  /// Cashu error — another Lightning payment from the wallet is still waiting for the mint; nothing was started
+  ///
+  /// In en, this message translates to:
+  /// **'A Lightning payment from this wallet is still in progress. Wait for it to finish, or restart the app, then try again.'**
+  String get cashuErrorMeltInFlight;
+
   /// Cashu error — the balance does not cover the invoice plus fees
   ///
   /// In en, this message translates to:

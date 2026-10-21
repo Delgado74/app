@@ -4376,6 +4376,10 @@ class AppLocalizationsEs extends AppLocalizations {
       'Las comisiones subieron desde que confirmaste. No se pagó nada; empieza de nuevo.';
 
   @override
+  String get cashuErrorMeltInFlight =>
+      'Todavía hay un pago Lightning de esta billetera en curso. Espera a que termine, o reinicia la app, y vuelve a intentarlo.';
+
+  @override
   String get cashuErrorMeltInsufficientFunds =>
       'No tienes suficiente en la billetera para pagar esta factura y sus comisiones.';
 
