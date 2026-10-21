@@ -211,7 +211,7 @@
   "footerTagline": "Open source. Non-custodial. Privé.",
   "drawerTitle": "Mostro",
   "drawerTagline": "P2P-exchange",
-  "drawerStageBadge": "Alfa",
+  "drawerStageBadge": "Beta",
   "drawerVersion": "Versie {version}",
   "drawerAccountMenuItem": "Account",
   "drawerSettingsMenuItem": "Instellingen",

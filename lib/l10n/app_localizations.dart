@@ -1368,10 +1368,10 @@ abstract class AppLocalizations {
   /// **'P2P exchange'**
   String get drawerTagline;
 
-  /// Release-stage chip in the drawer header (rendered uppercase). Single source for the stage label — change it here when the app leaves alpha
+  /// Release-stage chip in the drawer header (rendered uppercase). Single source for the stage label — change it here when the app leaves beta
   ///
   /// In en, this message translates to:
-  /// **'Alpha'**
+  /// **'Beta'**
   String get drawerStageBadge;
 
   /// App version line in the drawer footer

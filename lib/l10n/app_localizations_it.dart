@@ -748,7 +748,7 @@ class AppLocalizationsIt extends AppLocalizations {
   String get drawerTagline => 'Scambio P2P';
 
   @override
-  String get drawerStageBadge => 'Alpha';
+  String get drawerStageBadge => 'Beta';
 
   @override
   String drawerVersion(String version) {
