@@ -33,3 +33,63 @@ pub(crate) fn try_begin_melt(_mint: &MintUrl) -> Result<MeltInFlight> {
 pub(crate) fn melt_in_flight(_mint: &MintUrl) -> bool {
     false
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::str::FromStr;
+
+    /// A mint of its own per test: the registry is process-wide and the
+    /// tests run in parallel.
+    fn a_mint() -> MintUrl {
+        MintUrl::from_str(&format!("https://{}.mint.example", uuid::Uuid::new_v4())).unwrap()
+    }
+
+    #[test]
+    fn a_second_melt_at_the_same_mint_is_refused_until_the_first_ends() {
+        // Arrange
+        let mint = a_mint();
+        let other = a_mint();
+        let first = try_begin_melt(&mint).unwrap();
+
+        // Act / Assert — the mint is marked, and a second melt there is refused
+        // with the marker Dart maps.
+        assert!(melt_in_flight(&mint));
+        let refused = try_begin_melt(&mint).err().expect("a second melt must be refused");
+        assert_eq!(refused.to_string(), "CashuMeltInFlight");
+
+        // Another mint is not held up by it.
+        assert!(!melt_in_flight(&other));
+        let _other = try_begin_melt(&other).unwrap();
+
+        // Once the first ends, the mint is free again.
+        drop(first);
+        assert!(!melt_in_flight(&mint));
+        assert!(try_begin_melt(&mint).is_ok());
+    }
+
+    #[test]
+    fn the_mark_holds_while_the_melt_runs_and_clears_on_an_early_return() {
+        fn a_melt_that_fails(mint: &MintUrl) -> Result<()> {
+            let _in_flight = try_begin_melt(mint)?;
+            assert!(melt_in_flight(mint), "marked while it runs");
+            anyhow::bail!("CashuMeltFailed")
+        }
+
+        let mint = a_mint();
+        assert!(a_melt_that_fails(&mint).is_err());
+        assert!(!melt_in_flight(&mint), "cleared once it returned");
+    }
+
+    #[test]
+    fn the_mark_is_keyed_by_the_mint_not_by_how_its_url_is_spelled() {
+        // A user who switches mints and back may type the trailing slash once
+        // and not the other time; it is the same mint, with the same sagas.
+        let host = format!("{}.mint.example", uuid::Uuid::new_v4());
+        let typed = MintUrl::from_str(&format!("https://{host}/")).unwrap();
+        let bare = MintUrl::from_str(&format!("https://{host}")).unwrap();
+
+        let _in_flight = try_begin_melt(&typed).unwrap();
+        assert!(melt_in_flight(&bare));
+    }
+}
