@@ -13938,20 +13938,33 @@ mod tests {
     }
 
     /// #865 review: a chat cursor left behind makes a rebuilt row resume its
-    /// chat after the history the wipe deleted. The cursors go before the
-    /// row, and a failed delete keeps the row for the next sweep, as the
-    /// messages do.
+    /// chat after the history the wipe deleted. The chat stops first, so no
+    /// task writes a cursor after they go; the cursors go before the
+    /// messages, so a row kept by a failed delete still has its history; and
+    /// a failed delete of either keeps the row for the next sweep.
     #[test]
-    fn the_wipe_keeps_the_row_when_its_chat_cursors_are_not_forgotten() {
+    fn the_wipe_stops_the_chat_and_forgets_its_cursors_before_the_messages() {
         let wipe = fn_body("async fn wipe_unadopted_rows(");
+        let stop = wipe
+            .find("stop_chat_subscriptions(")
+            .expect("stops the chat");
         let cursors = wipe
             .find("forget_order_cursors(")
             .expect("forgets the chat cursors");
+        let messages = wipe
+            .find("delete_messages_for_order(")
+            .expect("deletes the messages");
         let row = wipe.find("wipe_trade_row(").expect("wipes the row");
-        assert!(cursors < row, "the cursors go before the row");
+        assert!(stop < cursors, "the chat stops before the cursors go");
+        assert!(cursors < messages, "the cursors go before the messages");
+        assert!(messages < row, "the messages go before the row");
         assert!(
-            wipe[cursors..row].contains("continue;"),
-            "a failed delete keeps the row"
+            wipe[cursors..messages].contains("continue;"),
+            "a failed cursor delete keeps the row"
+        );
+        assert!(
+            wipe[messages..row].contains("continue;"),
+            "a failed message delete keeps the row"
         );
     }
 
