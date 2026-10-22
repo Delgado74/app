@@ -328,8 +328,20 @@ once (`--uninstall` removes it).
 
 </details>
 
-Every release lists its files in `SHA256SUMS.txt`; check a download with
-`sha256sum -c SHA256SUMS.txt --ignore-missing`.
+Every release lists its files in `SHA256SUMS.txt`. Check a download against it, from the folder
+that holds both:
+
+```bash
+# Linux
+sha256sum -c SHA256SUMS.txt --ignore-missing
+# macOS
+grep macos-universal SHA256SUMS.txt | shasum -a 256 -c
+```
+
+```powershell
+# Windows (PowerShell): the Hash it prints must match the zip's line in SHA256SUMS.txt
+Get-FileHash .\mostro-*-windows-x64.zip
+```
 
 **iOS**
 
