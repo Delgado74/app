@@ -1346,5 +1346,5 @@
   "payoutOutcomeMaybePaid": "An diesen oder einen anderen hier gelisteten bezahlt",
   "otherNodeCardLine": "Trade auf Node: {nodeName}",
   "otherNodeCardDialogTitle": "Trade auf einem anderen Node",
-  "otherNodeCardOpenHint": "Dieser Trade ist auf Node {nodeName}. Um ihn zu bearbeiten, wechsle in den Einstellungen zu diesem Node."
+  "otherNodeCardSwitchPrompt": "Möchtest du zum Node {nodeName} wechseln?"
 }

@@ -8178,11 +8178,11 @@ abstract class AppLocalizations {
   /// **'Trade on another node'**
   String get otherNodeCardDialogTitle;
 
-  /// Notifications (#811): body of the dialog shown when the user taps a card whose trade is on another node; informational only, nodes are switched in Settings
+  /// Notifications (#811): body of the dialog shown when the user taps a card whose trade is on another node; its primary action switches to that node and then opens what was tapped
   ///
   /// In en, this message translates to:
-  /// **'This trade is on node {nodeName}. To act on it, switch to that node in Settings.'**
-  String otherNodeCardOpenHint(String nodeName);
+  /// **'Do you want to switch to node {nodeName}?'**
+  String otherNodeCardSwitchPrompt(String nodeName);
 }
 
 class _AppLocalizationsDelegate

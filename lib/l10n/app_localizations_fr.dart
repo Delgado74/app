@@ -5038,7 +5038,7 @@ class AppLocalizationsFr extends AppLocalizations {
   String get otherNodeCardDialogTitle => 'Transaction sur un autre nœud';
 
   @override
-  String otherNodeCardOpenHint(String nodeName) {
-    return 'Cette transaction est sur le nœud $nodeName. Pour agir dessus, passez à ce nœud dans les Paramètres.';
+  String otherNodeCardSwitchPrompt(String nodeName) {
+    return 'Voulez-vous passer au nœud $nodeName ?';
   }
 }

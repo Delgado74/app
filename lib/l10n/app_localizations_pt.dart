@@ -5034,7 +5034,7 @@ class AppLocalizationsPt extends AppLocalizations {
   String get otherNodeCardDialogTitle => 'Operação em outro nó';
 
   @override
-  String otherNodeCardOpenHint(String nodeName) {
-    return 'Esta operação está no nó $nodeName. Para agir sobre ela, mude para esse nó em Configurações.';
+  String otherNodeCardSwitchPrompt(String nodeName) {
+    return 'Quer mudar para o nó $nodeName?';
   }
 }

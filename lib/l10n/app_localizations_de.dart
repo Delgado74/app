@@ -5032,7 +5032,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get otherNodeCardDialogTitle => 'Trade auf einem anderen Node';
 
   @override
-  String otherNodeCardOpenHint(String nodeName) {
-    return 'Dieser Trade ist auf Node $nodeName. Um ihn zu bearbeiten, wechsle in den Einstellungen zu diesem Node.';
+  String otherNodeCardSwitchPrompt(String nodeName) {
+    return 'Möchtest du zum Node $nodeName wechseln?';
   }
 }

@@ -4974,7 +4974,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get otherNodeCardDialogTitle => 'Trade on another node';
 
   @override
-  String otherNodeCardOpenHint(String nodeName) {
-    return 'This trade is on node $nodeName. To act on it, switch to that node in Settings.';
+  String otherNodeCardSwitchPrompt(String nodeName) {
+    return 'Do you want to switch to node $nodeName?';
   }
 }

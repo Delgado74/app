@@ -5022,7 +5022,7 @@ class AppLocalizationsIt extends AppLocalizations {
   String get otherNodeCardDialogTitle => 'Operazione su un altro nodo';
 
   @override
-  String otherNodeCardOpenHint(String nodeName) {
-    return 'Questa operazione è sul nodo $nodeName. Per gestirla, passa a quel nodo nelle Impostazioni.';
+  String otherNodeCardSwitchPrompt(String nodeName) {
+    return 'Vuoi passare al nodo $nodeName?';
   }
 }

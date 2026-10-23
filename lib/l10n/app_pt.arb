@@ -1346,5 +1346,5 @@
   "payoutOutcomeMaybePaid": "Pago para este ou outro listado aqui",
   "otherNodeCardLine": "Operação no nó: {nodeName}",
   "otherNodeCardDialogTitle": "Operação em outro nó",
-  "otherNodeCardOpenHint": "Esta operação está no nó {nodeName}. Para agir sobre ela, mude para esse nó em Configurações."
+  "otherNodeCardSwitchPrompt": "Quer mudar para o nó {nodeName}?"
 }
