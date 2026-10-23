@@ -617,11 +617,13 @@ mod tests {
 
         // Act + Assert
         assert!(check_exported(&valid, &issuer, &identity).is_ok());
+        // Signed by another key than the one the node announced: its own
+        // marker, since the fix is to refresh the node's info (#882).
         let wrong_issuer = check_exported(&valid, &someone_else.to_hex(), &identity);
         assert!(wrong_issuer
             .unwrap_err()
             .to_string()
-            .starts_with("InvalidReputationAttestation"));
+            .starts_with("ReputationIssuerKeyMismatch"));
         let wrong_identity = check_exported(&valid, &issuer, &someone_else);
         assert!(wrong_identity
             .unwrap_err()
