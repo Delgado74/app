@@ -290,6 +290,32 @@ void main() {
     expect(_button(tester, _en.reputationCheck).enabled, isFalse);
   });
 
+  // #883: on a cold start the node's info event can arrive after the screen
+  // opened; until then the node reads as not importing.
+  testWidgets('the screen picks up the capabilities when they arrive after '
+      'it opened, without Retry', (tester) async {
+    // Arrange
+    final api = await _pump(tester, api: _FakeApi(importIssuers: null));
+    expect(find.text(_en.reputationNodeDoesNotImport), findsOneWidget);
+
+    // Act: the capability fetch lands.
+    api.importIssuers = const [];
+    await tester.pump(const Duration(seconds: 2));
+    await tester.pumpAndSettle();
+
+    // Assert
+    expect(find.text(_en.reputationNodeDoesNotImport), findsNothing);
+    expect(_button(tester, _en.reputationCheck).enabled, isTrue);
+    expect(find.widgetWithText(SelectableText, _npub), findsOneWidget);
+
+    // And the other way: a fetch that retracts the capability.
+    api.importIssuers = null;
+    await tester.pump(const Duration(seconds: 2));
+    await tester.pumpAndSettle();
+    expect(find.text(_en.reputationNodeDoesNotImport), findsOneWidget);
+    expect(_button(tester, _en.reputationCheck).enabled, isFalse);
+  });
+
   testWidgets('in full privacy mode the identity never goes to the bot', (
     tester,
   ) async {
