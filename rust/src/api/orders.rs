@@ -9842,15 +9842,47 @@ async fn refetch_active_node_orders() {
             return;
         }
     };
+    let Some(events) = fetch_book_events(
+        &pool.client(),
+        &mostro_pubkey,
+        std::time::Duration::from_secs(10),
+    )
+    .await
+    else {
+        return;
+    };
+    for event in events {
+        ingest_order_event_with(&event, Publish::WhenBatchEnds).await;
+    }
+    // One emission for the batch. Publishing per event made a refetch
+    // O(N²): each upsert cloned the whole book and sent it across the
+    // bridge, so N orders cost N clones of an N-element vector. This
+    // path runs on cold start, on every node switch, and on every
+    // pull-to-refresh.
+    order_book().publish().await;
+}
+
+/// What the relays hold of `mostro_pubkey`'s book: the two scopes of
+/// [`order_book_filters`], each fetched within `timeout`, keeping only the
+/// node's own events. `None` when both fetches failed.
+async fn fetch_book_events(
+    client: &nostr_sdk::prelude::Client,
+    mostro_pubkey: &nostr_sdk::prelude::PublicKey,
+    timeout: std::time::Duration,
+) -> Option<Vec<nostr_sdk::prelude::Event>> {
     // Same two filters as the live subscription (see `order_book_filters`).
-    let (pending_filter, recent_filter) = order_book_filters(&mostro_pubkey);
-    let client = pool.client();
-    let timeout = std::time::Duration::from_secs(10);
+    let (pending_filter, recent_filter) = order_book_filters(mostro_pubkey);
     // Fetched independently on purpose: the two scopes fail independently, and
     // losing the recent-changes pass must not throw away a pending book that
     // arrived fine (that would leave the UI empty on a transient relay error).
-    let pending = client.fetch_events(pending_filter).timeout(timeout).await;
-    let recent = client.fetch_events(recent_filter).timeout(timeout).await;
+    // Asked at the same time: each waits for the slowest relay's EOSE, and in
+    // turn a relay that never sends one held a node switch twice (#842).
+    use std::future::IntoFuture as _;
+    let (pending, recent) = futures_util::future::join(
+        client.fetch_events(pending_filter).timeout(timeout).into_future(),
+        client.fetch_events(recent_filter).timeout(timeout).into_future(),
+    )
+    .await;
     if let Err(e) = &pending {
         log::warn!("[orders] refetch: pending-book fetch failed: {e}");
     }
@@ -9859,7 +9891,7 @@ async fn refetch_active_node_orders() {
     }
     if pending.is_err() && recent.is_err() {
         // Both scopes failed: nothing to ingest, and the warnings above say why.
-        return;
+        return None;
     }
     let mut events: Vec<nostr_sdk::prelude::Event> = Vec::new();
     for batch in [pending, recent].into_iter().flatten() {
@@ -9873,18 +9905,8 @@ async fn refetch_active_node_orders() {
     // honour the author must not move a trade of ours — a `canceled` wipes a
     // never-active one (`wipe_on_public_cancel`). The live subscription checks
     // the same before ingesting.
-    for event in events
-        .into_iter()
-        .filter(|event| event.pubkey == mostro_pubkey)
-    {
-        ingest_order_event_with(&event, Publish::WhenBatchEnds).await;
-    }
-    // One emission for the batch. Publishing per event made a refetch
-    // O(N²): each upsert cloned the whole book and sent it across the
-    // bridge, so N orders cost N clones of an N-element vector. This
-    // path runs on cold start, on every node switch, and on every
-    // pull-to-refresh.
-    order_book().publish().await;
+    events.retain(|event| event.pubkey == *mostro_pubkey);
+    Some(events)
 }
 
 /// Stable subscription ID for the Kind 38383 pending order-book feed.
@@ -10194,11 +10216,14 @@ pub(crate) async fn refresh_subscriptions_for_active_node() {
 
     // Repopulate the cleared book with the new node's current orders (the live
     // stream won't redeliver already-seen events — see refetch_active_node_orders).
-    refetch_active_node_orders().await;
-
-    // Outgoing messages must use the new node's PoW difficulty, and the
-    // escrow mode must reflect the node we just switched to.
-    crate::api::nostr::fetch_and_set_node_capabilities().await;
+    // Alongside it, the new node's capabilities: outgoing messages must use its
+    // PoW difficulty, and the escrow mode must reflect it. The refetch waits
+    // for the slowest relay, and they must not wait behind it (#842).
+    futures_util::future::join(
+        refetch_active_node_orders(),
+        crate::api::nostr::fetch_and_set_node_capabilities(),
+    )
+    .await;
 
     crate::api::logging::blog_info(
         "orders",
@@ -12652,6 +12677,70 @@ mod tests {
                 "{id} is still pinned to the previous node"
             );
         }
+    }
+
+    /// A relay that completes the websocket handshake and then never answers:
+    /// connected, but no EOSE ever comes back — what a stuck relay looks like.
+    async fn silent_relay() -> String {
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let url = format!("ws://{}", listener.local_addr().unwrap());
+        tokio::spawn(async move {
+            while let Ok((stream, _)) = listener.accept().await {
+                tokio::spawn(async move {
+                    if let Ok(mut ws) = tokio_tungstenite::accept_async(stream).await {
+                        use futures_util::StreamExt;
+                        while ws.next().await.is_some() {}
+                    }
+                });
+            }
+        });
+        url
+    }
+
+    /// `fetch_events` waits for every relay's EOSE, so a relay that never
+    /// sends one holds each scope for the whole timeout. Asked one after the
+    /// other, the two scopes held a node switch for twice that (#842).
+    #[tokio::test]
+    async fn the_book_fetch_asks_both_scopes_at_once() {
+        use nostr_sdk::local_relay::MockRelay;
+        use nostr_sdk::prelude::{Client, Keys};
+
+        // Arrange: one relay holds a pending order of the node, another
+        // never answers.
+        let node = Keys::generate();
+        let order = book_event_by(&uuid::Uuid::new_v4().to_string(), "pending", &node);
+        let healthy = MockRelay::run().await.expect("mock relay");
+        let healthy_url = healthy.url().await.to_string();
+        let silent_url = silent_relay().await;
+        let client = Client::new();
+        for url in [&healthy_url, &silent_url] {
+            client.add_relay(url).await.expect("add relay");
+            client
+                .try_connect_relay(url, std::time::Duration::from_secs(3))
+                .await
+                .expect("connect");
+        }
+        client
+            .send_event_to([&healthy_url], &order)
+            .await
+            .expect("publish");
+        let timeout = std::time::Duration::from_secs(1);
+
+        // Act
+        let started = std::time::Instant::now();
+        let events = fetch_book_events(&client, &node.public_key(), timeout).await;
+        let elapsed = started.elapsed();
+
+        // Assert
+        let events = events.expect("the healthy relay answered");
+        assert!(
+            events.iter().any(|event| event.id == order.id),
+            "the healthy relay's order is in the book"
+        );
+        assert!(
+            elapsed < timeout + timeout / 2,
+            "both scopes waited for the silent relay in turn: {elapsed:?}"
+        );
     }
 
     /// The SDK reports a subscribe that failed on every relay as an `Ok`
@@ -23098,6 +23187,35 @@ mod tests {
 
         // Assert: a claim arriving during any await must find the fetch pending.
         assert!(announced.expect("announces the fetch") < first_await.expect("awaits something"));
+    }
+
+    /// The book refetch waits for the slowest relay; the capability fetch,
+    /// which reads one replaceable event, must not wait behind it (#842).
+    /// A source check: no test here may drive a real node switch
+    /// (`settings::tests::no_test_here_switches_the_active_node`).
+    #[test]
+    fn a_node_switch_fetches_capabilities_alongside_the_book() {
+        // Arrange
+        let source = include_str!("orders.rs");
+        let start = source
+            .find("pub(crate) async fn refresh_subscriptions_for_active_node()")
+            .expect("the node switch exists");
+        let body = &source[start..];
+        let body = &body[..body.find("\n}\n").expect("the node switch ends")];
+
+        // Act
+        let joined = body.find("join(");
+        let refetch = body.find("refetch_active_node_orders()");
+        let capabilities = body.find("fetch_and_set_node_capabilities()");
+
+        // Assert
+        let joined = joined.expect("the two fetches run together");
+        assert!(joined < refetch.expect("refetches the book"));
+        assert!(joined < capabilities.expect("fetches the capabilities"));
+        assert!(
+            !body.contains("refetch_active_node_orders().await"),
+            "the capability fetch must not wait for the book refetch"
+        );
     }
 
     #[test]

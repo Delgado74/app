@@ -105,8 +105,12 @@ re-targets the live feeds to it: the order book is cleared, the Kind 38383
 to the new node under the same stable subscription IDs, each closed before it is
 re-issued, because nostr-sdk 0.45 rejects a subscribe whose ID already exists and
 keeps the old filters — the node's current orders are refetched, and its PoW
-requirement is refreshed. A re-subscribe that no relay accepts is an error, not
-a silent success.
+requirement is refreshed. The refetch and the capability fetch (Kind 38385: PoW,
+escrow mode, bond policy, fee) run at the same time, and so do the refetch's two
+scopes (pending book, recent changes): the refetch waits for every relay's EOSE,
+up to 10 s, and the capabilities must not wait behind it (#842). A relay slow to
+answer still holds the switch until the refetch ends. A re-subscribe that no
+relay accepts is an error, not a silent success.
 
 The switch sends no trade message to either node; outside full privacy mode
 it asks the new node for the user's reputation (`UserInfo`). Once it returns,
