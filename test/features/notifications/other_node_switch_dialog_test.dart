@@ -111,6 +111,18 @@ void main() {
     expect(results, [false]);
   });
 
+  testWidgets('a switch that throws closes it as a failed one', (
+    tester,
+  ) async {
+    await pump(tester, onSwitch: () async => throw StateError('boom'));
+
+    await tester.tap(find.text(_en.nodeSwitchConfirmAction));
+    await tester.pumpAndSettle();
+
+    expect(results, [false]);
+    expect(find.text(_en.otherNodeCardDialogTitle), findsNothing);
+  });
+
   // DS-A11Y-4: the dialog at 320 dp, 2× text, German.
   testWidgets('it fits 320 dp at 2× text in German', (tester) async {
     tester.view.physicalSize = const Size(320, 760);

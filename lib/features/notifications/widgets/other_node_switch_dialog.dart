@@ -36,7 +36,14 @@ class _OtherNodeSwitchDialogState extends State<OtherNodeSwitchDialog> {
 
   Future<void> _switch() async {
     setState(() => _switching = true);
-    final switched = await widget.onSwitch();
+    // A throw counts as a failed switch: left busy, the dialog could not be
+    // closed (Cancel disabled, canPop false).
+    var switched = false;
+    try {
+      switched = await widget.onSwitch();
+    } catch (e) {
+      debugPrint('[node-switch] switch failed: $e');
+    }
     if (mounted) Navigator.of(context).pop(switched);
   }
 
