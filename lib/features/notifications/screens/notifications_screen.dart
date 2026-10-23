@@ -13,9 +13,11 @@ import 'package:mostro/features/notifications/models/notification_view_rules.dar
 import 'package:mostro/features/notifications/providers/notifications_provider.dart';
 import 'package:mostro/features/notifications/widgets/bond_slashed_dialog.dart';
 import 'package:mostro/features/notifications/widgets/notification_group_card.dart';
+import 'package:mostro/features/notifications/widgets/other_node_switch_dialog.dart';
 import 'package:mostro/features/notifications/widgets/system_notification_banner.dart';
 import 'package:mostro/features/cashu/seller_funding_route.dart';
 import 'package:mostro/features/settings/providers/escrow_mode_provider.dart';
+import 'package:mostro/features/settings/services/node_switch.dart';
 import 'package:mostro/features/trades/providers/trade_rows_provider.dart';
 import 'package:mostro/shared/widgets/redesign_app_bar.dart';
 
@@ -38,6 +40,10 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
   /// Notices swiped away whose snack bar is still open: hidden at once, so
   /// the dismissed card leaves the tree, and deleted only if not undone.
   final Set<String> _hidden = {};
+
+  /// Set while a switch to another node's trade is offered or running, so
+  /// a second tap cannot open a second dialog.
+  bool _switching = false;
 
   @override
   Widget build(BuildContext context) {
@@ -133,6 +139,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
           isDisputeGroup: events.first.orderId == null,
           onTapNotification: (n) => _handleTap(context, n),
           onGoToTrade: () => _goToTrade(context, events),
+          onOtherNode: _openOnItsNode,
         ),
       ),
       NoticeSystemEntry(:final notification) => _Swipeable(
@@ -208,6 +215,40 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
           // message), so none stays hidden once settled.
           if (mounted) setState(() => _hidden.removeAll(ids));
         });
+  }
+
+  /// A way into a trade on another node (#811): switch to that node if the
+  /// user says so, restore the account there as any switch does, then
+  /// [open] what was tapped. Run from the screen, not the card: once the
+  /// node is the active one the card is rebuilt without its amber line.
+  Future<void> _openOnItsNode(
+    String node,
+    String nodeName,
+    VoidCallback open,
+  ) async {
+    if (_switching) return;
+    _switching = true;
+    try {
+      final switched = await showOtherNodeSwitchDialog(
+        context,
+        nodeName: nodeName,
+        onSwitch: () => switchActiveNode(ref, node),
+      );
+      if (switched == null || !mounted) return;
+      if (!switched) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(AppLocalizations.of(context).errorSwitchingNode),
+          ),
+        );
+        return;
+      }
+      await afterNodeSwitch(context, ref, nodeName);
+      if (!mounted) return;
+      open();
+    } finally {
+      _switching = false;
+    }
   }
 
   /// Footer action of a group card — open the trade (or dispute) detail.

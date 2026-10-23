@@ -1346,5 +1346,5 @@
   "payoutOutcomeMaybePaid": "Payé à celui-ci ou à un autre listé ici",
   "otherNodeCardLine": "Transaction sur le nœud : {nodeName}",
   "otherNodeCardDialogTitle": "Transaction sur un autre nœud",
-  "otherNodeCardOpenHint": "Cette transaction est sur le nœud {nodeName}. Pour agir dessus, passez à ce nœud dans les Paramètres."
+  "otherNodeCardSwitchPrompt": "Voulez-vous passer au nœud {nodeName} ?"
 }
