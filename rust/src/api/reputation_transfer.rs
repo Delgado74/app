@@ -322,14 +322,20 @@ fn event_id(json: &str) -> Option<String> {
 }
 
 /// The node's answer to an export is signed by the key it advertises and
-/// names the identity the export was asked for.
+/// names the identity the export was asked for. Another signing key is its
+/// own failure (`ReputationIssuerKeyMismatch`): the key the app read for the
+/// node may be stale, as after the operator rotated it, and refreshing the
+/// node's info is the remedy (#882).
 fn check_exported(
     attestation: &ReputationAttestation,
     issuer: &str,
     destination: &PublicKey,
 ) -> Result<()> {
-    if attestation.issuer.to_hex() != issuer || attestation.destination != *destination {
-        bail!("InvalidReputationAttestation: not the node's issuer key, or another identity");
+    if attestation.issuer.to_hex() != issuer {
+        bail!("ReputationIssuerKeyMismatch: signed by another key than the node announced");
+    }
+    if attestation.destination != *destination {
+        bail!("InvalidReputationAttestation: it names another identity");
     }
     Ok(())
 }
