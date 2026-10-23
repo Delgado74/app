@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -35,6 +37,12 @@ class _ImportReputationScreenState
     extends ConsumerState<ImportReputationScreen> {
   final _input = TextEditingController();
 
+  /// How often the node's capabilities are read again. On a cold start the
+  /// Kind 38385 fetch can finish after this screen opened, and nothing else
+  /// rebuilds it when the trust list arrives (#883).
+  static const _supportRefresh = Duration(seconds: 2);
+  Timer? _supportTimer;
+
   /// The node does not advertise `reputation_import_issuers`.
   bool _unsupported = false;
 
@@ -71,12 +79,24 @@ class _ImportReputationScreenState
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) _load();
     });
+    _supportTimer = Timer.periodic(_supportRefresh, (_) => _refreshSupport());
   }
 
   @override
   void dispose() {
+    _supportTimer?.cancel();
     _input.dispose();
     super.dispose();
+  }
+
+  /// Reload when the node's capability changed since [_load] read it, in
+  /// either direction: a fetch that retracts the trust list blocks the
+  /// actions as the first read would have.
+  void _refreshSupport() {
+    if (!mounted || _loading || _busy) return;
+    final unsupported =
+        ref.read(reputationApiProvider).support().importIssuers == null;
+    if (unsupported != _unsupported) _load();
   }
 
   Future<void> _load() async {
