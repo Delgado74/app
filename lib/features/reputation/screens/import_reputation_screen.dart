@@ -62,6 +62,9 @@ class _ImportReputationScreenState
 
   String? _botError;
   bool _busy = false;
+
+  /// [_load] is reading the pending attestation and checking it.
+  bool _prefilling = false;
   bool _imported = false;
   bool _importing = false;
 
@@ -93,7 +96,7 @@ class _ImportReputationScreenState
   /// either direction: a fetch that retracts the trust list blocks the
   /// actions as the first read would have.
   void _refreshSupport() {
-    if (!mounted || _loading || _busy) return;
+    if (!mounted || _loading || _prefilling || _busy) return;
     final unsupported =
         ref.read(reputationApiProvider).support().importIssuers == null;
     if (unsupported != _unsupported) _load();
@@ -143,13 +146,21 @@ class _ImportReputationScreenState
       if (mounted) setState(() => _loading = false);
     }
     if (!mounted || _blocked) return;
-    // An attestation exported from another Mostro waits to be imported.
-    final pending = await api.pending().catchError(
-      (_) => null as ReputationAttestationInfo?,
-    );
-    if (!mounted || pending == null || _input.text.isNotEmpty) return;
-    _input.text = pending.json;
-    await _check();
+    // An attestation exported from another Mostro waits to be imported. The
+    // read and its check still belong to this load: a capability change
+    // meanwhile waits for the next tick, instead of starting a load that
+    // would leave the prefilled attestation unchecked.
+    _prefilling = true;
+    try {
+      final pending = await api.pending().catchError(
+        (_) => null as ReputationAttestationInfo?,
+      );
+      if (!mounted || pending == null || _input.text.isNotEmpty) return;
+      _input.text = pending.json;
+      await _check();
+    } finally {
+      _prefilling = false;
+    }
   }
 
   void _onTextChanged() {

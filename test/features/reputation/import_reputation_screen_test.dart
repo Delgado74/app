@@ -104,8 +104,12 @@ class _FakeApi extends ReputationApi {
     return _info(json: json);
   }
 
+  /// Delays [pending] when set.
+  Completer<ReputationAttestationInfo?>? pendingReply;
+
   @override
-  Future<ReputationAttestationInfo?> pending() async => pendingInfo;
+  Future<ReputationAttestationInfo?> pending() =>
+      pendingReply?.future ?? Future.value(pendingInfo);
 
   @override
   Future<String?> identity() async =>
@@ -277,6 +281,23 @@ void main() {
     expect(find.text(_json), findsOneWidget);
     expect(api.checked, [_json]);
     expect(find.text(_en.reputationImportConfirm), findsOneWidget);
+  });
+
+  testWidgets('a capability change while the pending attestation is read '
+      'does not lose its check', (tester) async {
+    // Arrange: the pending read is still in flight when the timer fires.
+    final api = _FakeApi()..pendingReply = Completer();
+    await _pump(tester, api: api);
+    api.importIssuers = null;
+    await tester.pump(const Duration(seconds: 2));
+
+    // Act
+    api.pendingReply!.complete(_info());
+    await tester.pumpAndSettle();
+
+    // Assert: the prefilled attestation was checked by the load that read it.
+    expect(find.text(_json), findsOneWidget);
+    expect(api.checked, [_json]);
   });
 
   testWidgets('a node that does not import says so up front and offers '
