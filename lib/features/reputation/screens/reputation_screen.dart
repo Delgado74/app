@@ -311,10 +311,11 @@ class _Card extends StatelessWidget {
     final book = OrderBookPalette.of(context);
     return Container(
       margin: const EdgeInsets.only(bottom: 14),
-      padding: const EdgeInsets.all(16),
+      // DS-CMP-8: a card sits on surface, radius 18, padding 14.
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: book.surface,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(18),
         border: Border.all(color: book.border),
       ),
       child: Column(
