@@ -624,16 +624,20 @@ class NotificationsNotifier extends StateNotifier<List<NotificationModel>> {
           return;
         }
         if (!mounted) return;
+        // From the state as it is now, not `byId`: loads run outside the
+        // mutation queue, so a hydration may have landed its trade and chat
+        // notices while the writes above were in flight.
+        final current = {for (final n in state) n.id: n};
         for (final id in gone) {
-          byId.remove(id);
+          current.remove(id);
           if (_loadsInFlight > 0) _deletedDuringLoad.add(id);
         }
         for (final card in changed) {
-          byId[card.id] = card;
+          current[card.id] = card;
           _deletedDuringLoad.remove(card.id);
         }
         state =
-            byId.values.toList()
+            current.values.toList()
               ..sort((a, b) => b.timestamp.compareTo(a.timestamp));
       });
 

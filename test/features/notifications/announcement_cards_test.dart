@@ -70,11 +70,22 @@ class _HeldStore extends SembastNotificationsStore {
 
   Completer<void>? hold;
 
+  /// Holds the write of an announcement snapshot instead: a load that
+  /// finishes while the snapshot is being persisted.
+  Completer<void>? holdSave;
+
   @override
   Future<List<NotificationModel>> loadAll() async {
     final gate = hold;
     if (gate != null) await gate.future;
     return super.loadAll();
+  }
+
+  @override
+  Future<void> saveAll(List<NotificationModel> notifications) async {
+    final gate = holdSave;
+    if (gate != null) await gate.future;
+    return super.saveAll(notifications);
   }
 }
 
@@ -382,6 +393,42 @@ void main() {
         // Assert: neither on screen nor in the store.
         expect(notifier.state, isEmpty);
         expect(await store.loadAll(), isEmpty);
+      },
+    );
+
+    test(
+      'a load that lands while a snapshot is being persisted keeps its notices',
+      () async {
+        // Arrange: a persisted trade notice, and Rust's snapshot caught
+        // mid-write when the initial load answers.
+        final store = _HeldStore(
+          factory: newDatabaseFactoryMemory(),
+          path: 'announce-${DateTime.now().microsecondsSinceEpoch}.db',
+        );
+        final trade = NotificationModel.tradeStatus(
+          orderId: 'o1',
+          status: 'active',
+          at: DateTime.utc(2030, 1, 1),
+        );
+        await store.save(trade);
+        final notifier = NotificationsNotifier(store: store);
+        store.holdSave = Completer<void>();
+        final reconcile = notifier.reconcileAnnouncements(
+          announcementCards([_info(d: 'new')]),
+        );
+        await Future<void>.delayed(Duration.zero);
+
+        // Act: the hydration completes first, then the write.
+        await notifier.loadInitialData();
+        expect(notifier.state.map((n) => n.id), [trade.id]);
+        store.holdSave!.complete();
+        await reconcile;
+
+        // Assert: the trade notice survived the snapshot's commit.
+        expect(
+          notifier.state.map((n) => n.id).toSet(),
+          {trade.id, '38387:ab:new'},
+        );
       },
     );
   });
