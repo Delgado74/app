@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -10,6 +12,7 @@ import 'package:mostro/features/order/widgets/currency_section.dart';
 import 'package:mostro/features/order/providers/order_side_provider.dart';
 import 'package:mostro/features/order/widgets/price_section.dart';
 import 'package:mostro/l10n/app_localizations.dart';
+import 'package:mostro/shared/utils/fiat_currencies.dart';
 import '../../../support/catalogue_fixtures.dart';
 import '../../../support/provider_harness.dart';
 
@@ -325,6 +328,34 @@ void main() {
 
       expect(container.read(isMarketPriceProvider), isTrue);
       expect(find.textContaining('at market price'), findsNothing);
+    });
+
+    test('the quote is pending until the lookup answers, for a coin only',
+        () async {
+      // Arrange: a lookup that has not answered yet.
+      final quote = Completer<ExchangeRateLookup>();
+      final container = createContainer(
+        overrides: [
+          catalogueOverride(),
+          selectedFiatCodeProvider.overrideWith((ref) => 'USDT'),
+          exchangeRateLookupProvider.overrideWith(
+            (ref, code) => code == 'USDT'
+                ? quote.future
+                : Future.value(const ExchangeRateLookup.noRates()),
+          ),
+        ],
+      );
+      await container.read(fiatCurrenciesProvider.future);
+      final pending = container.listen(marketQuotePendingProvider, (_, _) {});
+
+      // Assert: pending while nothing answered, settled once it has; a
+      // fiat is never pending.
+      expect(pending.read(), isTrue);
+      quote.complete(const ExchangeRateLookup.quoted(rate: 100000.0));
+      await container.read(exchangeRateLookupProvider('USDT').future);
+      expect(pending.read(), isFalse);
+      container.read(selectedFiatCodeProvider.notifier).state = 'USD';
+      expect(pending.read(), isFalse);
     });
   });
 }

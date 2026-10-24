@@ -10,13 +10,23 @@ import 'package:mostro/shared/widgets/currency_mark.dart';
 
 import '../../../support/catalogue_fixtures.dart';
 
-Future<void> _pump(WidgetTester tester) async {
+Future<void> _pump(
+  WidgetTester tester, {
+  Locale locale = const Locale('en'),
+  double textScale = 1.0,
+}) async {
   await tester.pumpWidget(
     ProviderScope(
       overrides: [catalogueOverride()],
       child: MaterialApp(
         theme: buildDarkTheme(),
-        locale: const Locale('en'),
+        locale: locale,
+        builder: (context, child) => MediaQuery(
+          data: MediaQuery.of(
+            context,
+          ).copyWith(textScaler: TextScaler.linear(textScale)),
+          child: child!,
+        ),
         localizationsDelegates: const [
           AppLocalizations.delegate,
           GlobalMaterialLocalizations.delegate,
@@ -67,6 +77,18 @@ void main() {
       expect(find.text('USDT — Tether USD'), findsOneWidget);
       expect(find.text('USD — US Dollar'), findsNothing);
       expect(find.byType(StablecoinsGroupHeader), findsOneWidget);
+    });
+
+    // DS-A11Y-4: a changed modal fits at 320 dp and 2x text in German.
+    testWidgets('fits at 320 dp and 2x text in German', (tester) async {
+      tester.view.physicalSize = const Size(320, 640);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
+      await _pump(tester, locale: const Locale('de'), textScale: 2.0);
+
+      expect(tester.takeException(), isNull);
+      expect(find.byType(TextField), findsOneWidget);
     });
 
     testWidgets('searching a fiat shows no stablecoins header', (tester) async {

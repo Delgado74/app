@@ -59,6 +59,17 @@ final marketLockedCodeProvider = Provider.autoDispose<String?>((ref) {
       : null;
 });
 
+/// Whether the selected stablecoin's quote is still on its way: the lookup
+/// has answered nothing yet, so Market may be about to lock. The screen
+/// holds Publish on a market order until it knows, or the order would reach
+/// a node that refuses it. A fiat is never pending: it is never locked.
+final marketQuotePendingProvider = Provider.autoDispose<bool>((ref) {
+  final currency = ref.watch(selectedFiatCurrencyProvider);
+  if (currency == null || !currency.isStablecoin) return false;
+  final lookup = ref.watch(exchangeRateLookupProvider(currency.code));
+  return !lookup.hasValue && !lookup.hasError;
+});
+
 /// `+3%`, `0%`, `-3%` — the premium as the screen prints it. Zero carries no
 /// sign; the value is a whole percent because the protocol stores one.
 String formatPremium(double premium) {
