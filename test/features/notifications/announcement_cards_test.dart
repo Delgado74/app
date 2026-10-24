@@ -425,10 +425,56 @@ void main() {
         await reconcile;
 
         // Assert: the trade notice survived the snapshot's commit.
-        expect(
-          notifier.state.map((n) => n.id).toSet(),
-          {trade.id, '38387:ab:new'},
+        expect(notifier.state.map((n) => n.id).toSet(), {
+          trade.id,
+          '38387:ab:new',
+        });
+      },
+    );
+  });
+
+  group('delayed dismissal', () {
+    test('skips a correction that replaced the swiped revision', () async {
+      // Arrange: the user swiped revision 1; a correction arrived while the
+      // Undo snack bar was open.
+      final flags = _RecordingFlags();
+      final notifier = NotificationsNotifier(announcementFlags: flags);
+      await notifier.reconcileAnnouncements(
+        announcementCards([_info(revision: '1800000000:aa')]),
+      );
+      await notifier.reconcileAnnouncements(
+        announcementCards([_info(revision: '1800000100:bb')]),
+      );
+
+      // Act
+      await notifier.delete(
+        '38387:ab:release-2-1',
+        announcementRevision: '1800000000:aa',
+      );
+
+      // Assert: the correction is still listed, unread, and Rust heard nothing.
+      final card = _card(notifier, '38387:ab:release-2-1');
+      expect(card.announcementRevision, '1800000100:bb');
+      expect(card.isRead, isFalse);
+      expect(flags.dismissals, isEmpty);
+    });
+
+    test(
+      'dismisses the revision that was swiped when it is still current',
+      () async {
+        final flags = _RecordingFlags();
+        final notifier = NotificationsNotifier(announcementFlags: flags);
+        await notifier.reconcileAnnouncements(
+          announcementCards([_info(revision: '1800000000:aa')]),
         );
+
+        await notifier.delete(
+          '38387:ab:release-2-1',
+          announcementRevision: '1800000000:aa',
+        );
+
+        expect(notifier.state, isEmpty);
+        expect(flags.dismissals, ['38387:ab:release-2-1']);
       },
     );
   });

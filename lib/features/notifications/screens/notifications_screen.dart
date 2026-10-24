@@ -198,6 +198,12 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
   /// the screen. The notifier outlives the screen, so the delete still runs.
   void _dismiss(List<NotificationModel> events) {
     final ids = {for (final n in events) n.id};
+    // What was swiped, for an announcement: a correction that lands while
+    // the snack bar is open is not it, and must not be dismissed in its place.
+    final revisions = {
+      for (final n in events)
+        if (n.announcementRevision case final revision?) n.id: revision,
+    };
     setState(() => _hidden.addAll(ids));
     final notifier = ref.read(notificationsProvider.notifier);
     final l10n = AppLocalizations.of(context);
@@ -220,7 +226,10 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
         .closed
         .then((reason) async {
           if (reason != SnackBarClosedReason.action) {
-            await Future.wait([for (final id in ids) notifier.delete(id)]);
+            await Future.wait([
+              for (final id in ids)
+                notifier.delete(id, announcementRevision: revisions[id]),
+            ]);
           }
           // Ids can come back (a chat card is re-created by the next
           // message), so none stays hidden once settled.

@@ -510,20 +510,29 @@ class NotificationsNotifier extends StateNotifier<List<NotificationModel>> {
     }
   });
 
-  Future<void> delete(String id) => _mutate(() async {
-    final card = state.where((n) => n.id == id).firstOrNull;
-    if (card != null && card.isAnnouncement) {
-      await _dismissAnnouncement(card);
-      return;
-    }
-    if (_loadsInFlight > 0) _deletedDuringLoad.add(id);
-    state = state.where((n) => n.id != id).toList();
-    try {
-      await store?.deleteRecord(id);
-    } catch (e) {
-      debugPrint('NotificationsNotifier: failed to persist delete: $e');
-    }
-  });
+  /// Deletes a card. For an announcement, [announcementRevision] is the
+  /// revision the user swiped: a correction that replaced it meanwhile (a
+  /// delayed dismissal, behind an Undo snack bar) is not the card they
+  /// dismissed, so it stays, unread, and nothing is reported to Rust.
+  Future<void> delete(String id, {String? announcementRevision}) =>
+      _mutate(() async {
+        final card = state.where((n) => n.id == id).firstOrNull;
+        if (card != null && card.isAnnouncement) {
+          if (announcementRevision != null &&
+              card.announcementRevision != announcementRevision) {
+            return;
+          }
+          await _dismissAnnouncement(card);
+          return;
+        }
+        if (_loadsInFlight > 0) _deletedDuringLoad.add(id);
+        state = state.where((n) => n.id != id).toList();
+        try {
+          await store?.deleteRecord(id);
+        } catch (e) {
+          debugPrint('NotificationsNotifier: failed to persist delete: $e');
+        }
+      });
 
   /// Everything goes, except that a `critical` announcement stays listed,
   /// read, until it expires (specs/006 §3.4) — the user who clears the list
