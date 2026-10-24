@@ -208,7 +208,7 @@ class _PushMasterRowState extends ConsumerState<_PushMasterRow> {
             value
                 ? Icons.notifications_active_outlined
                 : Icons.notifications_off_outlined,
-            size: 17,
+            size: 16,
             color: value ? book.limeIcon : book.textTertiary,
           ),
           const SizedBox(width: 12),
@@ -340,7 +340,7 @@ class _UnsupportedPlatformRow extends StatelessWidget {
         children: [
           Icon(
             Icons.notifications_off_outlined,
-            size: 17,
+            size: 16,
             color: book.textTertiary,
           ),
           const SizedBox(width: 12),
@@ -477,7 +477,7 @@ class _ToggleRow extends StatelessWidget {
         children: [
           Icon(
             icon,
-            size: 17,
+            size: 16,
             color: value ? book.limeIcon : book.textTertiary,
           ),
           const SizedBox(width: 12),
