@@ -479,39 +479,34 @@ async fn refresh_subscription() {
         log::debug!("[announcements] allowlist empty: no subscription");
         return;
     };
+    let Ok(pool) = crate::api::nostr::get_pool() else {
+        log::warn!("[announcements] no relay pool: not subscribing");
+        return;
+    };
+    let client = pool.client();
+    let id = SubscriptionId::new(SUBSCRIPTION_ID);
     if LOOP_ACTIVE
         .compare_exchange(false, true, Ordering::AcqRel, Ordering::Acquire)
         .is_err()
     {
         // `live_subs` re-issues the recorded filter on every reconnect; left
         // alone, its `since` would trail further behind each day it runs.
-        if let Ok(pool) = crate::api::nostr::get_pool() {
-            if let Err(e) = crate::nostr::live_subs::live_subs()
-                .replace(&pool.client(), SubscriptionId::new(SUBSCRIPTION_ID), filter)
-                .await
-            {
-                log::warn!("[announcements] refreshing the filter failed: {e}");
-            }
+        if let Err(e) = crate::nostr::live_subs::live_subs()
+            .replace(&client, id, filter)
+            .await
+        {
+            log::warn!("[announcements] refreshing the filter failed: {e}");
         }
         return;
     }
-    crate::rt::spawn(async move {
-        let _guard = LoopGuard;
-        run_subscription(authors, filter, version).await;
-    });
-}
-
-/// Subscribe on the shared pool — keyed with an ephemeral key, never a trade
-/// key (§4.4) — and store whatever wins at its address. Publishes nothing.
-async fn run_subscription(authors: Vec<PublicKey>, filter: Filter, version: Version) {
-    let Ok(pool) = crate::api::nostr::get_pool() else {
-        log::warn!("[announcements] no relay pool: not subscribing");
-        return;
-    };
-    let client = pool.client();
-    // Before subscribing, so nothing arrives between the two unheard.
-    let mut rx = client.notifications();
-    let id = SubscriptionId::new(SUBSCRIPTION_ID);
+    let guard = LoopGuard;
+    // The first open happens here, under `TRANSITION`, not in the pump task:
+    // spawned, it could reach the relay after a tap closed the subscription
+    // and reopen it behind the user's back. A pump that never subscribed
+    // drops the guard, so the next refresh tries again.
+    //
+    // Taken before subscribing, so nothing arrives between the two unheard.
+    let rx = client.notifications();
     if let Err(e) = crate::nostr::live_subs::live_subs()
         .replace(&client, id.clone(), filter)
         .await
@@ -520,7 +515,21 @@ async fn run_subscription(authors: Vec<PublicKey>, filter: Filter, version: Vers
         return;
     }
     log::info!("[announcements] subscribed to {} key(s)", authors.len());
+    crate::rt::spawn(async move {
+        let _guard = guard;
+        run_subscription(rx, id, authors, version).await;
+    });
+}
 
+/// Pump the subscription [`refresh_subscription`] opened on the shared pool —
+/// keyed with an ephemeral key, never a trade key (§4.4) — and store whatever
+/// wins at its address. Publishes nothing.
+async fn run_subscription(
+    mut rx: std::pin::Pin<Box<dyn futures_util::Stream<Item = ClientNotification> + Send>>,
+    id: SubscriptionId,
+    authors: Vec<PublicKey>,
+    version: Version,
+) {
     while let Some(notification) = rx.next().await {
         let ClientNotification::Event {
             subscription_id,
