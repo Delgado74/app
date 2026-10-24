@@ -169,8 +169,8 @@ class AmountSection extends ConsumerWidget {
           if (quickAmounts.isNotEmpty) ...[
             const SizedBox(height: 10),
             Wrap(
-              spacing: 7,
-              runSpacing: 7,
+              spacing: 8,
+              runSpacing: 8,
               children: [
                 for (final amount in quickAmounts)
                   _QuickAmountChip(
