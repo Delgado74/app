@@ -2,10 +2,12 @@
 
 **Feature Branch**: `006-announcement-channel`
 **Created**: 2026-08-26
-**Status**: In progress — steps 1 to 3 of §10 are built: parsing and the allowlist in
+**Status**: In progress — steps 1 to 4 of §10 are built: parsing and the allowlist in
 `rust/src/nostr/announcements.rs`, the reader and its cache in
 `rust/src/nostr/announcement_reader.rs`, the bridge and the Announcements toggle in
-`rust/src/api/announcements.rs` and `lib/features/settings/providers/announcements_provider.dart`
+`rust/src/api/announcements.rs` and `lib/features/settings/providers/announcements_provider.dart`,
+the cards in `lib/features/notifications/services/announcement_cards.dart` and
+`widgets/system_notification_banner.dart`
 **Input**: Give the project one authenticated way to reach people already running the
 app — "update to 2.1", "the node is down for maintenance", "this relay is gone" —
 without a backend, an account, an email address, or a push token.
@@ -278,9 +280,14 @@ second one look like the first. Every announcement therefore declares one of thr
 
 | `severity` | For | Rendered as |
 |---|---|---|
-| `info` | releases, new features, events | `blueAccent`, an info icon |
-| `warning` | outages, a relay being retired, anything with a deadline | `warningAmber`, the warning icon the system banner already uses |
-| `critical` | a security issue the user must act on now | `destructiveRed`, a shield icon, and the bell's dot turns red |
+| `info` | releases, new features, events | the Activity palette's action chip (lime), an info icon |
+| `warning` | outages, a relay being retired, anything with a deadline | the wait chip (amber) and the warning icon the system banner already uses |
+| `critical` | a security issue the user must act on now | the dispute chip (red), a shield icon, and the bell's dot turns red |
+
+(As built: the three tones are `ActivityPalette.chipAction*` / `chipWait*` / `chipDispute*`,
+the chips the trade cards next to it already use, rather than the v1 `AppColors` tokens an
+earlier draft named — DS-COL-11 forbids new code on that layer. The level's label is
+rendered above the title, in the tone's ink.)
 
 Three levels, not five: the publisher has to be able to pick one without deliberating, and
 a level nobody can distinguish from its neighbour is a level that gets chosen at random.
@@ -579,24 +586,52 @@ generated `lib/src/rust/` is never hand-edited.
 
 Each announcement becomes a `NotificationModel`:
 
-- `type: NotificationType.system` — which already routes to `SystemNotificationBanner`,
-  whose amber is today hardcoded; it grows a severity parameter so the three levels of
-  §3.4 map onto `blueAccent` / `warningAmber` / `destructiveRed` with their icons
-- `id`: the address string, so the model's identity is the announcement's identity and the
-  existing Sembast `processed_events` tombstone ledger works unchanged
-- `title` / `message`: the locale block matching `Localizations.localeOf(context)`; there
-  is no fallback path, because §3.2 guarantees every locale is present
+- `type: NotificationType.system` — which already routes to `SystemNotificationBanner`;
+  the card reads the announcement's level and paints it in the Activity palette's chip of
+  §3.4 (`chipAction*` / `chipWait*` / `chipDispute*`) with its icon and label. A plain
+  system notice keeps the amber it always had
+- `id`: the address string, so the model's identity is the announcement's identity. The
+  `processed_events` ledger plays no part: Rust's snapshots decide which cards exist
+- `title` / `message`: the locale block matching the app's locale. §3.2 guarantees every
+  locale this build knew of; the stored English copy is the fallback for one added since
 - `timestamp`: `created_at`
 - the `url`, when present, as a single button opening externally through `url_launcher`
-  (already a dependency), never rendered inline in the body
+  (already a dependency), never rendered inline in the body, with a 48 dp target
 
 Read and dismiss flow through the existing notifications provider, which then calls the
 bridge so Rust holds the same state — it is Rust that has to know whether a superseding
 revision should re-announce. A newer revision at a known address arrives as an unread item
-at the same id, which is exactly what §5.3 asks for.
+at the same id, which is exactly what §5.3 asks for. The cards are the device's, not the
+identity's: an identity change keeps them, as Rust keeps the cache and its flags.
 
-The bell, the unread dot and the notifications screen are unchanged. **This feature adds
-no new navigation and no new screen.**
+The bell and the notifications screen change only for `critical`: an unread one turns the
+bell's dot red, and its semantic label names it, even over the backup reminder. It sorts
+above every other section on the screen. **This feature adds no new navigation and no new
+screen.**
+
+**What the surface settled** (step 4 of §10):
+
+- `lib/features/notifications/services/announcement_cards.dart` turns each snapshot of
+  Rust's stream into the cards to show (`announcementCards`: a dismissed non-critical has
+  none), and `NotificationsNotifier.reconcileAnnouncements` makes the Sembast store match:
+  a new address is added, a new revision at a known address replaces its card (unread), an
+  address Rust no longer lists loses its card, and Rust's `read` flag wins. The stream is
+  subscribed in `app_bootstrap.dart` before the relay pool starts — Rust's first emit comes
+  with the pool's first `Online` — and the cache is read once on top of it, so the cards
+  are there offline. A stream snapshot that lands while that read is in flight wins
+  (`AnnouncementCards.readCache`): it is the whole cache too, and possibly a newer one.
+- The card's id is the address; its `detail` map holds the revision, the level, the link
+  and every locale under `loc:<lang>:title|body`. `resolvedTitle` / `resolvedMessage`
+  pick the copy by `AppLocalizations.localeName`; the stored `title` / `message` are the
+  English fallback for a locale this build added since.
+- Read and dismiss go through the notifier's `AnnouncementFlags` (injected, so tests never
+  reach the bridge): a tap reads, a swipe dismisses. Swiping a `critical` marks it read and
+  keeps it; "Clear all" keeps every `critical`, read, and dismisses the rest. The screen's
+  tap opens nothing for an announcement — the link is a button of its own on the card,
+  opened with `url_launcher` externally.
+- `sectionNotices` lists `critical` announcements in a section of their own, rendered above
+  the trades that need action and the timeline, and `unreadCriticalAnnouncementProvider`
+  turns the bell's dot red with its own semantic label.
 
 ### 6.3 Nothing interrupts
 
@@ -734,7 +769,7 @@ PR per step, per the workflow in CLAUDE.md.
 | 1 | §3 parsing and validation + the §4.1 allowlist, as pure Rust functions — no relay, no DB, no UI | Everything rests on it, and it is the cheapest thing to get wrong quietly. Ships with the allowlist **empty**, which is inert by construction |
 | 2 | Fetch, verify, freshness, expiry, the `announcements` table and the schema bump (§4.2, §5) | Testable without a screen |
 | 3 | ~~The bridge surface + the Announcements toggle (§6.1, §7), then `./scripts/frb-generate.sh`~~ — **done** | The off switch before the surface |
-| 4 | Rendering into the existing notification surface, seven locales of chrome (§6.2) | Last, when there is something to show |
+| 4 | ~~Rendering into the existing notification surface, seven locales of chrome (§6.2)~~ — **done** | Last, when there is something to show |
 | 5 | `rust/src/bin/announce.rs` + the publishing doc (§8) | With or just after step 1, sharing its validator |
 | 6 | **Add the real npubs** — one line, its own PR, npubs checked against a source outside this repo | The only commit that makes the channel live |
 | 7 | **Land MostroP2P/protocol#56** — the `38387` registration (§3) | A number reserved only in this repo is not reserved; it should land before the reader ships, and it depends on nothing here |
