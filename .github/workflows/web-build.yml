@@ -124,6 +124,10 @@ jobs:
             exit 1
           fi
           echo "wasm-bindgen=$version" >> "$GITHUB_OUTPUT"
+          # Created up front: a cache miss leaves no directory, and wasm-pack
+          # does not create one it was pointed at — it skips the download and
+          # goes straight to the `cargo install` that cannot work here.
+          mkdir -p "$RUNNER_TEMP/wasm-pack"
           echo "WASM_PACK_CACHE=$RUNNER_TEMP/wasm-pack" >> "$GITHUB_ENV"
 
       - name: Cache wasm-pack downloads
