@@ -751,6 +751,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   LogEntry dco_decode_box_autoadd_log_entry(dynamic raw);
 
   @protected
+  MostroNodeEntry dco_decode_box_autoadd_mostro_node_entry(dynamic raw);
+
+  @protected
   MostroNodePicture dco_decode_box_autoadd_mostro_node_picture(dynamic raw);
 
   @protected
@@ -1032,6 +1035,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   LogEntry? dco_decode_opt_box_autoadd_log_entry(dynamic raw);
+
+  @protected
+  MostroNodeEntry? dco_decode_opt_box_autoadd_mostro_node_entry(dynamic raw);
 
   @protected
   MostroNodePicture? dco_decode_opt_box_autoadd_mostro_node_picture(
@@ -1854,6 +1860,11 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   LogEntry sse_decode_box_autoadd_log_entry(SseDeserializer deserializer);
 
   @protected
+  MostroNodeEntry sse_decode_box_autoadd_mostro_node_entry(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   MostroNodePicture sse_decode_box_autoadd_mostro_node_picture(
     SseDeserializer deserializer,
   );
@@ -2197,6 +2208,11 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   LogEntry? sse_decode_opt_box_autoadd_log_entry(SseDeserializer deserializer);
+
+  @protected
+  MostroNodeEntry? sse_decode_opt_box_autoadd_mostro_node_entry(
+    SseDeserializer deserializer,
+  );
 
   @protected
   MostroNodePicture? sse_decode_opt_box_autoadd_mostro_node_picture(
@@ -3198,6 +3214,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  void sse_encode_box_autoadd_mostro_node_entry(
+    MostroNodeEntry self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_box_autoadd_mostro_node_picture(
     MostroNodePicture self,
     SseSerializer serializer,
@@ -3674,6 +3696,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   @protected
   void sse_encode_opt_box_autoadd_log_entry(
     LogEntry? self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_opt_box_autoadd_mostro_node_entry(
+    MostroNodeEntry? self,
     SseSerializer serializer,
   );
 
