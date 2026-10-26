@@ -1380,6 +1380,17 @@ class AppLocalizationsDe extends AppLocalizations {
       'Schlichter-Aktionen und Streitbeilegungen';
 
   @override
+  String get notifAnnouncementsTitle => 'Ankündigungen';
+
+  @override
+  String get notifAnnouncementsSubtitle =>
+      'Versionen, Ausfälle und Relay-Änderungen, signiert vom Mostro-Projekt';
+
+  @override
+  String get announcementsGroupSubtitle =>
+      'Ankündigungen werden von den Relays gelesen und nie beantwortet: Nichts über dich wird gesendet.';
+
+  @override
   String get searchCurrenciesHint => 'Währungen suchen…';
 
   @override
@@ -5066,7 +5077,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get otherNodeCardDialogTitle => 'Trade auf einem anderen Node';
 
   @override
-  String otherNodeCardOpenHint(String nodeName) {
-    return 'Dieser Trade ist auf Node $nodeName. Um ihn zu bearbeiten, wechsle in den Einstellungen zu diesem Node.';
+  String otherNodeCardSwitchPrompt(String nodeName) {
+    return 'Möchtest du zum Node $nodeName wechseln?';
   }
 }

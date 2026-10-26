@@ -1379,6 +1379,17 @@ class AppLocalizationsNl extends AppLocalizations {
       'Acties van de solver en uitkomsten van disputen';
 
   @override
+  String get notifAnnouncementsTitle => 'Aankondigingen';
+
+  @override
+  String get notifAnnouncementsSubtitle =>
+      'Versies, storingen en relaywijzigingen, ondertekend door het Mostro-project';
+
+  @override
+  String get announcementsGroupSubtitle =>
+      'Aankondigingen worden van de relays gelezen en nooit beantwoord: er wordt niets over jou verstuurd.';
+
+  @override
   String get searchCurrenciesHint => 'Valuta zoeken…';
 
   @override
@@ -5051,7 +5062,7 @@ class AppLocalizationsNl extends AppLocalizations {
   String get otherNodeCardDialogTitle => 'Trade op een andere node';
 
   @override
-  String otherNodeCardOpenHint(String nodeName) {
-    return 'Deze trade staat op node $nodeName. Schakel in Instellingen over naar die node om ermee verder te gaan.';
+  String otherNodeCardSwitchPrompt(String nodeName) {
+    return 'Wil je overschakelen naar node $nodeName?';
   }
 }

@@ -394,6 +394,9 @@
   "notifPaymentAlertsSubtitle": "Confirmations et échecs de paiements Lightning",
   "notifDisputeUpdatesTitle": "Mises à jour des litiges",
   "notifDisputeUpdatesSubtitle": "Actions des médiateurs et résolutions de litiges",
+  "notifAnnouncementsTitle": "Annonces",
+  "notifAnnouncementsSubtitle": "Versions, pannes et changements de relais, signés par le projet Mostro",
+  "announcementsGroupSubtitle": "Les annonces sont lues depuis les relais et jamais répondues : rien vous concernant n'est envoyé.",
   "searchCurrenciesHint": "Rechercher des devises…",
   "noCurrenciesFoundMessage": "Aucune devise trouvée",
   "shareLogsTooltip": "Partager les journaux",
@@ -1355,5 +1358,5 @@
   "payoutOutcomeMaybePaid": "Payé à celui-ci ou à un autre listé ici",
   "otherNodeCardLine": "Transaction sur le nœud : {nodeName}",
   "otherNodeCardDialogTitle": "Transaction sur un autre nœud",
-  "otherNodeCardOpenHint": "Cette transaction est sur le nœud {nodeName}. Pour agir dessus, passez à ce nœud dans les Paramètres."
+  "otherNodeCardSwitchPrompt": "Voulez-vous passer au nœud {nodeName} ?"
 }

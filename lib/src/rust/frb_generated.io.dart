@@ -4,6 +4,7 @@
 // ignore_for_file: unused_import, unused_element, unnecessary_import, duplicate_ignore, invalid_use_of_internal_member, annotate_overrides, non_constant_identifier_names, curly_braces_in_flow_control_structures, prefer_const_literals_to_create_immutables, unused_field
 
 import 'api.dart';
+import 'api/announcements.dart';
 import 'api/bond.dart';
 import 'api/cashu.dart';
 import 'api/disputes.dart';
@@ -40,6 +41,10 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
     required super.generalizedFrbRustBinding,
     required super.portManager,
   });
+
+  CrossPlatformFinalizerArg
+  get rust_arc_decrement_strong_count_AnnouncementsStreamPtr =>
+      wire._rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerAnnouncementsStreamPtr;
 
   CrossPlatformFinalizerArg
   get rust_arc_decrement_strong_count_AnyMessageStreamPtr =>
@@ -146,6 +151,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   AnyhowException dco_decode_AnyhowException(dynamic raw);
+
+  @protected
+  AnnouncementsStream
+  dco_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerAnnouncementsStream(
+    dynamic raw,
+  );
 
   @protected
   AnyMessageStream
@@ -304,6 +315,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  AnnouncementsStream
+  dco_decode_Auto_RefMut_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerAnnouncementsStream(
+    dynamic raw,
+  );
+
+  @protected
   AnyMessageStream
   dco_decode_Auto_RefMut_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerAnyMessageStream(
     dynamic raw,
@@ -456,6 +473,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   @protected
   OrderBook
   dco_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOrderBook(
+    dynamic raw,
+  );
+
+  @protected
+  AnnouncementsStream
+  dco_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerAnnouncementsStream(
     dynamic raw,
   );
 
@@ -617,6 +640,15 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   String dco_decode_String(dynamic raw);
+
+  @protected
+  AnnouncementInfo dco_decode_announcement_info(dynamic raw);
+
+  @protected
+  AnnouncementSeverity dco_decode_announcement_severity(dynamic raw);
+
+  @protected
+  AnnouncementText dco_decode_announcement_text(dynamic raw);
 
   @protected
   AppSettings dco_decode_app_settings(dynamic raw);
@@ -861,6 +893,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   List<String> dco_decode_list_String(dynamic raw);
+
+  @protected
+  List<AnnouncementInfo> dco_decode_list_announcement_info(dynamic raw);
+
+  @protected
+  List<AnnouncementText> dco_decode_list_announcement_text(dynamic raw);
 
   @protected
   List<BondClaim> dco_decode_list_bond_claim(dynamic raw);
@@ -1206,6 +1244,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   AnyhowException sse_decode_AnyhowException(SseDeserializer deserializer);
 
   @protected
+  AnnouncementsStream
+  sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerAnnouncementsStream(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   AnyMessageStream
   sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerAnyMessageStream(
     SseDeserializer deserializer,
@@ -1362,6 +1406,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  AnnouncementsStream
+  sse_decode_Auto_RefMut_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerAnnouncementsStream(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   AnyMessageStream
   sse_decode_Auto_RefMut_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerAnyMessageStream(
     SseDeserializer deserializer,
@@ -1514,6 +1564,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   @protected
   OrderBook
   sse_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOrderBook(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  AnnouncementsStream
+  sse_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerAnnouncementsStream(
     SseDeserializer deserializer,
   );
 
@@ -1675,6 +1731,17 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   String sse_decode_String(SseDeserializer deserializer);
+
+  @protected
+  AnnouncementInfo sse_decode_announcement_info(SseDeserializer deserializer);
+
+  @protected
+  AnnouncementSeverity sse_decode_announcement_severity(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  AnnouncementText sse_decode_announcement_text(SseDeserializer deserializer);
 
   @protected
   AppSettings sse_decode_app_settings(SseDeserializer deserializer);
@@ -1963,6 +2030,16 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   List<String> sse_decode_list_String(SseDeserializer deserializer);
+
+  @protected
+  List<AnnouncementInfo> sse_decode_list_announcement_info(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  List<AnnouncementText> sse_decode_list_announcement_text(
+    SseDeserializer deserializer,
+  );
 
   @protected
   List<BondClaim> sse_decode_list_bond_claim(SseDeserializer deserializer);
@@ -2392,6 +2469,13 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   void
+  sse_encode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerAnnouncementsStream(
+    AnnouncementsStream self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void
   sse_encode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerAnyMessageStream(
     AnyMessageStream self,
     SseSerializer serializer,
@@ -2569,6 +2653,13 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   void
   sse_encode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWalletStatusStream(
     WalletStatusStream self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void
+  sse_encode_Auto_RefMut_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerAnnouncementsStream(
+    AnnouncementsStream self,
     SseSerializer serializer,
   );
 
@@ -2756,6 +2847,13 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   void
+  sse_encode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerAnnouncementsStream(
+    AnnouncementsStream self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void
   sse_encode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerAnyMessageStream(
     AnyMessageStream self,
     SseSerializer serializer,
@@ -2938,6 +3036,24 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   void sse_encode_String(String self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_announcement_info(
+    AnnouncementInfo self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_announcement_severity(
+    AnnouncementSeverity self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_announcement_text(
+    AnnouncementText self,
+    SseSerializer serializer,
+  );
 
   @protected
   void sse_encode_app_settings(AppSettings self, SseSerializer serializer);
@@ -3340,6 +3456,18 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   void sse_encode_list_String(List<String> self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_list_announcement_info(
+    List<AnnouncementInfo> self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_list_announcement_text(
+    List<AnnouncementText> self,
+    SseSerializer serializer,
+  );
 
   @protected
   void sse_encode_list_bond_claim(
@@ -3874,6 +4002,40 @@ class RustLibWire implements BaseWire {
   /// The symbols are looked up in [dynamicLibrary].
   RustLibWire(ffi.DynamicLibrary dynamicLibrary)
     : _lookup = dynamicLibrary.lookup;
+
+  void
+  rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerAnnouncementsStream(
+    ffi.Pointer<ffi.Void> ptr,
+  ) {
+    return _rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerAnnouncementsStream(
+      ptr,
+    );
+  }
+
+  late final _rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerAnnouncementsStreamPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Pointer<ffi.Void>)>>(
+        'frbgen_mostro_rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerAnnouncementsStream',
+      );
+  late final _rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerAnnouncementsStream =
+      _rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerAnnouncementsStreamPtr
+          .asFunction<void Function(ffi.Pointer<ffi.Void>)>();
+
+  void
+  rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerAnnouncementsStream(
+    ffi.Pointer<ffi.Void> ptr,
+  ) {
+    return _rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerAnnouncementsStream(
+      ptr,
+    );
+  }
+
+  late final _rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerAnnouncementsStreamPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Pointer<ffi.Void>)>>(
+        'frbgen_mostro_rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerAnnouncementsStream',
+      );
+  late final _rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerAnnouncementsStream =
+      _rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerAnnouncementsStreamPtr
+          .asFunction<void Function(ffi.Pointer<ffi.Void>)>();
 
   void
   rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerAnyMessageStream(

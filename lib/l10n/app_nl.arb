@@ -394,6 +394,9 @@
   "notifPaymentAlertsSubtitle": "Bevestigde en mislukte Lightning-betalingen",
   "notifDisputeUpdatesTitle": "Wijzigingen in disputen",
   "notifDisputeUpdatesSubtitle": "Acties van de solver en uitkomsten van disputen",
+  "notifAnnouncementsTitle": "Aankondigingen",
+  "notifAnnouncementsSubtitle": "Versies, storingen en relaywijzigingen, ondertekend door het Mostro-project",
+  "announcementsGroupSubtitle": "Aankondigingen worden van de relays gelezen en nooit beantwoord: er wordt niets over jou verstuurd.",
   "searchCurrenciesHint": "Valuta zoeken…",
   "noCurrenciesFoundMessage": "Geen valuta gevonden",
   "shareLogsTooltip": "Logboek delen",
@@ -1355,5 +1358,5 @@
   "payoutOutcomeMaybePaid": "Betaald aan deze of een andere die hier staat",
   "otherNodeCardLine": "Trade op node: {nodeName}",
   "otherNodeCardDialogTitle": "Trade op een andere node",
-  "otherNodeCardOpenHint": "Deze trade staat op node {nodeName}. Schakel in Instellingen over naar die node om ermee verder te gaan."
+  "otherNodeCardSwitchPrompt": "Wil je overschakelen naar node {nodeName}?"
 }

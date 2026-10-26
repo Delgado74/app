@@ -1378,6 +1378,17 @@ class AppLocalizationsPt extends AppLocalizations {
       'Ações do mediador e resoluções de disputas';
 
   @override
+  String get notifAnnouncementsTitle => 'Anúncios';
+
+  @override
+  String get notifAnnouncementsSubtitle =>
+      'Versões, quedas e mudanças de relays, assinados pelo projeto Mostro';
+
+  @override
+  String get announcementsGroupSubtitle =>
+      'Os anúncios são lidos dos relays e nunca respondidos: nada sobre você é enviado.';
+
+  @override
   String get searchCurrenciesHint => 'Buscar moedas…';
 
   @override
@@ -5068,7 +5079,7 @@ class AppLocalizationsPt extends AppLocalizations {
   String get otherNodeCardDialogTitle => 'Operação em outro nó';
 
   @override
-  String otherNodeCardOpenHint(String nodeName) {
-    return 'Esta operação está no nó $nodeName. Para agir sobre ela, mude para esse nó em Configurações.';
+  String otherNodeCardSwitchPrompt(String nodeName) {
+    return 'Quer mudar para o nó $nodeName?';
   }
 }

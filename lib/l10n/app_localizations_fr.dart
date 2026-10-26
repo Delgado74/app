@@ -1377,6 +1377,17 @@ class AppLocalizationsFr extends AppLocalizations {
       'Actions des médiateurs et résolutions de litiges';
 
   @override
+  String get notifAnnouncementsTitle => 'Annonces';
+
+  @override
+  String get notifAnnouncementsSubtitle =>
+      'Versions, pannes et changements de relais, signés par le projet Mostro';
+
+  @override
+  String get announcementsGroupSubtitle =>
+      'Les annonces sont lues depuis les relais et jamais répondues : rien vous concernant n\'est envoyé.';
+
+  @override
   String get searchCurrenciesHint => 'Rechercher des devises…';
 
   @override
@@ -5072,7 +5083,7 @@ class AppLocalizationsFr extends AppLocalizations {
   String get otherNodeCardDialogTitle => 'Transaction sur un autre nœud';
 
   @override
-  String otherNodeCardOpenHint(String nodeName) {
-    return 'Cette transaction est sur le nœud $nodeName. Pour agir dessus, passez à ce nœud dans les Paramètres.';
+  String otherNodeCardSwitchPrompt(String nodeName) {
+    return 'Voulez-vous passer au nœud $nodeName ?';
   }
 }

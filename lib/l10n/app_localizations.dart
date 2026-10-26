@@ -2466,6 +2466,24 @@ abstract class AppLocalizations {
   /// **'Resolver actions and dispute resolutions'**
   String get notifDisputeUpdatesSubtitle;
 
+  /// Title of the Announcements toggle in notification settings (specs/006)
+  ///
+  /// In en, this message translates to:
+  /// **'Announcements'**
+  String get notifAnnouncementsTitle;
+
+  /// Subtitle of the Announcements toggle
+  ///
+  /// In en, this message translates to:
+  /// **'Releases, outages and relay changes, signed by the Mostro project'**
+  String get notifAnnouncementsSubtitle;
+
+  /// Line above the Announcements toggle: the channel is one-way, nothing is reported back
+  ///
+  /// In en, this message translates to:
+  /// **'Announcements are read from the relays and never answered: nothing about you is sent.'**
+  String get announcementsGroupSubtitle;
+
   /// Hint text of the currency search field
   ///
   /// In en, this message translates to:
@@ -8232,11 +8250,11 @@ abstract class AppLocalizations {
   /// **'Trade on another node'**
   String get otherNodeCardDialogTitle;
 
-  /// Notifications (#811): body of the dialog shown when the user taps a card whose trade is on another node; informational only, nodes are switched in Settings
+  /// Notifications (#811): body of the dialog shown when the user taps a card whose trade is on another node; its primary action switches to that node and then opens what was tapped
   ///
   /// In en, this message translates to:
-  /// **'This trade is on node {nodeName}. To act on it, switch to that node in Settings.'**
-  String otherNodeCardOpenHint(String nodeName);
+  /// **'Do you want to switch to node {nodeName}?'**
+  String otherNodeCardSwitchPrompt(String nodeName);
 }
 
 class _AppLocalizationsDelegate

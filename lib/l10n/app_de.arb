@@ -394,6 +394,9 @@
   "notifPaymentAlertsSubtitle": "Bestätigungen und Fehler von Lightning-Zahlungen",
   "notifDisputeUpdatesTitle": "Streitfall-Updates",
   "notifDisputeUpdatesSubtitle": "Schlichter-Aktionen und Streitbeilegungen",
+  "notifAnnouncementsTitle": "Ankündigungen",
+  "notifAnnouncementsSubtitle": "Versionen, Ausfälle und Relay-Änderungen, signiert vom Mostro-Projekt",
+  "announcementsGroupSubtitle": "Ankündigungen werden von den Relays gelesen und nie beantwortet: Nichts über dich wird gesendet.",
   "searchCurrenciesHint": "Währungen suchen…",
   "noCurrenciesFoundMessage": "Keine Währungen gefunden",
   "shareLogsTooltip": "Protokolle teilen",
@@ -1355,5 +1358,5 @@
   "payoutOutcomeMaybePaid": "An diesen oder einen anderen hier gelisteten bezahlt",
   "otherNodeCardLine": "Trade auf Node: {nodeName}",
   "otherNodeCardDialogTitle": "Trade auf einem anderen Node",
-  "otherNodeCardOpenHint": "Dieser Trade ist auf Node {nodeName}. Um ihn zu bearbeiten, wechsle in den Einstellungen zu diesem Node."
+  "otherNodeCardSwitchPrompt": "Möchtest du zum Node {nodeName} wechseln?"
 }

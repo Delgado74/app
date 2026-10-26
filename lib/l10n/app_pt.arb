@@ -394,6 +394,9 @@
   "notifPaymentAlertsSubtitle": "Confirmações e falhas de pagamentos Lightning",
   "notifDisputeUpdatesTitle": "Atualizações de disputas",
   "notifDisputeUpdatesSubtitle": "Ações do mediador e resoluções de disputas",
+  "notifAnnouncementsTitle": "Anúncios",
+  "notifAnnouncementsSubtitle": "Versões, quedas e mudanças de relays, assinados pelo projeto Mostro",
+  "announcementsGroupSubtitle": "Os anúncios são lidos dos relays e nunca respondidos: nada sobre você é enviado.",
   "searchCurrenciesHint": "Buscar moedas…",
   "noCurrenciesFoundMessage": "Nenhuma moeda encontrada",
   "shareLogsTooltip": "Compartilhar logs",
@@ -1355,5 +1358,5 @@
   "payoutOutcomeMaybePaid": "Pago para este ou outro listado aqui",
   "otherNodeCardLine": "Operação no nó: {nodeName}",
   "otherNodeCardDialogTitle": "Operação em outro nó",
-  "otherNodeCardOpenHint": "Esta operação está no nó {nodeName}. Para agir sobre ela, mude para esse nó em Configurações."
+  "otherNodeCardSwitchPrompt": "Quer mudar para o nó {nodeName}?"
 }

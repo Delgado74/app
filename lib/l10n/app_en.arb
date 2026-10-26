@@ -1714,6 +1714,18 @@
   "@notifDisputeUpdatesSubtitle": {
     "description": "Subtitle of the dispute updates notification toggle"
   },
+  "notifAnnouncementsTitle": "Announcements",
+  "@notifAnnouncementsTitle": {
+    "description": "Title of the Announcements toggle in notification settings (specs/006)"
+  },
+  "notifAnnouncementsSubtitle": "Releases, outages and relay changes, signed by the Mostro project",
+  "@notifAnnouncementsSubtitle": {
+    "description": "Subtitle of the Announcements toggle"
+  },
+  "announcementsGroupSubtitle": "Announcements are read from the relays and never answered: nothing about you is sent.",
+  "@announcementsGroupSubtitle": {
+    "description": "Line above the Announcements toggle: the channel is one-way, nothing is reported back"
+  },
   "searchCurrenciesHint": "Search currencies…",
   "@searchCurrenciesHint": {
     "description": "Hint text of the currency search field"
@@ -5221,9 +5233,9 @@
   "@otherNodeCardDialogTitle": {
     "description": "Notifications (#811): title of the dialog shown when the user taps a card whose trade is on another node"
   },
-  "otherNodeCardOpenHint": "This trade is on node {nodeName}. To act on it, switch to that node in Settings.",
-  "@otherNodeCardOpenHint": {
-    "description": "Notifications (#811): body of the dialog shown when the user taps a card whose trade is on another node; informational only, nodes are switched in Settings",
+  "otherNodeCardSwitchPrompt": "Do you want to switch to node {nodeName}?",
+  "@otherNodeCardSwitchPrompt": {
+    "description": "Notifications (#811): body of the dialog shown when the user taps a card whose trade is on another node; its primary action switches to that node and then opens what was tapped",
     "placeholders": {
       "nodeName": {
         "type": "String"

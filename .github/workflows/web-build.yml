@@ -38,7 +38,11 @@ env:
 jobs:
   build:
     name: Build and smoke-test web bundle
-    runs-on: ubuntu-latest
+    # Pinned, not ubuntu-latest: that label moved to ubuntu-26.04, where
+    # Playwright 1.56.0 cannot install Chromium ("Playwright does not support
+    # chromium on ubuntu26.04-x64"). Move to ubuntu-latest together with a
+    # Playwright bump that supports it (1.64.1 does).
+    runs-on: ubuntu-24.04
     permissions:
       contents: read
     # The first uncached run compiles std from source (-Z build-std), which is slow.
