@@ -4,6 +4,38 @@ All notable changes to Mostro are documented here, newest first. This file is
 written by the release workflow (docs/RELEASING.md) — do not edit it by hand.
 Versions follow [Semantic Versioning](https://semver.org/).
 
+## [2.1.1] - 2026-10-26
+
+### ✨ Features
+
+- **reputation:** name the source of an attestation before importing it ([#886](https://github.com/MostroP2P/app/pull/886)) by @grunch
+- **announcements:** add the project's announcement keys ([#892](https://github.com/MostroP2P/app/pull/892)) by @grunch
+- **announcements:** add the announce validator and the publishing doc ([#891](https://github.com/MostroP2P/app/pull/891)) by @grunch
+- **announcements:** show announcements in the notification surface ([#890](https://github.com/MostroP2P/app/pull/890)) by @grunch
+- **reputation:** sign a rebind authorisation for lnp2pBot ([#885](https://github.com/MostroP2P/app/pull/885)) by @grunch
+- **announcements:** bridge the cache to Dart and add the Announcements toggle ([#889](https://github.com/MostroP2P/app/pull/889)) by @grunch
+- **notifications:** switch to the trade's node from its card ([#879](https://github.com/MostroP2P/app/pull/879)) by @Catrya
+- **drawer:** the release-stage chip says BETA ([#876](https://github.com/MostroP2P/app/pull/876)) by @grunch
+
+### 🐛 Bug Fixes
+
+- **reputation:** import screen picks up capabilities that arrive late ([#888](https://github.com/MostroP2P/app/pull/888)) by @grunch
+- **reputation:** export failures no longer read as an invalid paste ([#887](https://github.com/MostroP2P/app/pull/887)) by @grunch
+- **orders:** don't serialize the node switch's relay fetches ([#877](https://github.com/MostroP2P/app/pull/877)) by @Catrya
+- **android:** opt out of Auto Backup and device transfer ([#874](https://github.com/MostroP2P/app/pull/874)) by @grunch
+
+### 📚 Documentation
+
+- **readme:** add screenshots and the download links of the website ([#878](https://github.com/MostroP2P/app/pull/878)) by @grunch
+
+### 👷 Build & CI
+
+- **web:** pin the web build to ubuntu-24.04 ([#896](https://github.com/MostroP2P/app/pull/896)) by @grunch
+
+### 🧹 Chores
+
+- **cashu:** bump cdk and cdk-sqlite to 0.18.2 ([#871](https://github.com/MostroP2P/app/pull/871)) by @Forte11Cuba
+
 ## [2.1.0] - 2026-10-21
 
 ### ✨ Features
