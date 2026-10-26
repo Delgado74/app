@@ -653,16 +653,23 @@ class NotificationsNotifier extends StateNotifier<List<NotificationModel>> {
   /// Forget everything, ledger included, because the identity changed
   /// (issue #533). Unlike [deleteAll] — the user clearing their own list —
   /// nothing here may survive to suppress or resurrect a notice for the
-  /// next user.
+  /// next user. Announcement cards are the exception: they belong to the
+  /// device, and Rust keeps them, flags included, across the change — no
+  /// snapshot would come to bring them back (specs/006 §6.2).
   Future<void> wipeForIdentityChange() => _mutate(() async {
     if (_loadsInFlight > 0) _wipedDuringLoad = true;
-    state = [];
+    final announcements = [
+      for (final n in state)
+        if (n.isAnnouncement) n,
+    ];
+    state = announcements;
     // The in-memory half of the ledger: this notifier outlives the identity,
     // and a same-seed import replays chat messages under the ids it already
     // holds — they would be dropped as seen, with the card just wiped.
     _processedMessages.clear();
     try {
       await store?.wipe();
+      await store?.saveAll(announcements);
     } catch (e) {
       debugPrint('NotificationsNotifier: failed to persist identity wipe: $e');
     }

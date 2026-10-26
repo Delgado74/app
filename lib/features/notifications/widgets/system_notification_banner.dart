@@ -36,6 +36,9 @@ class SystemNotificationBanner extends StatelessWidget {
   static const _cardRadius = 18.0;
   static const _tileRadius = 12.0;
 
+  /// The link's tap target (DS-CMP-6).
+  static const _minTarget = 48.0;
+
   @override
   Widget build(BuildContext context) {
     final book = OrderBookPalette.of(context);
@@ -128,38 +131,51 @@ class SystemNotificationBanner extends StatelessWidget {
                               ? TextOverflow.visible
                               : TextOverflow.ellipsis,
                     ),
-                    if (onOpenLink != null) ...[
-                      const SizedBox(height: 8),
-                      InkWell(
-                        onTap: onOpenLink,
-                        borderRadius: BorderRadius.circular(_tileRadius),
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 2,
-                            vertical: 4,
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                Icons.open_in_new_rounded,
-                                size: 14,
-                                color: tone.ink,
+                    // The 48 dp target centres the label, which also gives
+                    // it its gap from the body (DS-CMP-6, DS-A11Y-1).
+                    if (onOpenLink != null)
+                      Semantics(
+                        container: true,
+                        button: true,
+                        enabled: true,
+                        label: l10n.announcementOpenLink,
+                        child: InkWell(
+                          onTap: onOpenLink,
+                          borderRadius: BorderRadius.circular(_tileRadius),
+                          child: ConstrainedBox(
+                            constraints: const BoxConstraints(
+                              minWidth: _minTarget,
+                              minHeight: _minTarget,
+                            ),
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 2,
                               ),
-                              const SizedBox(width: 6),
-                              Text(
-                                l10n.announcementOpenLink,
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                  color: tone.ink,
+                              child: ExcludeSemantics(
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      Icons.open_in_new_rounded,
+                                      size: 14,
+                                      color: tone.ink,
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      l10n.announcementOpenLink,
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w600,
+                                        color: tone.ink,
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
-                            ],
+                            ),
                           ),
                         ),
                       ),
-                    ],
                   ],
                 ),
               ),

@@ -32,6 +32,26 @@ class AnnouncementCards {
 
   final NotificationsNotifier Function() notifications;
 
-  Future<void> onChanged(List<AnnouncementInfo> snapshot) =>
+  /// Snapshots the stream has handed over so far.
+  int _streamed = 0;
+
+  /// A snapshot from Rust's stream.
+  Future<void> onChanged(List<AnnouncementInfo> snapshot) {
+    _streamed++;
+    return _apply(snapshot);
+  }
+
+  /// The cache as [read] returns it, the cards' first source before the
+  /// stream says anything (§5.4). Dropped when a stream snapshot arrived
+  /// while it was in flight: that one is the whole cache too, and may hold
+  /// an announcement the read missed, which the older list would take away.
+  Future<void> readCache(Future<List<AnnouncementInfo>> Function() read) async {
+    final streamedBefore = _streamed;
+    final snapshot = await read();
+    if (_streamed != streamedBefore) return;
+    await _apply(snapshot);
+  }
+
+  Future<void> _apply(List<AnnouncementInfo> snapshot) =>
       notifications().reconcileAnnouncements(announcementCards(snapshot));
 }

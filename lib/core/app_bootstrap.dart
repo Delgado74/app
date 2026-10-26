@@ -419,10 +419,10 @@ Future<void> _startup(
       );
       // What the cache already holds, without waiting for the pool: the
       // cards are the last thing the project said, online or not (§5.4).
+      // A stream snapshot that lands first wins over this read.
       unawaited(
-        announcements_api
-            .getAnnouncements()
-            .then(announcementCards.onChanged)
+        announcementCards
+            .readCache(announcements_api.getAnnouncements)
             .catchError(
               (Object e) =>
                   debugPrint('[announcement-cards] initial read failed: $e'),

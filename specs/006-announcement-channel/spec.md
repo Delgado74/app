@@ -586,24 +586,28 @@ generated `lib/src/rust/` is never hand-edited.
 
 Each announcement becomes a `NotificationModel`:
 
-- `type: NotificationType.system` — which already routes to `SystemNotificationBanner`,
-  whose amber is today hardcoded; it grows a severity parameter so the three levels of
-  §3.4 map onto `blueAccent` / `warningAmber` / `destructiveRed` with their icons
-- `id`: the address string, so the model's identity is the announcement's identity and the
-  existing Sembast `processed_events` tombstone ledger works unchanged
-- `title` / `message`: the locale block matching `Localizations.localeOf(context)`; there
-  is no fallback path, because §3.2 guarantees every locale is present
+- `type: NotificationType.system` — which already routes to `SystemNotificationBanner`;
+  the card reads the announcement's level and paints it in the Activity palette's chip of
+  §3.4 (`chipAction*` / `chipWait*` / `chipDispute*`) with its icon and label. A plain
+  system notice keeps the amber it always had
+- `id`: the address string, so the model's identity is the announcement's identity. The
+  `processed_events` ledger plays no part: Rust's snapshots decide which cards exist
+- `title` / `message`: the locale block matching the app's locale. §3.2 guarantees every
+  locale this build knew of; the stored English copy is the fallback for one added since
 - `timestamp`: `created_at`
 - the `url`, when present, as a single button opening externally through `url_launcher`
-  (already a dependency), never rendered inline in the body
+  (already a dependency), never rendered inline in the body, with a 48 dp target
 
 Read and dismiss flow through the existing notifications provider, which then calls the
 bridge so Rust holds the same state — it is Rust that has to know whether a superseding
 revision should re-announce. A newer revision at a known address arrives as an unread item
-at the same id, which is exactly what §5.3 asks for.
+at the same id, which is exactly what §5.3 asks for. The cards are the device's, not the
+identity's: an identity change keeps them, as Rust keeps the cache and its flags.
 
-The bell, the unread dot and the notifications screen are unchanged. **This feature adds
-no new navigation and no new screen.**
+The bell and the notifications screen change only for `critical`: an unread one turns the
+bell's dot red, and its semantic label names it, even over the backup reminder. It sorts
+above every other section on the screen. **This feature adds no new navigation and no new
+screen.**
 
 **What the surface settled** (step 4 of §10):
 
@@ -614,7 +618,8 @@ no new navigation and no new screen.**
   address Rust no longer lists loses its card, and Rust's `read` flag wins. The stream is
   subscribed in `app_bootstrap.dart` before the relay pool starts — Rust's first emit comes
   with the pool's first `Online` — and the cache is read once on top of it, so the cards
-  are there offline.
+  are there offline. A stream snapshot that lands while that read is in flight wins
+  (`AnnouncementCards.readCache`): it is the whole cache too, and possibly a newer one.
 - The card's id is the address; its `detail` map holds the revision, the level, the link
   and every locale under `loc:<lang>:title|body`. `resolvedTitle` / `resolvedMessage`
   pick the copy by `AppLocalizations.localeName`; the stored `title` / `message` are the

@@ -97,6 +97,7 @@ Future<void> _pumpApp(
   Widget home, {
   required NotificationsNotifier notifier,
   String locale = 'en',
+  bool backupActive = false,
 }) async {
   final router = GoRouter(
     initialLocation: AppRoute.notifications,
@@ -108,7 +109,7 @@ Future<void> _pumpApp(
         notificationsProvider.overrideWith((_) => notifier),
         tradeRowsProvider.overrideWithValue(const AsyncValue.data([])),
         backupReminderProvider.overrideWith(
-          (_) => BackupReminderNotifier(initialValue: false),
+          (_) => BackupReminderNotifier(initialValue: backupActive),
         ),
       ],
       child: MaterialApp.router(
@@ -202,6 +203,37 @@ void main() {
       ]);
 
       expect(cards.map((c) => c.id), ['38387:ab:c', '38387:ab:d']);
+    });
+  });
+
+  group('AnnouncementCards', () {
+    test('drops a cache read that a stream snapshot overtook', () async {
+      // Arrange: the startup read is still in flight when the stream hands
+      // over a newer snapshot, with an announcement the read never saw.
+      final notifier = NotificationsNotifier();
+      final cards = AnnouncementCards(notifications: () => notifier);
+      final read = Completer<List<AnnouncementInfo>>();
+      final cached = cards.readCache(() => read.future);
+
+      // Act
+      await cards.onChanged([_info(d: 'old'), _info(d: 'new')]);
+      read.complete([_info(d: 'old')]);
+      await cached;
+
+      // Assert
+      expect(notifier.state.map((n) => n.id).toSet(), {
+        '38387:ab:old',
+        '38387:ab:new',
+      });
+    });
+
+    test('applies a cache read when the stream stayed quiet', () async {
+      final notifier = NotificationsNotifier();
+      final cards = AnnouncementCards(notifications: () => notifier);
+
+      await cards.readCache(() async => [_info(d: 'cached')]);
+
+      expect(notifier.state.map((n) => n.id), ['38387:ab:cached']);
     });
   });
 
@@ -433,6 +465,36 @@ void main() {
     );
   });
 
+  group('identity change', () {
+    test('keeps the announcements, which are the device\'s', () async {
+      // Arrange: a project notice and a notice of the user who is leaving.
+      final store = SembastNotificationsStore(
+        factory: newDatabaseFactoryMemory(),
+        path: 'announce-${DateTime.now().microsecondsSinceEpoch}.db',
+      );
+      final notifier = NotificationsNotifier(store: store);
+      await notifier.reconcileAnnouncements(
+        announcementCards([_info(severity: AnnouncementSeverity.critical)]),
+      );
+      await notifier.add(
+        NotificationModel.tradeStatus(
+          orderId: 'o1',
+          status: 'active',
+          at: DateTime.utc(2030, 1, 1),
+        ),
+      );
+
+      // Act
+      await notifier.wipeForIdentityChange();
+
+      // Assert: on screen and in the store the next launch reads.
+      expect(notifier.state.map((n) => n.id), ['38387:ab:release-2-1']);
+      expect((await store.loadAll()).map((n) => n.id), [
+        '38387:ab:release-2-1',
+      ]);
+    });
+  });
+
   group('delayed dismissal', () {
     test('skips a correction that replaced the swiped revision', () async {
       // Arrange: the user swiped revision 1; a correction arrived while the
@@ -512,6 +574,39 @@ void main() {
       expect(opened, 1);
     });
 
+    testWidgets('the link is a labelled button of at least 48 dp', (
+      tester,
+    ) async {
+      final notifier = NotificationsNotifier();
+      await notifier.reconcileAnnouncements(announcementCards([_info()]));
+
+      await _pumpApp(
+        tester,
+        Scaffold(
+          body: SystemNotificationBanner(
+            notification: notifier.state.single,
+            onOpenLink: () {},
+          ),
+        ),
+        notifier: notifier,
+      );
+
+      final link = find.bySemanticsLabel('Open link');
+      expect(link, findsOneWidget);
+      final node = tester.getSemantics(link);
+      expect(
+        node,
+        isSemantics(
+          isButton: true,
+          hasEnabledState: true,
+          isEnabled: true,
+          hasTapAction: true,
+        ),
+      );
+      expect(node.rect.height, greaterThanOrEqualTo(48));
+      expect(node.rect.width, greaterThanOrEqualTo(48));
+    });
+
     testWidgets('a plain system notice keeps its amber and no link', (
       tester,
     ) async {
@@ -569,6 +664,27 @@ void main() {
       );
       // No count badge: the red dot is the whole signal.
       expect(find.text('1'), findsNothing);
+    });
+
+    testWidgets('an unread critical outranks the backup reminder', (
+      tester,
+    ) async {
+      final notifier = NotificationsNotifier();
+      await notifier.reconcileAnnouncements(
+        announcementCards([_info(severity: AnnouncementSeverity.critical)]),
+      );
+
+      await _pumpApp(
+        tester,
+        const Scaffold(body: NotificationBell()),
+        notifier: notifier,
+        backupActive: true,
+      );
+
+      expect(
+        find.bySemanticsLabel('Notifications, a security update is unread'),
+        findsOneWidget,
+      );
     });
 
     testWidgets('an unread info announcement counts like any notice', (

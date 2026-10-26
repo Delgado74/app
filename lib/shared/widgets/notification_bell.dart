@@ -97,13 +97,15 @@ class _NotificationBellState extends ConsumerState<NotificationBell>
     });
 
     final l10n = AppLocalizations.of(context);
+    // With both behind the red dot, the label names the security update:
+    // it sorts above everything on the screen the bell opens (§3.4).
     final semanticLabel =
         !isActive
             ? l10n.notificationsBellNoUnread
-            : backupActive
-            ? l10n.notificationsBellBackupActive
             : criticalUnread
             ? l10n.notificationsBellCritical
+            : backupActive
+            ? l10n.notificationsBellBackupActive
             : l10n.notificationsBellUnread(unreadCount);
 
     return Semantics(
