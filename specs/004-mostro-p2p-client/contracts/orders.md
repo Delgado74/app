@@ -299,12 +299,14 @@ NewOrderParams {
   `DOC`; app#884). The node's accepted-currency list decides the rest.
 - A market-priced order (`amount_sats` absent, a range order always) in a
   stablecoin needs the node to quote the coin: a node whose rates event
-  (`fetch_exchange_rate` → `ExchangeRateLookup::NotQuoted`) lists no price
+  (`lookup_exchange_rate` → `ExchangeRateLookup::NotQuoted`) lists no price
   for it refuses every market order in the coin (mostrod
   `docs/PRICE_PROVIDERS.md` §11.8). The create-order screen locks Market —
   and range mode with it — on `NotQuoted`, and holds Publish on a market
-  order while the lookup is pending. `NoRates` (no event at all) and every
-  fiat stay as before: the pre-check fails open and the daemon decides.
+  order while the lookup is pending — after a node change too, until the
+  new node answers: the previous node's answer says nothing about it.
+  `NoRates` (no event at all) and every fiat stay as before: the pre-check
+  fails open and the daemon decides.
 - `payment_method` MUST not be empty
 - The amount is checked against the node's advertised `min_order_amount` /
   `max_order_amount` before anything is sent: directly for a fixed

@@ -11,6 +11,7 @@ import 'package:mostro/features/order/providers/exchange_rate_provider.dart';
 import 'package:mostro/features/order/widgets/currency_section.dart';
 import 'package:mostro/features/order/providers/order_side_provider.dart';
 import 'package:mostro/features/order/widgets/price_section.dart';
+import 'package:mostro/features/settings/providers/mostro_nodes_provider.dart';
 import 'package:mostro/l10n/app_localizations.dart';
 import 'package:mostro/shared/utils/fiat_currencies.dart';
 import '../../../support/catalogue_fixtures.dart';
@@ -355,6 +356,42 @@ void main() {
       await container.read(exchangeRateLookupProvider('USDT').future);
       expect(pending.read(), isFalse);
       container.read(selectedFiatCodeProvider.notifier).state = 'USD';
+      expect(pending.read(), isFalse);
+    });
+
+    test('a node change holds the quote pending until the new node answers',
+        () async {
+      // Arrange: node A quotes the coin; node B has not answered yet.
+      const nodeA = 'aa';
+      const nodeB = 'bb';
+      final quotes = {
+        nodeA: Completer<ExchangeRateLookup>()
+          ..complete(const ExchangeRateLookup.quoted(rate: 100000.0)),
+        nodeB: Completer<ExchangeRateLookup>(),
+      };
+      final container = createContainer(
+        overrides: [
+          catalogueOverride(),
+          selectedFiatCodeProvider.overrideWith((ref) => 'USDT'),
+          mostroPubkeyProvider.overrideWith((ref) => nodeA),
+          exchangeRateLookupProvider.overrideWith(
+            (ref, _) => quotes[ref.watch(mostroPubkeyProvider)]!.future,
+          ),
+        ],
+      );
+      await container.read(fiatCurrenciesProvider.future);
+      final pending = container.listen(marketQuotePendingProvider, (_, _) {});
+      await container.read(exchangeRateLookupProvider('USDT').future);
+      expect(pending.read(), isFalse);
+
+      // Act: the user switches node. Riverpod keeps node A's answer while
+      // node B's lookup loads.
+      container.read(mostroPubkeyProvider.notifier).state = nodeB;
+
+      // Assert: node A's quote says nothing about node B.
+      expect(pending.read(), isTrue);
+      quotes[nodeB]!.complete(const ExchangeRateLookup.quoted(rate: 1.0));
+      await container.read(exchangeRateLookupProvider('USDT').future);
       expect(pending.read(), isFalse);
     });
   });
