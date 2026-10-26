@@ -1391,6 +1391,22 @@ class AppLocalizationsDe extends AppLocalizations {
       'Ankündigungen werden von den Relays gelesen und nie beantwortet: Nichts über dich wird gesendet.';
 
   @override
+  String get announcementLevelInfo => 'Ankündigung';
+
+  @override
+  String get announcementLevelWarning => 'Hinweis';
+
+  @override
+  String get announcementLevelCritical => 'Sicherheitsupdate';
+
+  @override
+  String get announcementOpenLink => 'Link öffnen';
+
+  @override
+  String get notificationsBellCritical =>
+      'Benachrichtigungen, ein ungelesenes Sicherheitsupdate';
+
+  @override
   String get searchCurrenciesHint => 'Währungen suchen…';
 
   @override
@@ -4774,6 +4790,14 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String get reputationFiguresNote =>
       'Importierte Reputation wird zu deiner hiesigen addiert; deine Gegenparteien sehen beide zusammen.';
+
+  @override
+  String get reputationExportFailed =>
+      'Dieser Mostro konnte deine Reputation nicht exportieren. Versuche es später noch einmal.';
+
+  @override
+  String get reputationExportUnexpectedIssuer =>
+      'Dieser Mostro hat die Antwort mit einem anderen Schlüssel signiert als dem angekündigten. Wechsle zu einem anderen Mostro und zurück, um seine Angaben zu aktualisieren, und versuche es dann erneut.';
 
   @override
   String get reputationOpenLnp2pbotFailed =>

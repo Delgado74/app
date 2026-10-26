@@ -82,9 +82,15 @@ the identity that asked is still the active one.
 **Errors**: `ReputationExportUnsupported`, `StorageUnavailable` (checked
 before anything is sent), `PrivacyModeEnabled`, `InvalidPubkey`,
 `NoDaemonResponse`, `InvalidPayload`,
-`InvalidReputationAttestation`, the node's `CantDoReason` by name, and
-`NoIdentity` when the identity was deleted or replaced before the answer
-arrived (nothing is stored).
+`ReputationIssuerKeyMismatch` (the answer is signed by another key than the
+`reputation_issuer` the app read for the node, as after a rotation with a
+stale info event; refreshing the node's info is the remedy, #882),
+`InvalidReputationAttestation` (it names another identity), the node's
+`CantDoReason` by name, and `NoIdentity` when the identity was deleted or
+replaced before the answer arrived (nothing is stored). The reputation screen
+shows `ReputationIssuerKeyMismatch` with its own text, and every failure
+without a text of its own as "This Mostro could not export your reputation",
+never as an invalid pasted attestation.
 
 ---
 
@@ -223,6 +229,10 @@ that importing links the source and destination accounts.
   in full privacy mode, or when `import_issuers` is absent. A localized notice
   explains the refusal and Retry rereads the state. An empty issuer list means
   that no issuer is trusted yet; Check rejects every attestation in that case.
+  The screen rereads `get_reputation_support()` every two seconds and reloads
+  when `import_issuers` appears or disappears, so a capability fetch that
+  finishes after the screen opened (a cold start) is picked up without Retry
+  (#883).
 - The full identity npub is selectable beside the bot action. The user compares
   it with the key shown by lnp2pBot before confirming the binding there.
   The Telegram URL uses `rep_` plus the same key encoded as 43 unpadded base64url

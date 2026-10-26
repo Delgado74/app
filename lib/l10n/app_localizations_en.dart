@@ -1373,6 +1373,22 @@ class AppLocalizationsEn extends AppLocalizations {
       'Announcements are read from the relays and never answered: nothing about you is sent.';
 
   @override
+  String get announcementLevelInfo => 'Announcement';
+
+  @override
+  String get announcementLevelWarning => 'Notice';
+
+  @override
+  String get announcementLevelCritical => 'Security update';
+
+  @override
+  String get announcementOpenLink => 'Open link';
+
+  @override
+  String get notificationsBellCritical =>
+      'Notifications, a security update is unread';
+
+  @override
   String get searchCurrenciesHint => 'Search currencies…';
 
   @override
@@ -4719,6 +4735,14 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get reputationFiguresNote =>
       'Imported reputation is added to the one you have here; your counterparts see them merged.';
+
+  @override
+  String get reputationExportFailed =>
+      'This Mostro could not export your reputation. Try again later.';
+
+  @override
+  String get reputationExportUnexpectedIssuer =>
+      'This Mostro signed the answer with a key other than the one it announced. Switch to another Mostro and back to refresh its info, then try again.';
 
   @override
   String get reputationOpenLnp2pbotFailed =>

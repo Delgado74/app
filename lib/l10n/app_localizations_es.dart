@@ -1386,6 +1386,22 @@ class AppLocalizationsEs extends AppLocalizations {
       'Los anuncios se leen de los relays y nunca se responden: no se envía nada sobre ti.';
 
   @override
+  String get announcementLevelInfo => 'Anuncio';
+
+  @override
+  String get announcementLevelWarning => 'Aviso';
+
+  @override
+  String get announcementLevelCritical => 'Actualización de seguridad';
+
+  @override
+  String get announcementOpenLink => 'Abrir enlace';
+
+  @override
+  String get notificationsBellCritical =>
+      'Notificaciones, hay una actualización de seguridad sin leer';
+
+  @override
   String get searchCurrenciesHint => 'Buscar monedas…';
 
   @override
@@ -4750,6 +4766,14 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get reputationFiguresNote =>
       'La reputación importada se suma a la que tienes aquí; tus contrapartes las ven juntas.';
+
+  @override
+  String get reputationExportFailed =>
+      'Este Mostro no pudo exportar tu reputación. Inténtalo más tarde.';
+
+  @override
+  String get reputationExportUnexpectedIssuer =>
+      'Este Mostro firmó la respuesta con una clave distinta de la que anunció. Cambia a otro Mostro y vuelve para actualizar su información, y luego inténtalo de nuevo.';
 
   @override
   String get reputationOpenLnp2pbotFailed =>

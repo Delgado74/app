@@ -1390,6 +1390,22 @@ class AppLocalizationsNl extends AppLocalizations {
       'Aankondigingen worden van de relays gelezen en nooit beantwoord: er wordt niets over jou verstuurd.';
 
   @override
+  String get announcementLevelInfo => 'Aankondiging';
+
+  @override
+  String get announcementLevelWarning => 'Mededeling';
+
+  @override
+  String get announcementLevelCritical => 'Beveiligingsupdate';
+
+  @override
+  String get announcementOpenLink => 'Link openen';
+
+  @override
+  String get notificationsBellCritical =>
+      'Meldingen, een ongelezen beveiligingsupdate';
+
+  @override
   String get searchCurrenciesHint => 'Valuta zoeken…';
 
   @override
@@ -4759,6 +4775,14 @@ class AppLocalizationsNl extends AppLocalizations {
   @override
   String get reputationFiguresNote =>
       'Geïmporteerde reputatie wordt opgeteld bij die van hier; je tegenpartijen zien ze samen.';
+
+  @override
+  String get reputationExportFailed =>
+      'Deze Mostro kon je reputatie niet exporteren. Probeer het later opnieuw.';
+
+  @override
+  String get reputationExportUnexpectedIssuer =>
+      'Deze Mostro heeft het antwoord ondertekend met een andere sleutel dan aangekondigd. Schakel over naar een andere Mostro en terug om zijn gegevens te vernieuwen, en probeer het dan opnieuw.';
 
   @override
   String get reputationOpenLnp2pbotFailed =>

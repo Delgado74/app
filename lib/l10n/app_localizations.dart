@@ -2484,6 +2484,36 @@ abstract class AppLocalizations {
   /// **'Announcements are read from the relays and never answered: nothing about you is sent.'**
   String get announcementsGroupSubtitle;
 
+  /// Label on an info-level announcement card (specs/006 §3.4)
+  ///
+  /// In en, this message translates to:
+  /// **'Announcement'**
+  String get announcementLevelInfo;
+
+  /// Label on a warning-level announcement card
+  ///
+  /// In en, this message translates to:
+  /// **'Notice'**
+  String get announcementLevelWarning;
+
+  /// Label on a critical (security) announcement card
+  ///
+  /// In en, this message translates to:
+  /// **'Security update'**
+  String get announcementLevelCritical;
+
+  /// Button on an announcement card that opens its link externally
+  ///
+  /// In en, this message translates to:
+  /// **'Open link'**
+  String get announcementOpenLink;
+
+  /// Semantic label of the bell while a critical announcement is unread
+  ///
+  /// In en, this message translates to:
+  /// **'Notifications, a security update is unread'**
+  String get notificationsBellCritical;
+
   /// Hint text of the currency search field
   ///
   /// In en, this message translates to:
@@ -7787,6 +7817,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Imported reputation is added to the one you have here; your counterparts see them merged.'**
   String get reputationFiguresNote;
+
+  /// Reputation screen: an export failed for a reason without a message of its own (#882)
+  ///
+  /// In en, this message translates to:
+  /// **'This Mostro could not export your reputation. Try again later.'**
+  String get reputationExportFailed;
+
+  /// Reputation screen: the export answer is signed by another key than the reputation_issuer the app read for the node, usually a stale info event (#882)
+  ///
+  /// In en, this message translates to:
+  /// **'This Mostro signed the answer with a key other than the one it announced. Switch to another Mostro and back to refresh its info, then try again.'**
+  String get reputationExportUnexpectedIssuer;
 
   /// Shown when the Telegram link could not be opened: the user can still do it by hand
   ///
