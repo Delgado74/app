@@ -112,8 +112,20 @@ void main() {
       }
     });
 
-    test('DOC is offered on Rootstock', () {
-      expect((shipped['DOC'] as List).cast<String>(), ['DOC (Rootstock)']);
+    test('each coin is offered on the networks of #884', () {
+      // The order is the picker's, not part of the contract.
+      const networks = {
+        'DOC': ['Rootstock'],
+        'USDC': ['Ethereum', 'Base', 'Solana', 'Polygon'],
+        'USDT': ['Tron', 'Ethereum', 'Polygon', 'Solana', 'Liquid'],
+      };
+      networks.forEach((code, chains) {
+        expect(
+          (shipped[code] as List).cast<String>(),
+          unorderedEquals([for (final chain in chains) '$code ($chain)']),
+          reason: code,
+        );
+      });
     });
   });
 }
