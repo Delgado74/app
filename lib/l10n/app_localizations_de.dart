@@ -871,7 +871,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get fiatSentFailed =>
-      'Fiat-Zahlung konnte nicht bestätigt werden. Bitte erneut versuchen.';
+      'Zahlung konnte nicht bestätigt werden. Bitte erneut versuchen.';
 
   @override
   String get releaseFailed =>
@@ -1480,7 +1480,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get tradeInstructionFiatSentBuyer =>
-      'Fiat-Zahlung als gesendet markiert. Warte darauf, dass der Verkäufer den Empfang bestätigt und deine Sats freigibt.';
+      'Zahlung als gesendet markiert. Warte darauf, dass der Verkäufer den Empfang bestätigt und deine Sats freigibt.';
 
   @override
   String get tradeInstructionActiveSeller =>
@@ -1488,7 +1488,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get tradeInstructionFiatSentSeller =>
-      'Der Käufer hat bestätigt, die Fiat-Zahlung gesendet zu haben. Sobald du den Empfang prüfst, gib die Sats frei.';
+      'Der Käufer hat bestätigt, die Zahlung gesendet zu haben. Sobald du den Empfang prüfst, gib die Sats frei.';
 
   @override
   String get tradeInstructionDisputed =>
@@ -1604,10 +1604,10 @@ class AppLocalizationsDe extends AppLocalizations {
   String get tradeStepInvoiceSeller => 'Du sperrst die Sats';
 
   @override
-  String get tradeStepFiatBuyer => 'Du sendest die Fiat-Zahlung';
+  String get tradeStepFiatBuyer => 'Du sendest die Zahlung';
 
   @override
-  String get tradeStepFiatSeller => 'Der Käufer sendet die Fiat-Zahlung';
+  String get tradeStepFiatSeller => 'Der Käufer sendet die Zahlung';
 
   @override
   String get tradeStepReleaseBuyer => 'Der Verkäufer gibt deine Sats frei';
@@ -2429,7 +2429,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get tradeBodyWaitingPaymentBuyer =>
-      'Der Verkäufer sperrt gerade die Sats. Sobald sie gesperrt sind, bist du mit der Fiat-Zahlung dran.';
+      'Der Verkäufer sperrt gerade die Sats. Sobald sie gesperrt sind, bist du mit der Zahlung dran.';
 
   @override
   String tradeBodyActiveSeller(String method) {
@@ -2444,6 +2444,21 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String tradeBodyFiatSentSeller(String method) {
     return 'Der Käufer hat die Zahlung als gesendet markiert. Prüfe dein $method-Konto, bevor du freigibst.';
+  }
+
+  @override
+  String tradeBodyActiveBuyerStablecoin(String method) {
+    return 'Sende es über $method an die Adresse aus dem Chat: In einem anderen Netzwerk kann es verloren gehen. Füge danach die Transaktions-ID in den Chat ein (ein Schlichter prüft sie im Streitfall) und bestätige es unten.';
+  }
+
+  @override
+  String tradeBodyActiveSellerStablecoin(String method) {
+    return 'Teile deine $method-Adresse im Chat oben.';
+  }
+
+  @override
+  String tradeBodyFiatSentSellerStablecoin(String method) {
+    return 'Der Käufer hat die Zahlung als gesendet markiert. Prüfe vor der Freigabe anhand der Transaktions-ID aus dem Chat, ob sie auf deiner $method-Adresse angekommen ist.';
   }
 
   @override
@@ -3706,14 +3721,14 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get tradeCardActiveMessage =>
-      'Die Sats sind gesperrt. Der Käufer kann jetzt die Fiat-Zahlung senden.';
+      'Die Sats sind gesperrt. Der Käufer kann jetzt die Zahlung senden.';
 
   @override
-  String get tradeCardFiatSentTitle => 'Fiat als gesendet markiert';
+  String get tradeCardFiatSentTitle => 'Zahlung als gesendet markiert';
 
   @override
   String get tradeCardFiatSentMessage =>
-      'Der Käufer hat die Fiat-Zahlung als gesendet markiert.';
+      'Der Käufer hat die Zahlung als gesendet markiert.';
 
   @override
   String get tradeCardSettledHoldInvoiceTitle => 'Sats freigegeben';
@@ -4558,7 +4573,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get tradeBodyWaitingPaymentBuyerCashu =>
-      'Der Verkäufer sperrt die Sats in der Treuhand. Sobald die Treuhand gesperrt ist, bist du dran, den Fiat-Betrag zu zahlen.';
+      'Der Verkäufer sperrt die Sats in der Treuhand. Sobald die Treuhand gesperrt ist, bist du mit der Zahlung dran.';
 
   @override
   String get shareChatKeyAction => 'Chat-Schlüssel mit dem Schlichter teilen';

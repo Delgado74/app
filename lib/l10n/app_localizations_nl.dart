@@ -875,7 +875,7 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get fiatSentFailed =>
-      'De fiat kon niet als verstuurd worden gemeld. Probeer het opnieuw.';
+      'De betaling kon niet als verstuurd worden gemeld. Probeer het opnieuw.';
 
   @override
   String get releaseFailed => 'Vrijgeven is mislukt. Probeer het opnieuw.';
@@ -1479,7 +1479,7 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get tradeInstructionFiatSentBuyer =>
-      'Je hebt de fiatbetaling als verstuurd gemeld. Wacht tot de verkoper de ontvangst bevestigt en je sats vrijgeeft.';
+      'Je hebt de betaling als verstuurd gemeld. Wacht tot de verkoper de ontvangst bevestigt en je sats vrijgeeft.';
 
   @override
   String get tradeInstructionActiveSeller =>
@@ -1487,7 +1487,7 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get tradeInstructionFiatSentSeller =>
-      'De koper heeft bevestigd dat de fiat is overgemaakt. Controleer of het binnen is en geef daarna de sats vrij.';
+      'De koper heeft bevestigd dat de betaling is verstuurd. Controleer of het binnen is en geef daarna de sats vrij.';
 
   @override
   String get tradeInstructionDisputed =>
@@ -1601,10 +1601,10 @@ class AppLocalizationsNl extends AppLocalizations {
   String get tradeStepInvoiceSeller => 'Jij zet de sats vast';
 
   @override
-  String get tradeStepFiatBuyer => 'Jij maakt de fiat over';
+  String get tradeStepFiatBuyer => 'Jij betaalt';
 
   @override
-  String get tradeStepFiatSeller => 'De koper maakt de fiat over';
+  String get tradeStepFiatSeller => 'De koper betaalt';
 
   @override
   String get tradeStepReleaseBuyer => 'De verkoper geeft je sats vrij';
@@ -2423,7 +2423,7 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get tradeBodyWaitingPaymentBuyer =>
-      'De verkoper zet de sats vast. Zodra ze vaststaan, is het aan jou om de fiat over te maken.';
+      'De verkoper zet de sats vast. Zodra ze vaststaan, is het aan jou om te betalen.';
 
   @override
   String tradeBodyActiveSeller(String method) {
@@ -2438,6 +2438,21 @@ class AppLocalizationsNl extends AppLocalizations {
   @override
   String tradeBodyFiatSentSeller(String method) {
     return 'De koper heeft de betaling als verstuurd gemeld. Controleer je $method-rekening voordat je vrijgeeft.';
+  }
+
+  @override
+  String tradeBodyActiveBuyerStablecoin(String method) {
+    return 'Stuur het via $method naar het adres uit de chat: op een ander netwerk kan het verloren gaan. Plak daarna de transactie-ID in de chat (een solver controleert die bij een dispuut) en meld het hieronder.';
+  }
+
+  @override
+  String tradeBodyActiveSellerStablecoin(String method) {
+    return 'Deel je $method-adres in de chat hierboven.';
+  }
+
+  @override
+  String tradeBodyFiatSentSellerStablecoin(String method) {
+    return 'De koper heeft de betaling als verstuurd gemeld. Controleer met de transactie-ID uit de chat of die op je $method-adres is aangekomen voordat je vrijgeeft.';
   }
 
   @override
@@ -3697,14 +3712,14 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get tradeCardActiveMessage =>
-      'De sats staan vast. De koper kan nu de fiat overmaken.';
+      'De sats staan vast. De koper kan nu betalen.';
 
   @override
-  String get tradeCardFiatSentTitle => 'Fiat als verstuurd gemeld';
+  String get tradeCardFiatSentTitle => 'Betaling als verstuurd gemeld';
 
   @override
   String get tradeCardFiatSentMessage =>
-      'De koper heeft de fiatbetaling als verstuurd gemeld.';
+      'De koper heeft de betaling als verstuurd gemeld.';
 
   @override
   String get tradeCardSettledHoldInvoiceTitle => 'Sats vrijgegeven';
@@ -4544,7 +4559,7 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get tradeBodyWaitingPaymentBuyerCashu =>
-      'De verkoper vergrendelt de sats in de escrow. Zodra die vergrendeld is, ben jij aan de beurt om de fiat te betalen.';
+      'De verkoper vergrendelt de sats in de escrow. Zodra die vergrendeld is, ben jij aan de beurt om te betalen.';
 
   @override
   String get shareChatKeyAction => 'Chatsleutel delen met de solver';

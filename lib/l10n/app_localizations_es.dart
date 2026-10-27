@@ -870,7 +870,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get fiatSentFailed =>
-      'Error al marcar el fiat como enviado. Por favor, inténtalo de nuevo.';
+      'Error al marcar el pago como enviado. Por favor, inténtalo de nuevo.';
 
   @override
   String get releaseFailed =>
@@ -1476,7 +1476,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get tradeInstructionFiatSentBuyer =>
-      'Pago fiat marcado como enviado. Esperando que el vendedor confirme la recepción y libere tus sats.';
+      'Pago marcado como enviado. Esperando que el vendedor confirme la recepción y libere tus sats.';
 
   @override
   String get tradeInstructionActiveSeller =>
@@ -1484,7 +1484,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get tradeInstructionFiatSentSeller =>
-      'El comprador confirmó que envió el pago fiat. Una vez que verifiques la recepción, libera los sats.';
+      'El comprador confirmó que envió el pago. Una vez que verifiques la recepción, libera los sats.';
 
   @override
   String get tradeInstructionDisputed =>
@@ -1598,10 +1598,10 @@ class AppLocalizationsEs extends AppLocalizations {
   String get tradeStepInvoiceSeller => 'Bloqueas los sats';
 
   @override
-  String get tradeStepFiatBuyer => 'Envías el pago fiat';
+  String get tradeStepFiatBuyer => 'Envías el pago';
 
   @override
-  String get tradeStepFiatSeller => 'El comprador envía el pago fiat';
+  String get tradeStepFiatSeller => 'El comprador envía el pago';
 
   @override
   String get tradeStepReleaseBuyer => 'El vendedor libera tus sats';
@@ -2421,7 +2421,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get tradeBodyWaitingPaymentBuyer =>
-      'Está pagando la factura. Cuando los sats estén bloqueados, te toca pagar el fiat.';
+      'Está pagando la factura. Cuando los sats estén bloqueados, te toca pagar.';
 
   @override
   String tradeBodyActiveSeller(String method) {
@@ -2436,6 +2436,21 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String tradeBodyFiatSentSeller(String method) {
     return 'El comprador marcó el pago como enviado. Revisa tu cuenta de $method antes de liberar.';
+  }
+
+  @override
+  String tradeBodyActiveBuyerStablecoin(String method) {
+    return 'Envíalo por $method, a la dirección que te pasó por el chat: por otra red se puede perder. Luego pega el ID de la transacción en el chat (un resolutor lo revisa en una disputa) y márcalo abajo.';
+  }
+
+  @override
+  String tradeBodyActiveSellerStablecoin(String method) {
+    return 'Pásale tu dirección de $method por el chat de arriba.';
+  }
+
+  @override
+  String tradeBodyFiatSentSellerStablecoin(String method) {
+    return 'El comprador marcó el pago como enviado. Antes de liberar, comprueba que llegó a tu dirección de $method, con el ID de la transacción del chat.';
   }
 
   @override
@@ -3691,14 +3706,14 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get tradeCardActiveMessage =>
-      'Los sats están bloqueados. El comprador ya puede enviar el pago fiat.';
+      'Los sats están bloqueados. El comprador ya puede enviar el pago.';
 
   @override
-  String get tradeCardFiatSentTitle => 'Fiat marcado como enviado';
+  String get tradeCardFiatSentTitle => 'Pago marcado como enviado';
 
   @override
   String get tradeCardFiatSentMessage =>
-      'El comprador marcó el pago fiat como enviado.';
+      'El comprador marcó el pago como enviado.';
 
   @override
   String get tradeCardSettledHoldInvoiceTitle => 'Sats liberados';
@@ -4532,7 +4547,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get tradeBodyWaitingPaymentBuyerCashu =>
-      'Está bloqueando los sats en la custodia. Cuando estén bloqueados, te toca pagar el fiat.';
+      'Está bloqueando los sats en la custodia. Cuando estén bloqueados, te toca pagar.';
 
   @override
   String get shareChatKeyAction =>

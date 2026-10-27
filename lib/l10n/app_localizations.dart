@@ -1575,7 +1575,7 @@ abstract class AppLocalizations {
   /// Snackbar shown when the fiat-sent action fails
   ///
   /// In en, this message translates to:
-  /// **'Failed to mark fiat as sent. Please try again.'**
+  /// **'Failed to mark the payment as sent. Please try again.'**
   String get fiatSentFailed;
 
   /// Snackbar shown when the release-sats action fails
@@ -2655,7 +2655,7 @@ abstract class AppLocalizations {
   /// Instruction for buyer after marking fiat sent
   ///
   /// In en, this message translates to:
-  /// **'Fiat payment marked as sent. Waiting for the seller to confirm receipt and release your sats.'**
+  /// **'Payment marked as sent. Waiting for the seller to confirm receipt and release your sats.'**
   String get tradeInstructionFiatSentBuyer;
 
   /// Instruction for seller while trade is active
@@ -2667,7 +2667,7 @@ abstract class AppLocalizations {
   /// Instruction for seller after buyer marks fiat sent
   ///
   /// In en, this message translates to:
-  /// **'The buyer has confirmed they sent the fiat payment. Once you verify receipt, release the sats.'**
+  /// **'The buyer has confirmed they sent the payment. Once you verify receipt, release the sats.'**
   String get tradeInstructionFiatSentSeller;
 
   /// Instruction while a dispute is in progress
@@ -2853,13 +2853,13 @@ abstract class AppLocalizations {
   /// Timeline step for buyer: send fiat
   ///
   /// In en, this message translates to:
-  /// **'You send the fiat payment'**
+  /// **'You send the payment'**
   String get tradeStepFiatBuyer;
 
   /// Timeline step for seller: buyer sends fiat
   ///
   /// In en, this message translates to:
-  /// **'The buyer sends the fiat payment'**
+  /// **'The buyer sends the payment'**
   String get tradeStepFiatSeller;
 
   /// Timeline step for buyer: seller releases sats
@@ -4083,7 +4083,7 @@ abstract class AppLocalizations {
   /// Step body for the buyer while the seller pays the hold invoice
   ///
   /// In en, this message translates to:
-  /// **'The seller is locking the sats. Once they are locked, it\'s your turn to pay the fiat.'**
+  /// **'The seller is locking the sats. Once they are locked, it\'s your turn to pay.'**
   String get tradeBodyWaitingPaymentBuyer;
 
   /// Step body for the seller of an active trade; {method} is the payment method
@@ -4103,6 +4103,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'The buyer marked the payment as sent. Check your {method} account before releasing.'**
   String tradeBodyFiatSentSeller(String method);
+
+  /// Step body for the buyer of an active stablecoin trade: send on the network the payment method names, then paste the transaction ID in the chat (app#884); {method} is the payment method
+  ///
+  /// In en, this message translates to:
+  /// **'Send it on {method}, to the address they shared in the chat: on another network it can be lost. Then paste the transaction ID in the chat (a resolver checks it in a dispute) and mark it below.'**
+  String tradeBodyActiveBuyerStablecoin(String method);
+
+  /// Step body for the seller of an active stablecoin trade: share the receiving address (app#884); {method} is the payment method
+  ///
+  /// In en, this message translates to:
+  /// **'Share your {method} address in the chat above.'**
+  String tradeBodyActiveSellerStablecoin(String method);
+
+  /// Step body for the seller of a stablecoin trade once the buyer marked the payment as sent: check the transfer by its transaction ID (app#884); {method} is the payment method
+  ///
+  /// In en, this message translates to:
+  /// **'The buyer marked the payment as sent. Before releasing, check that it reached your {method} address, with the transaction ID from the chat.'**
+  String tradeBodyFiatSentSellerStablecoin(String method);
 
   /// Warning inside the step block before releasing
   ///
@@ -6135,19 +6153,19 @@ abstract class AppLocalizations {
   /// Notifications card body for a trade status change (issue #474); role-neutral, both sides see it
   ///
   /// In en, this message translates to:
-  /// **'The sats are locked. The buyer can now send the fiat payment.'**
+  /// **'The sats are locked. The buyer can now send the payment.'**
   String get tradeCardActiveMessage;
 
   /// Notifications card title for a trade status change (issue #474); role-neutral, both sides see it
   ///
   /// In en, this message translates to:
-  /// **'Fiat marked as sent'**
+  /// **'Payment marked as sent'**
   String get tradeCardFiatSentTitle;
 
   /// Notifications card body for a trade status change (issue #474); role-neutral, both sides see it
   ///
   /// In en, this message translates to:
-  /// **'The buyer marked the fiat payment as sent.'**
+  /// **'The buyer marked the payment as sent.'**
   String get tradeCardFiatSentMessage;
 
   /// Notifications card title for a trade status change (issue #474); role-neutral, both sides see it
@@ -7449,7 +7467,7 @@ abstract class AppLocalizations {
   /// Trade screen body for the buyer while the seller locks the Cashu escrow
   ///
   /// In en, this message translates to:
-  /// **'They\'re locking the sats in escrow. Once it\'s locked, it\'s your turn to pay the fiat.'**
+  /// **'They\'re locking the sats in escrow. Once it\'s locked, it\'s your turn to pay.'**
   String get tradeBodyWaitingPaymentBuyerCashu;
 
   /// Dispute chat app bar: tooltip of the action that sends the solver the peer chat key (#415)
