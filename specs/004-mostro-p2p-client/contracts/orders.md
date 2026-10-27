@@ -305,10 +305,14 @@ NewOrderParams {
   and range mode with it — on `NotQuoted`, and holds Publish on a market
   order while the lookup is pending — after a node change too, until the
   new node answers: the previous node's answer says nothing about it.
-  `NoRates` (no usable rates event: missing, expired or unreadable) and
-  every fiat stay as before: the pre-check fails open and the daemon
-  decides.
-- `payment_method` MUST not be empty
+  `NoRates` (no event at all) and every fiat stay as before: the pre-check
+  fails open and the daemon decides.
+- `payment_method` MUST not be empty. The create-order picker suggests the
+  currency's list from `assets/data/payment_methods.json`, the `default` one
+  for a fiat without its own. A stablecoin always has its own, and every
+  entry names the network (`DOC (Rootstock)`, `USDT (Tron)`; app#884): a
+  coin sent on the wrong chain can be lost. A free-text method stays
+  possible.
 - The amount is checked against the node's advertised `min_order_amount` /
   `max_order_amount` before anything is sent: directly for a fixed
   `amount_sats` (#282), and for a market-price order by converting every fiat
