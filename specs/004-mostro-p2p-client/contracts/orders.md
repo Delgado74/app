@@ -305,8 +305,9 @@ NewOrderParams {
   and range mode with it — on `NotQuoted`, and holds Publish on a market
   order while the lookup is pending — after a node change too, until the
   new node answers: the previous node's answer says nothing about it.
-  `NoRates` (no event at all) and every fiat stay as before: the pre-check
-  fails open and the daemon decides.
+  `NoRates` (no usable rates event: missing, expired or unreadable) and
+  every fiat stay as before: the pre-check fails open and the daemon
+  decides.
 - `payment_method` MUST not be empty
 - The amount is checked against the node's advertised `min_order_amount` /
   `max_order_amount` before anything is sent: directly for a fixed
