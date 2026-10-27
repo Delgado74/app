@@ -32,6 +32,7 @@ class AmountSection extends ConsumerWidget {
     required this.quickAmounts,
     required this.onChanged,
     required this.onRangeChanged,
+    this.canRange = true,
     this.hasError = false,
   });
 
@@ -49,6 +50,10 @@ class AmountSection extends ConsumerWidget {
   /// Any amount text changed (typed or chip-filled).
   final VoidCallback onChanged;
   final ValueChanged<bool> onRangeChanged;
+
+  /// Whether a range order can be written: a range is priced at market, so
+  /// it is locked out while Market is ([marketLockedCodeProvider]).
+  final bool canRange;
 
   /// Paints the amount underline(s) coral: the amount is what the validation
   /// message in the preview bar refers to.
@@ -99,6 +104,7 @@ class AmountSection extends ConsumerWidget {
                   value: true,
                   label: l10n.amountModeRange,
                   automationId: AutomationIds.orderCreateAmountRange,
+                  enabled: canRange,
                 ),
               ],
               onSelected: onRangeChanged,
@@ -163,8 +169,8 @@ class AmountSection extends ConsumerWidget {
           if (quickAmounts.isNotEmpty) ...[
             const SizedBox(height: 10),
             Wrap(
-              spacing: 7,
-              runSpacing: 7,
+              spacing: 8,
+              runSpacing: 8,
               children: [
                 for (final amount in quickAmounts)
                   _QuickAmountChip(

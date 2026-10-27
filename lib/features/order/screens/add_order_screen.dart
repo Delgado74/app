@@ -191,9 +191,12 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
   /// on the way back to single so a later return to range cannot resurrect a
   /// bound from an earlier attempt. A range order can't carry a fixed sats
   /// price (Mostro prices it at market with a premium), so entering range
-  /// mode forces Market and clears any fixed sats.
+  /// mode forces Market and clears any fixed sats — and is refused while
+  /// Market is locked ([marketLockedCodeProvider]): the segment is disabled,
+  /// and a tap that got through would select a mode the node refuses.
   void _onRangeChanged(bool isRange) {
     if (isRange == ref.read(isRangeOrderProvider)) return;
+    if (isRange && ref.read(marketLockedCodeProvider) != null) return;
     setState(() {
       if (isRange) {
         _minController.text = _amountController.text;
@@ -401,7 +404,14 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
       isRange: isRange,
       amounts: amounts,
     );
-    if (_submitting || !valid || outOfRange != null || fiatOutOfRange != null) {
+    final marketBlocked = isMarket &&
+        (ref.read(marketLockedCodeProvider) != null ||
+            ref.read(marketQuotePendingProvider));
+    if (_submitting ||
+        !valid ||
+        marketBlocked ||
+        outOfRange != null ||
+        fiatOutOfRange != null) {
       return;
     }
     setState(() => _submitting = true);
@@ -489,6 +499,19 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
     final node = ref.watch(mostroNodeProvider).valueOrNull;
     final amounts = _amounts(isRange, symbols);
     final currencyRefused = fiatRefused(fiatCode, accepted);
+    // A stablecoin the node does not quote has no market price there
+    // (#884): Market is locked, and until the lookup answers it may be about
+    // to be. Neither state may publish a market order — a range order
+    // included, which is priced at market: a range in progress leaves range
+    // mode when the lock lands, and the toggle stays disabled while it holds.
+    final lockedCode = ref.watch(marketLockedCodeProvider);
+    final quotePending = ref.watch(marketQuotePendingProvider);
+    final marketBlocked = isMarket && (lockedCode != null || quotePending);
+    ref.listen(marketLockedCodeProvider, (_, locked) {
+      if (locked != null && ref.read(isRangeOrderProvider)) {
+        _onRangeChanged(false);
+      }
+    });
 
     final satsRangeError = (!isMarket && !isRange && fixedSatsStr.isNotEmpty)
         ? satsOutOfNodeRange(
@@ -516,7 +539,8 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
         ) &&
         satsRangeError == null &&
         fiatRangeError == null &&
-        !currencyRefused;
+        !currencyRefused &&
+        !marketBlocked;
     final rangeWarning = currencyRefused
         ? l10n.orderCurrencyNotAccepted(fiatCode)
         : _rangeWarning(
@@ -607,6 +631,7 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
               hasError: fiatRangeError != null,
               onChanged: () => setState(() {}),
               onRangeChanged: _onRangeChanged,
+              canRange: lockedCode == null,
             ),
           ),
           const SizedBox(height: 12),

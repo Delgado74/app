@@ -861,6 +861,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   EscrowModeInfo dco_decode_escrow_mode_info(dynamic raw);
 
   @protected
+  ExchangeRateLookup dco_decode_exchange_rate_lookup(dynamic raw);
+
+  @protected
   double dco_decode_f_64(dynamic raw);
 
   @protected
@@ -1992,6 +1995,11 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   EscrowModeInfo sse_decode_escrow_mode_info(SseDeserializer deserializer);
+
+  @protected
+  ExchangeRateLookup sse_decode_exchange_rate_lookup(
+    SseDeserializer deserializer,
+  );
 
   @protected
   double sse_decode_f_64(SseDeserializer deserializer);
@@ -3405,6 +3413,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   @protected
   void sse_encode_escrow_mode_info(
     EscrowModeInfo self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_exchange_rate_lookup(
+    ExchangeRateLookup self,
     SseSerializer serializer,
   );
 
