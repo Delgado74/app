@@ -27,18 +27,19 @@ tags:
     - freedom-tech
 license: AGPL-3.0-or-later
 website: https://mostro.network
-# Store images, 1242 × 2688, kept out of assets/ so the app does not bundle
-# them. The first three are one panorama and must stay in this order.
+# Store images, 1242 × 2688 JPEG (quality 85, no chroma subsampling), kept out
+# of assets/ so the app does not bundle them. The first three are one panorama
+# and must stay in this order.
 images:
-    - docs/zapstore/01_hero.png
-    - docs/zapstore/02_hero.png
-    - docs/zapstore/03_hero.png
-    - docs/zapstore/04_book.png
-    - docs/zapstore/05_create.png
-    - docs/zapstore/06_escrow.png
-    - docs/zapstore/07_chat.png
-    - docs/zapstore/08_trades.png
-    - docs/zapstore/09_nodes.png
+    - docs/zapstore/01_hero.jpg
+    - docs/zapstore/02_hero.jpg
+    - docs/zapstore/03_hero.jpg
+    - docs/zapstore/04_book.jpg
+    - docs/zapstore/05_create.jpg
+    - docs/zapstore/06_escrow.jpg
+    - docs/zapstore/07_chat.jpg
+    - docs/zapstore/08_trades.jpg
+    - docs/zapstore/09_nodes.jpg
 supported_nips:
     - "01"
     - "06"
