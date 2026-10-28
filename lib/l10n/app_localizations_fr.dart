@@ -869,7 +869,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get fiatSentFailed =>
-      'Échec de la confirmation du paiement fiat. Veuillez réessayer.';
+      'Échec de la confirmation du paiement. Veuillez réessayer.';
 
   @override
   String get releaseFailed => 'Échec de la libération. Veuillez réessayer.';
@@ -1477,7 +1477,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get tradeInstructionFiatSentBuyer =>
-      'Paiement fiat marqué comme envoyé. En attente que le vendeur confirme la réception et libère vos sats.';
+      'Paiement marqué comme envoyé. En attente que le vendeur confirme la réception et libère vos sats.';
 
   @override
   String get tradeInstructionActiveSeller =>
@@ -1485,7 +1485,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get tradeInstructionFiatSentSeller =>
-      'L\'acheteur a confirmé avoir envoyé le paiement fiat. Une fois la réception vérifiée, libérez les sats.';
+      'L\'acheteur a confirmé avoir envoyé le paiement. Une fois la réception vérifiée, libérez les sats.';
 
   @override
   String get tradeInstructionDisputed =>
@@ -1601,10 +1601,10 @@ class AppLocalizationsFr extends AppLocalizations {
   String get tradeStepInvoiceSeller => 'Vous bloquez les sats';
 
   @override
-  String get tradeStepFiatBuyer => 'Vous envoyez le paiement fiat';
+  String get tradeStepFiatBuyer => 'Vous envoyez le paiement';
 
   @override
-  String get tradeStepFiatSeller => 'L\'acheteur envoie le paiement fiat';
+  String get tradeStepFiatSeller => 'L\'acheteur envoie le paiement';
 
   @override
   String get tradeStepReleaseBuyer => 'Le vendeur libère vos sats';
@@ -2425,7 +2425,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get tradeBodyWaitingPaymentBuyer =>
-      'Le vendeur paie la facture. Une fois les sats bloqués, ce sera à vous de payer le fiat.';
+      'Le vendeur paie la facture. Une fois les sats bloqués, ce sera à vous de payer.';
 
   @override
   String tradeBodyActiveSeller(String method) {
@@ -2440,6 +2440,21 @@ class AppLocalizationsFr extends AppLocalizations {
   @override
   String tradeBodyFiatSentSeller(String method) {
     return 'L\'acheteur a marqué le paiement comme envoyé. Vérifiez votre compte $method avant de libérer.';
+  }
+
+  @override
+  String tradeBodyActiveBuyerStablecoin(String method) {
+    return 'Envoyez-le sur $method, à l\'adresse reçue dans le chat : sur un autre réseau, il peut être perdu. Collez ensuite l\'ID de transaction dans le chat (c\'est votre preuve en cas de litige) et indiquez-le ci-dessous.';
+  }
+
+  @override
+  String tradeBodyActiveSellerStablecoin(String method) {
+    return 'Transmettez votre adresse $method dans le chat ci-dessus.';
+  }
+
+  @override
+  String tradeBodyFiatSentSellerStablecoin(String method) {
+    return 'L\'acheteur a marqué le paiement comme envoyé. Avant de libérer, vérifiez qu\'il est arrivé à votre adresse $method, avec l\'ID de transaction du chat.';
   }
 
   @override
@@ -3701,14 +3716,14 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get tradeCardActiveMessage =>
-      'Les sats sont bloqués. L\'acheteur peut maintenant envoyer le paiement fiat.';
+      'Les sats sont bloqués. L\'acheteur peut maintenant envoyer le paiement.';
 
   @override
-  String get tradeCardFiatSentTitle => 'Fiat marqué comme envoyé';
+  String get tradeCardFiatSentTitle => 'Paiement marqué comme envoyé';
 
   @override
   String get tradeCardFiatSentMessage =>
-      'L\'acheteur a marqué le paiement fiat comme envoyé.';
+      'L\'acheteur a marqué le paiement comme envoyé.';
 
   @override
   String get tradeCardSettledHoldInvoiceTitle => 'Sats libérés';
@@ -4566,7 +4581,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get tradeBodyWaitingPaymentBuyerCashu =>
-      'Le vendeur bloque les sats dans le séquestre. Une fois le séquestre bloqué, c\'est à vous de payer le fiat.';
+      'Le vendeur bloque les sats dans le séquestre. Une fois le séquestre bloqué, c\'est à vous de payer.';
 
   @override
   String get shareChatKeyAction => 'Partager la clé du chat avec le médiateur';

@@ -862,7 +862,8 @@ class AppLocalizationsEn extends AppLocalizations {
       'Your counterpart asked to cancel. Cancelling now ends the trade for both of you and no funds are moved.';
 
   @override
-  String get fiatSentFailed => 'Failed to mark fiat as sent. Please try again.';
+  String get fiatSentFailed =>
+      'Failed to mark the payment as sent. Please try again.';
 
   @override
   String get releaseFailed => 'Failed to release. Please try again.';
@@ -1461,7 +1462,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get tradeInstructionFiatSentBuyer =>
-      'Fiat payment marked as sent. Waiting for the seller to confirm receipt and release your sats.';
+      'Payment marked as sent. Waiting for the seller to confirm receipt and release your sats.';
 
   @override
   String get tradeInstructionActiveSeller =>
@@ -1469,7 +1470,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get tradeInstructionFiatSentSeller =>
-      'The buyer has confirmed they sent the fiat payment. Once you verify receipt, release the sats.';
+      'The buyer has confirmed they sent the payment. Once you verify receipt, release the sats.';
 
   @override
   String get tradeInstructionDisputed =>
@@ -1583,10 +1584,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tradeStepInvoiceSeller => 'You lock the sats';
 
   @override
-  String get tradeStepFiatBuyer => 'You send the fiat payment';
+  String get tradeStepFiatBuyer => 'You send the payment';
 
   @override
-  String get tradeStepFiatSeller => 'The buyer sends the fiat payment';
+  String get tradeStepFiatSeller => 'The buyer sends the payment';
 
   @override
   String get tradeStepReleaseBuyer => 'The seller releases your sats';
@@ -2403,7 +2404,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get tradeBodyWaitingPaymentBuyer =>
-      'The seller is locking the sats. Once they are locked, it\'s your turn to pay the fiat.';
+      'The seller is locking the sats. Once they are locked, it\'s your turn to pay.';
 
   @override
   String tradeBodyActiveSeller(String method) {
@@ -2418,6 +2419,21 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String tradeBodyFiatSentSeller(String method) {
     return 'The buyer marked the payment as sent. Check your $method account before releasing.';
+  }
+
+  @override
+  String tradeBodyActiveBuyerStablecoin(String method) {
+    return 'Send it on $method, to the address they shared in the chat: on another network it can be lost. Then paste the transaction ID in the chat (it is your proof in a dispute) and mark it below.';
+  }
+
+  @override
+  String tradeBodyActiveSellerStablecoin(String method) {
+    return 'Share your $method address in the chat above.';
+  }
+
+  @override
+  String tradeBodyFiatSentSellerStablecoin(String method) {
+    return 'The buyer marked the payment as sent. Before releasing, check that it reached your $method address, with the transaction ID from the chat.';
   }
 
   @override
@@ -3666,14 +3682,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get tradeCardActiveMessage =>
-      'The sats are locked. The buyer can now send the fiat payment.';
+      'The sats are locked. The buyer can now send the payment.';
 
   @override
-  String get tradeCardFiatSentTitle => 'Fiat marked as sent';
+  String get tradeCardFiatSentTitle => 'Payment marked as sent';
 
   @override
   String get tradeCardFiatSentMessage =>
-      'The buyer marked the fiat payment as sent.';
+      'The buyer marked the payment as sent.';
 
   @override
   String get tradeCardSettledHoldInvoiceTitle => 'Sats released';
@@ -4504,7 +4520,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get tradeBodyWaitingPaymentBuyerCashu =>
-      'They\'re locking the sats in escrow. Once it\'s locked, it\'s your turn to pay the fiat.';
+      'They\'re locking the sats in escrow. Once it\'s locked, it\'s your turn to pay.';
 
   @override
   String get shareChatKeyAction => 'Share the chat key with the resolver';

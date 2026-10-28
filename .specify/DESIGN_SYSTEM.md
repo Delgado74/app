@@ -334,6 +334,10 @@ one-to-one choice in their ARB files.
 | A trade a solver decides | dispute | disputa | — |
 | Payment methods the user ticked | selected | seleccionado(s) | elegido(s), chosen |
 | The ratings a user has received | ratings | calificaciones | trades, operaciones (for this count) |
+| What the buyer sends the seller | payment | pago | fiat (as its name) |
+| The chain a coin travels on, named in its payment method | network | red | chain, cadena |
+| Where a coin is received | address | dirección | wallet, cuenta |
+| A coin transfer's identifier on its chain | transaction ID | ID de la transacción | txid, hash |
 
 ---
 

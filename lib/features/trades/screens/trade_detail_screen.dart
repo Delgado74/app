@@ -50,6 +50,7 @@ import 'package:mostro/features/trades/widgets/payout_destination_card.dart';
 import 'package:mostro/l10n/app_localizations.dart';
 import 'package:mostro/shared/mascot/mascot_cues.dart';
 import 'package:mostro/shared/utils/countdown.dart';
+import 'package:mostro/shared/utils/fiat_currencies.dart';
 import 'package:mostro/shared/utils/reputation_age.dart';
 import 'package:mostro/shared/widgets/mostro_modal.dart';
 import 'package:mostro/shared/utils/platform_int64.dart';
@@ -720,6 +721,17 @@ class _TradeDetailScreenState extends ConsumerState<TradeDetailScreen>
     final trade = tradeAsync.valueOrNull;
     final peerRating = trade?.peerRating;
     final figures = _figures(trade, order);
+    // A coin is sent on one network and checked by its transaction ID: the
+    // step copy says both (#884).
+    final isStablecoin =
+        figures != null &&
+        ref.watch(stablecoinPegsProvider).containsKey(figures.code);
+    // The row's method first, like the figures: a taken order can leave the
+    // book. A row restored without a book entry has none.
+    final paymentMethod = switch (trade?.order.paymentMethod) {
+      final method? when method.isNotEmpty => method,
+      _ => order?.paymentMethod,
+    };
     final locale = Localizations.localeOf(context).toString();
     final amount =
         figures == null
@@ -858,11 +870,12 @@ class _TradeDetailScreenState extends ConsumerState<TradeDetailScreen>
                                 view,
                                 status,
                                 isBuyer,
-                                order,
+                                paymentMethod: paymentMethod,
                                 kind: trade?.order.kind,
                                 amount: amount,
                                 summary: summary,
                                 loadFailed: loadFailed,
+                                isStablecoin: isStablecoin,
                               ),
                     ),
                   ),
@@ -1050,12 +1063,13 @@ class _TradeDetailScreenState extends ConsumerState<TradeDetailScreen>
     AppLocalizations l10n,
     TradeView view,
     TradeStatus status,
-    bool isBuyer,
-    OrderItem? order, {
+    bool isBuyer, {
+    required String? paymentMethod,
     required OrderKind? kind,
     required String? amount,
     required String? summary,
     required bool loadFailed,
+    required bool isStablecoin,
   }) {
     return TradeStepBlock(
       summary: summary,
@@ -1072,7 +1086,13 @@ class _TradeDetailScreenState extends ConsumerState<TradeDetailScreen>
       body:
           loadFailed
               ? TextSpan(text: l10n.tradeLoadError)
-              : _body(l10n, status, isBuyer, order?.paymentMethod),
+              : _body(
+                l10n,
+                status,
+                isBuyer,
+                paymentMethod,
+                isStablecoin: isStablecoin,
+              ),
       warning: view.showsReleaseWarning ? l10n.tradeReleaseIrreversible : null,
       countdown:
           view.showsTimer
@@ -1138,13 +1158,15 @@ class _TradeDetailScreenState extends ConsumerState<TradeDetailScreen>
   }
 
   /// What to do about it, with the payment method in the body face. The
-  /// method-specific copy needs the order; without it the generic line.
+  /// method-specific copy needs the order; without it the generic line. A
+  /// stablecoin's also names the address and the transaction ID (#884).
   InlineSpan? _body(
     AppLocalizations l10n,
     TradeStatus status,
     bool isBuyer,
-    String? method,
-  ) {
+    String? method, {
+    required bool isStablecoin,
+  }) {
     final book = OrderBookPalette.of(context);
     final keyData = TextStyle(
       color: book.textBody,
@@ -1168,6 +1190,10 @@ class _TradeDetailScreenState extends ConsumerState<TradeDetailScreen>
             : l10n.tradeWaitingPaymentSellerInstruction,
       TradeStatus.inProgress => l10n.tradeInstructionInProgress,
       TradeStatus.waitingBond => l10n.tradeInstructionWaitingBond,
+      TradeStatus.active when method != null && isStablecoin =>
+        isBuyer
+            ? l10n.tradeBodyActiveBuyerStablecoin(method)
+            : l10n.tradeBodyActiveSellerStablecoin(method),
       TradeStatus.active when method != null =>
         isBuyer
             ? l10n.tradeBodyActiveBuyer(method)
@@ -1176,6 +1202,8 @@ class _TradeDetailScreenState extends ConsumerState<TradeDetailScreen>
         isBuyer
             ? l10n.tradeInstructionActiveBuyer
             : l10n.tradeInstructionActiveSeller,
+      TradeStatus.fiatSent when !isBuyer && method != null && isStablecoin =>
+        l10n.tradeBodyFiatSentSellerStablecoin(method),
       TradeStatus.fiatSent when !isBuyer && method != null => l10n
           .tradeBodyFiatSentSeller(method),
       TradeStatus.fiatSent =>

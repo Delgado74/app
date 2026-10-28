@@ -868,7 +868,7 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get fiatSentFailed =>
-      'Impossibile contrassegnare il fiat come inviato. Riprova.';
+      'Impossibile contrassegnare il pagamento come inviato. Riprova.';
 
   @override
   String get releaseFailed => 'Rilascio non riuscito. Riprova.';
@@ -1473,7 +1473,7 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get tradeInstructionFiatSentBuyer =>
-      'Pagamento fiat contrassegnato come inviato. In attesa che il venditore confermi la ricezione e rilasci i tuoi sats.';
+      'Pagamento contrassegnato come inviato. In attesa che il venditore confermi la ricezione e rilasci i tuoi sats.';
 
   @override
   String get tradeInstructionActiveSeller =>
@@ -1481,7 +1481,7 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get tradeInstructionFiatSentSeller =>
-      'L\'acquirente ha confermato di aver inviato il pagamento fiat. Una volta verificata la ricezione, rilascia i sats.';
+      'L\'acquirente ha confermato di aver inviato il pagamento. Una volta verificata la ricezione, rilascia i sats.';
 
   @override
   String get tradeInstructionDisputed =>
@@ -1596,10 +1596,10 @@ class AppLocalizationsIt extends AppLocalizations {
   String get tradeStepInvoiceSeller => 'Blocchi i sats';
 
   @override
-  String get tradeStepFiatBuyer => 'Invii il pagamento fiat';
+  String get tradeStepFiatBuyer => 'Invii il pagamento';
 
   @override
-  String get tradeStepFiatSeller => 'L\'acquirente invia il pagamento fiat';
+  String get tradeStepFiatSeller => 'L\'acquirente invia il pagamento';
 
   @override
   String get tradeStepReleaseBuyer => 'Il venditore rilascia i tuoi sats';
@@ -2419,7 +2419,7 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get tradeBodyWaitingPaymentBuyer =>
-      'Il venditore sta bloccando i sats. Quando saranno bloccati, toccherà a te pagare il fiat.';
+      'Il venditore sta bloccando i sats. Quando saranno bloccati, toccherà a te pagare.';
 
   @override
   String tradeBodyActiveSeller(String method) {
@@ -2434,6 +2434,21 @@ class AppLocalizationsIt extends AppLocalizations {
   @override
   String tradeBodyFiatSentSeller(String method) {
     return 'L\'acquirente ha segnato il pagamento come inviato. Controlla il tuo conto $method prima di rilasciare.';
+  }
+
+  @override
+  String tradeBodyActiveBuyerStablecoin(String method) {
+    return 'Invialo su $method, all\'indirizzo ricevuto in chat: su un\'altra rete può andare perso. Poi incolla l\'ID della transazione in chat (è la tua prova in una disputa) e segnalalo qui sotto.';
+  }
+
+  @override
+  String tradeBodyActiveSellerStablecoin(String method) {
+    return 'Passa il tuo indirizzo $method nella chat qui sopra.';
+  }
+
+  @override
+  String tradeBodyFiatSentSellerStablecoin(String method) {
+    return 'L\'acquirente ha segnato il pagamento come inviato. Prima di rilasciare, verifica che sia arrivato al tuo indirizzo $method, con l\'ID della transazione della chat.';
   }
 
   @override
@@ -3694,14 +3709,14 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get tradeCardActiveMessage =>
-      'I sats sono bloccati. L\'acquirente può ora inviare il pagamento fiat.';
+      'I sats sono bloccati. L\'acquirente può ora inviare il pagamento.';
 
   @override
-  String get tradeCardFiatSentTitle => 'Fiat segnato come inviato';
+  String get tradeCardFiatSentTitle => 'Pagamento segnato come inviato';
 
   @override
   String get tradeCardFiatSentMessage =>
-      'L\'acquirente ha segnato il pagamento fiat come inviato.';
+      'L\'acquirente ha segnato il pagamento come inviato.';
 
   @override
   String get tradeCardSettledHoldInvoiceTitle => 'Sats rilasciati';
@@ -4546,7 +4561,7 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get tradeBodyWaitingPaymentBuyerCashu =>
-      'Il venditore sta bloccando i sats in custodia. Una volta bloccati, tocca a te pagare il fiat.';
+      'Il venditore sta bloccando i sats in custodia. Una volta bloccati, tocca a te pagare.';
 
   @override
   String get shareChatKeyAction =>
