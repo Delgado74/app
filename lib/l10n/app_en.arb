@@ -2644,8 +2644,6 @@
   "@marketPriceCaption": {
     "description": "Caption under an order-book card amount"
   },
-<<<<<<< HEAD
-=======
   "effectiveRateUsd": "~{rate} {currency}/USD",
   "@effectiveRateUsd": {
     "description": "Effective fiat/USD cross rate of a market-price offer under the order-book card amount, after the maker's premium. {rate} is the already formatted number and {currency} the offer's fiat code; place them wherever the language needs them",
@@ -2676,7 +2674,6 @@
       }
     }
   },
->>>>>>> 2466ee60 (feat(order): show the effective fiat/USD rate on market-price offer cards)
   "sortNewest": "Newest",
   "@sortNewest": {
     "description": "Sort caption on the order-book filter row; must describe the ordering actually applied (newest first)"
