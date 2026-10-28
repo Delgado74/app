@@ -578,4 +578,5 @@
 
   "effectiveRateUsd": "~{rate} {currency}/USD",
   "reputationTradesLabel": "{count, plural, =1{operación} other{operaciones}}",
-  "reputationDaysLabel": "{count, plural, =1{día} other{días}}",
+  "reputationDaysLabel": "{count, plural, =1{día} other{días}}"
+}

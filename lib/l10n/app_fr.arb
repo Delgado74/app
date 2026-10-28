@@ -580,4 +580,5 @@
   "reputationTradesLabel": "{count, plural, =1{transaction} other{transactions}}",
   "reputationDaysLabel": "{count, plural, =1{jour} other{jours}}",
   "sortNewest": "Plus récentes",
-  "ordersCount": "{count, plural, =1{1 ordre} other{{count} ordres}}",
+  "ordersCount": "{count, plural, =1{1 ordre} other{{count} ordres}}"
+}
