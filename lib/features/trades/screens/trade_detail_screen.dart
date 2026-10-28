@@ -726,6 +726,12 @@ class _TradeDetailScreenState extends ConsumerState<TradeDetailScreen>
     final isStablecoin =
         figures != null &&
         ref.watch(stablecoinPegsProvider).containsKey(figures.code);
+    // The row's method first, like the figures: a taken order can leave the
+    // book. A row restored without a book entry has none.
+    final paymentMethod = switch (trade?.order.paymentMethod) {
+      final method? when method.isNotEmpty => method,
+      _ => order?.paymentMethod,
+    };
     final locale = Localizations.localeOf(context).toString();
     final amount =
         figures == null
@@ -864,7 +870,7 @@ class _TradeDetailScreenState extends ConsumerState<TradeDetailScreen>
                                 view,
                                 status,
                                 isBuyer,
-                                order,
+                                paymentMethod: paymentMethod,
                                 kind: trade?.order.kind,
                                 amount: amount,
                                 summary: summary,
@@ -1057,8 +1063,8 @@ class _TradeDetailScreenState extends ConsumerState<TradeDetailScreen>
     AppLocalizations l10n,
     TradeView view,
     TradeStatus status,
-    bool isBuyer,
-    OrderItem? order, {
+    bool isBuyer, {
+    required String? paymentMethod,
     required OrderKind? kind,
     required String? amount,
     required String? summary,
@@ -1084,7 +1090,7 @@ class _TradeDetailScreenState extends ConsumerState<TradeDetailScreen>
                 l10n,
                 status,
                 isBuyer,
-                order?.paymentMethod,
+                paymentMethod,
                 isStablecoin: isStablecoin,
               ),
       warning: view.showsReleaseWarning ? l10n.tradeReleaseIrreversible : null,

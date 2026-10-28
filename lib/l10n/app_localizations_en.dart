@@ -2423,7 +2423,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String tradeBodyActiveBuyerStablecoin(String method) {
-    return 'Send it on $method, to the address they shared in the chat: on another network it can be lost. Then paste the transaction ID in the chat (a resolver checks it in a dispute) and mark it below.';
+    return 'Send it on $method, to the address they shared in the chat: on another network it can be lost. Then paste the transaction ID in the chat (it is your proof in a dispute) and mark it below.';
   }
 
   @override

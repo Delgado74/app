@@ -4107,7 +4107,7 @@ abstract class AppLocalizations {
   /// Step body for the buyer of an active stablecoin trade: send on the network the payment method names, then paste the transaction ID in the chat (app#884); {method} is the payment method
   ///
   /// In en, this message translates to:
-  /// **'Send it on {method}, to the address they shared in the chat: on another network it can be lost. Then paste the transaction ID in the chat (a resolver checks it in a dispute) and mark it below.'**
+  /// **'Send it on {method}, to the address they shared in the chat: on another network it can be lost. Then paste the transaction ID in the chat (it is your proof in a dispute) and mark it below.'**
   String tradeBodyActiveBuyerStablecoin(String method);
 
   /// Step body for the seller of an active stablecoin trade: share the receiving address (app#884); {method} is the payment method

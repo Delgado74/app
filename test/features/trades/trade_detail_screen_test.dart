@@ -466,7 +466,7 @@ void main() {
   });
 
   // A coin sent on another network than the one agreed can be lost, and in
-  // a dispute the solver checks the transfer by its transaction ID (#884).
+  // a dispute its transaction ID is the buyer's proof of the transfer (#884).
   group('a stablecoin trade names the network and the transaction ID', () {
     const method = 'USDT (Tron)';
 
@@ -525,6 +525,57 @@ void main() {
       expect(
         find.text(
           _en.tradeBodyFiatSentSellerStablecoin(method),
+          findRichText: true,
+        ),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('the row names the network once the order left the book', (
+      tester,
+    ) async {
+      // Arrange + Act: a taken order can leave the book; its row stays.
+      await _pumpTradeDetail(
+        tester,
+        orderId: 'order-coin',
+        isBuyer: true,
+        status: OrderStatus.active,
+        trades: [
+          fakeTrade(id: 'coin', fiatCode: 'USDT', paymentMethod: method),
+        ],
+        extraOverrides: [catalogueOverride()],
+      );
+
+      // Assert
+      expect(
+        find.text(
+          _en.tradeBodyActiveBuyerStablecoin(method),
+          findRichText: true,
+        ),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('a row restored without its method reads the book', (
+      tester,
+    ) async {
+      // Arrange + Act: a restore with no book entry writes an empty method.
+      await _pumpTradeDetail(
+        tester,
+        orderId: 'order-coin',
+        isBuyer: true,
+        status: OrderStatus.active,
+        trades: [fakeTrade(id: 'coin', fiatCode: 'USDT', paymentMethod: '')],
+        book: [
+          fakeOrder(id: 'order-coin', fiatCode: 'USDT', paymentMethod: method),
+        ],
+        extraOverrides: [catalogueOverride()],
+      );
+
+      // Assert
+      expect(
+        find.text(
+          _en.tradeBodyActiveBuyerStablecoin(method),
           findRichText: true,
         ),
         findsOneWidget,

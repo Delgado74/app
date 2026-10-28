@@ -2452,7 +2452,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String tradeBodyActiveBuyerStablecoin(String method) {
-    return 'Envie por $method, para o endereço que o vendedor enviou no chat: em outra rede, pode se perder. Depois cole o ID da transação no chat (um mediador o verifica em uma disputa) e marque abaixo.';
+    return 'Envie por $method, para o endereço que o vendedor enviou no chat: em outra rede, pode se perder. Depois cole o ID da transação no chat (é sua prova em uma disputa) e marque abaixo.';
   }
 
   @override

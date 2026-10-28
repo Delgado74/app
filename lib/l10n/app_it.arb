@@ -667,7 +667,7 @@
   "tradeBodyActiveSeller": "Passa i tuoi dati {method} nella chat qui sopra.",
   "tradeBodyActiveBuyer": "Tramite {method}, con i dati ricevuti in chat. Quando hai inviato, segnalalo qui sotto.",
   "tradeBodyFiatSentSeller": "L'acquirente ha segnato il pagamento come inviato. Controlla il tuo conto {method} prima di rilasciare.",
-  "tradeBodyActiveBuyerStablecoin": "Invialo su {method}, all'indirizzo ricevuto in chat: su un'altra rete può andare perso. Poi incolla l'ID della transazione in chat (un mediatore lo controlla in una disputa) e segnalalo qui sotto.",
+  "tradeBodyActiveBuyerStablecoin": "Invialo su {method}, all'indirizzo ricevuto in chat: su un'altra rete può andare perso. Poi incolla l'ID della transazione in chat (è la tua prova in una disputa) e segnalalo qui sotto.",
   "tradeBodyActiveSellerStablecoin": "Passa il tuo indirizzo {method} nella chat qui sopra.",
   "tradeBodyFiatSentSellerStablecoin": "L'acquirente ha segnato il pagamento come inviato. Prima di rilasciare, verifica che sia arrivato al tuo indirizzo {method}, con l'ID della transazione della chat.",
   "tradeReleaseIrreversible": "Il rilascio dei sats non si può annullare.",

@@ -667,7 +667,7 @@
   "tradeBodyActiveSeller": "Pásale tus datos de {method} por el chat de arriba.",
   "tradeBodyActiveBuyer": "Por {method}, con los datos que te pasó por el chat. Cuando lo hayas enviado, márcalo abajo.",
   "tradeBodyFiatSentSeller": "El comprador marcó el pago como enviado. Revisa tu cuenta de {method} antes de liberar.",
-  "tradeBodyActiveBuyerStablecoin": "Envíalo por {method}, a la dirección que te pasó por el chat: por otra red se puede perder. Luego pega el ID de la transacción en el chat (un resolutor lo revisa en una disputa) y márcalo abajo.",
+  "tradeBodyActiveBuyerStablecoin": "Envíalo por {method}, a la dirección que te pasó por el chat: por otra red se puede perder. Luego pega el ID de la transacción en el chat (es tu prueba en una disputa) y márcalo abajo.",
   "tradeBodyActiveSellerStablecoin": "Pásale tu dirección de {method} por el chat de arriba.",
   "tradeBodyFiatSentSellerStablecoin": "El comprador marcó el pago como enviado. Antes de liberar, comprueba que llegó a tu dirección de {method}, con el ID de la transacción del chat.",
   "tradeReleaseIrreversible": "Liberar los sats no se puede deshacer.",

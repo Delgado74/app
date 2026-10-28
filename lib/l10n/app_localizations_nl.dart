@@ -2442,7 +2442,7 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String tradeBodyActiveBuyerStablecoin(String method) {
-    return 'Stuur het via $method naar het adres uit de chat: op een ander netwerk kan het verloren gaan. Plak daarna de transactie-ID in de chat (een solver controleert die bij een dispuut) en meld het hieronder.';
+    return 'Stuur het via $method naar het adres uit de chat: op een ander netwerk kan het verloren gaan. Plak daarna de transactie-ID in de chat (dat is je bewijs bij een dispuut) en meld het hieronder.';
   }
 
   @override

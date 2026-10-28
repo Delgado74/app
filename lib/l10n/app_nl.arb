@@ -667,7 +667,7 @@
   "tradeBodyActiveSeller": "Deel je {method}-gegevens in de chat hierboven.",
   "tradeBodyActiveBuyer": "Via {method}, met de gegevens die de verkoper in de chat heeft gedeeld. Heb je het overgemaakt, meld dat dan hieronder.",
   "tradeBodyFiatSentSeller": "De koper heeft de betaling als verstuurd gemeld. Controleer je {method}-rekening voordat je vrijgeeft.",
-  "tradeBodyActiveBuyerStablecoin": "Stuur het via {method} naar het adres uit de chat: op een ander netwerk kan het verloren gaan. Plak daarna de transactie-ID in de chat (een solver controleert die bij een dispuut) en meld het hieronder.",
+  "tradeBodyActiveBuyerStablecoin": "Stuur het via {method} naar het adres uit de chat: op een ander netwerk kan het verloren gaan. Plak daarna de transactie-ID in de chat (dat is je bewijs bij een dispuut) en meld het hieronder.",
   "tradeBodyActiveSellerStablecoin": "Deel je {method}-adres in de chat hierboven.",
   "tradeBodyFiatSentSellerStablecoin": "De koper heeft de betaling als verstuurd gemeld. Controleer met de transactie-ID uit de chat of die op je {method}-adres is aangekomen voordat je vrijgeeft.",
   "tradeReleaseIrreversible": "De sats vrijgeven kan niet ongedaan worden gemaakt.",

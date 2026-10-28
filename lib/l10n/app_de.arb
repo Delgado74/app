@@ -667,7 +667,7 @@
   "tradeBodyActiveSeller": "Teile deine {method}-Daten im Chat oben.",
   "tradeBodyActiveBuyer": "Per {method}, mit den Daten aus dem Chat. Sobald du gezahlt hast, bestätige es unten.",
   "tradeBodyFiatSentSeller": "Der Käufer hat die Zahlung als gesendet markiert. Prüfe dein {method}-Konto, bevor du freigibst.",
-  "tradeBodyActiveBuyerStablecoin": "Sende es über {method} an die Adresse aus dem Chat: In einem anderen Netzwerk kann es verloren gehen. Füge danach die Transaktions-ID in den Chat ein (ein Schlichter prüft sie im Streitfall) und bestätige es unten.",
+  "tradeBodyActiveBuyerStablecoin": "Sende es über {method} an die Adresse aus dem Chat: In einem anderen Netzwerk kann es verloren gehen. Füge danach die Transaktions-ID in den Chat ein (sie ist dein Nachweis im Streitfall) und bestätige es unten.",
   "tradeBodyActiveSellerStablecoin": "Teile deine {method}-Adresse im Chat oben.",
   "tradeBodyFiatSentSellerStablecoin": "Der Käufer hat die Zahlung als gesendet markiert. Prüfe vor der Freigabe anhand der Transaktions-ID aus dem Chat, ob sie auf deiner {method}-Adresse angekommen ist.",
   "tradeReleaseIrreversible": "Das Freigeben der Sats lässt sich nicht rückgängig machen.",
