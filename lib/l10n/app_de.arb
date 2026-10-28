@@ -575,12 +575,6 @@
   "reasonBestPremium": "Bester Aufschlag",
   "reasonMostReputable": "Am angesehensten",
   "marketPriceCaption": "Marktpreis",
-
-  "effectiveRateUsd": "~{rate} {currency}/USD",
-  "reputationTradesLabel": "{count, plural, =1{Trade} other{Trades}}",
-  "reputationDaysLabel": "{count, plural, =1{Tag} other{Tage}}",
-<<<<<<< HEAD
->>>>>>> 2466ee60 (feat(order): show the effective fiat/USD rate on market-price offer cards)
   "sortNewest": "Neueste",
   "ordersCount": "{count, plural, =1{1 Order} other{{count} Orders}}",
   "sortBestPremium": "Bester Aufschlag",
@@ -1381,7 +1375,27 @@
   "otherNodeCardSwitchPrompt": "Möchtest du zum Node {nodeName} wechseln?",
   "stablecoinsGroupHeader": "Stablecoins",
   "bitcoinNetworksGroupHeader": "Bitcoin in anderen Netzwerken",
-  "marketPriceNotQuotedByNode": "Dieser Node bietet für {code} keinen Marktpreis an. Gib einen festen Betrag in Sats an."
+  "marketPriceNotQuotedByNode": "Dieser Node bietet für {code} keinen Marktpreis an. Gib einen festen Betrag in Sats an.",
+  "effectiveRateUsd": "~{rate} {currency}/USD",
+  "@effectiveRateUsd": {
+    "description": "Effective fiat/USD cross rate of a market-price offer under the order-book card amount, after the maker's premium. {rate} is the already formatted number and {currency} the offer's fiat code; place them wherever the language needs them",
+    "placeholders": {
+      "rate": {"type": "String"},
+      "currency": {"type": "String"}
+    }
+  },
+  "reputationTradesLabel": "{count, plural, =1{Trade} other{Trades}}",
+  "@reputationTradesLabel": {
+    "description": "Unit word after the trade count in the order-book reputation row",
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "reputationDaysLabel": "{count, plural, =1{Tag} other{Tage}}",
+  "@reputationDaysLabel": {
+    "description": "Unit word after the active-days count in the order-book reputation row",
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  }
 }
-=======
->>>>>>> 6f61581d (fix(l10n): resolve conflicts in l10n files)
