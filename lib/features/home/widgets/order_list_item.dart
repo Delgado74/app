@@ -41,7 +41,8 @@ class OrderCardFormats {
       _unsignedPremium = NumberFormat('0.0', _locale),
       rating = ratingFormat(_locale),
       decimal = NumberFormat.decimalPattern(_locale),
-      fiat = NumberFormat('#,##0.##', _locale);
+      fiat = NumberFormat('#,##0.##', _locale),
+      rate = NumberFormat('#,##0.######', _locale);
 
   final String _locale;
 
@@ -58,6 +59,10 @@ class OrderCardFormats {
 
   /// Fiat amounts: grouped, up to two decimals, no trailing zeros.
   final NumberFormat fiat;
+
+  /// Effective fiat/fiat cross rates (`305.4`, `0.0084`): grouped, up to six
+  /// decimals, no trailing zeros, so small rates are not rounded to zero.
+  final NumberFormat rate;
 
   static final Map<String, OrderCardFormats> _byLocale = {};
 
@@ -132,6 +137,7 @@ class OrderListItem extends StatelessWidget {
     required this.order,
     this.onTap,
     this.reason,
+    this.effectiveFiatPerUsd,
   });
 
   final OrderItem order;
@@ -141,6 +147,12 @@ class OrderListItem extends StatelessWidget {
   /// list (see [orderReasonsProvider]) and passed in by the screen. The
   /// best-premium card also gets the highlight border.
   final OrderReason? reason;
+
+  /// The effective fiat/USD cross rate of a market-price order, computed once
+  /// per visible list by [effectiveRatesProvider] and passed in by the
+  /// screen. Null for fixed-sats orders and when no rate is available, in
+  /// which case the card keeps the plain "Market price" caption.
+  final double? effectiveFiatPerUsd;
 
   @override
   Widget build(BuildContext context) {
@@ -176,7 +188,12 @@ class OrderListItem extends StatelessWidget {
             children: [
               _HeaderRow(order: order, reason: reason, palette: pal),
               const SizedBox(height: _rowGap),
-              _AmountRow(order: order, formats: formats, palette: pal),
+              _AmountRow(
+                order: order,
+                formats: formats,
+                palette: pal,
+                effectiveFiatPerUsd: effectiveFiatPerUsd,
+              ),
               const SizedBox(height: _rowGap),
               _PaymentMethodsRow(
                 paymentMethod: order.paymentMethod,
@@ -367,11 +384,13 @@ class _AmountRow extends StatelessWidget {
     required this.order,
     required this.formats,
     required this.palette,
+    required this.effectiveFiatPerUsd,
   });
 
   final OrderItem order;
   final OrderCardFormats formats;
   final OrderBookPalette palette;
+  final double? effectiveFiatPerUsd;
 
   /// Green in the taker's favour or at market, amber up to 3 points against
   /// them, orange beyond.
@@ -467,13 +486,21 @@ class _AmountRow extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 4),
+                    Text(
+                      caption,
+                      textAlign: TextAlign.end,
+                      style: TextStyle(
+                        fontSize: 10,
+                        color: palette.textFaint,
+                      ),
+                    ),
+                    if (!order.hasFixedSats && effectiveFiatPerUsd != null)
                       Text(
-                        caption,
-                        textAlign: TextAlign.end,
-                        style: TextStyle(
-                          fontSize: 10,
-                          color: palette.textFaint,
+                        l10n.effectiveRateUsd(
+                          formats.rate.format(effectiveFiatPerUsd!),
+                          order.fiatCode,
                         ),
+                        style: TextStyle(fontSize: 10, color: palette.textFaint),
                       ),
                     ],
                   ),
