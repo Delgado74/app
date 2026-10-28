@@ -212,8 +212,8 @@ bridged by flutter_rust_bridge.
 
 ## Releases (`docs/RELEASING.md`)
 - **A pushed tag `vX.Y.Z` is the release.** `.github/workflows/release.yml` builds two signed
-  APKs (`armeabi-v7a`, `arm64-v8a`), publishes the GitHub release and opens the `CHANGELOG.md`
-  PR. It refuses a tag that is not on `main` or whose version `pubspec.yaml` **and**
+  APKs (`armeabi-v7a`, `arm64-v8a`), publishes the GitHub release, lists it on Zapstore (`zsp`,
+  signed with the `ZAPSTORE_SIGN_WITH` secret) and opens the `CHANGELOG.md` PR. It refuses a tag that is not on `main` or whose version `pubspec.yaml` **and**
   `rust/Cargo.toml` do not already carry — the About screen shows `CARGO_PKG_VERSION`. Cut a
   release with `./scripts/release.sh X.Y.Z`, run twice: it opens the bump PR
   (`scripts/bump-version.sh`, never one file by hand), then — once merged — tags `origin/main`.
