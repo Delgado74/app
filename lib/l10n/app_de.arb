@@ -575,11 +575,11 @@
   "reasonBestPremium": "Bester Aufschlag",
   "reasonMostReputable": "Am angesehensten",
   "marketPriceCaption": "Marktpreis",
-<<<<<<< HEAD
-=======
+
   "effectiveRateUsd": "~{rate} {currency}/USD",
   "reputationTradesLabel": "{count, plural, =1{Trade} other{Trades}}",
   "reputationDaysLabel": "{count, plural, =1{Tag} other{Tage}}",
+<<<<<<< HEAD
 >>>>>>> 2466ee60 (feat(order): show the effective fiat/USD rate on market-price offer cards)
   "sortNewest": "Neueste",
   "ordersCount": "{count, plural, =1{1 Order} other{{count} Orders}}",
@@ -1383,3 +1383,5 @@
   "bitcoinNetworksGroupHeader": "Bitcoin in anderen Netzwerken",
   "marketPriceNotQuotedByNode": "Dieser Node bietet für {code} keinen Marktpreis an. Gib einen festen Betrag in Sats an."
 }
+=======
+>>>>>>> 6f61581d (fix(l10n): resolve conflicts in l10n files)
